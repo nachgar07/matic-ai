@@ -29,7 +29,7 @@ export const Auth = () => {
         // Redirect authenticated users to main page
         if (session?.user) {
           setTimeout(() => {
-            window.location.href = 'https://xn--sueosblancosblanqueria-mec.com/inicio';
+            window.location.href = `${window.location.origin}/`;
           }, 100);
         }
       }
@@ -41,7 +41,7 @@ export const Auth = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        window.location.href = 'https://xn--sueosblancosblanqueria-mec.com/inicio';
+        window.location.href = `${window.location.origin}/`;
       }
     });
 
@@ -92,7 +92,7 @@ export const Auth = () => {
           description: "Has iniciado sesión correctamente.",
         });
         // Force page reload to redirect
-        window.location.href = 'https://xn--sueosblancosblanqueria-mec.com/inicio';
+        window.location.href = `${window.location.origin}/`;
       }
     } catch (error: any) {
       toast({
@@ -113,7 +113,7 @@ export const Auth = () => {
       // Clean up existing state
       cleanupAuthState();
       
-      const redirectUrl = 'https://xn--sueosblancosblanqueria-mec.com/inicio';
+      const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -159,7 +159,7 @@ export const Auth = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://xn--sueosblancosblanqueria-mec.com/inicio',
+          redirectTo: `${window.location.origin}/`,
         },
       });
 
