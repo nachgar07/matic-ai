@@ -1,21 +1,86 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { CalorieRing } from "@/components/CalorieRing/CalorieRing";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar/WeeklyCalendar";
 import { MacroCard } from "@/components/MacroCard/MacroCard";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
-import { Footprints, Flame, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Footprints, Flame, Sparkles, LogOut } from "lucide-react";
+import { User, Session } from '@supabase/supabase-js';
 
 export const Home = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  
   // Mock data
   const caloriesConsumed = 0;
   const caloriesTarget = 2586;
   const steps = 0;
   const activeCalories = 0;
 
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      // Clean up auth state
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Attempt global sign out
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Ignore errors
+      }
+      
+      // Force page reload for a clean state
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Error signing out:', error);
+      window.location.href = '/auth';
+    }
+  };
+
+  // Redirect to auth if not logged in
+  if (!session || !user) {
+    window.location.href = '/auth';
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Calogram</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Calogram</h1>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleSignOut}
+            className="text-muted-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
         <WeeklyCalendar />
       </div>
 
