@@ -30,6 +30,25 @@ export interface DailyTotals {
   fat: number;
 }
 
+export interface FavoriteFood {
+  id: string;
+  user_id: string;
+  food_id: string;
+  created_at: string;
+  foods: Food;
+}
+
+export interface NutritionGoals {
+  id: string;
+  user_id: string;
+  daily_calories: number;
+  daily_protein: number;
+  daily_carbs: number;
+  daily_fat: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Search foods using FatSecret API
 export const useSearchFoods = () => {
   return useMutation({
@@ -75,6 +94,115 @@ export const useUserMeals = (date?: string) => {
 
       if (error) throw error;
       return data as { meals: MealEntry[]; dailyTotals: DailyTotals };
+    }
+  });
+};
+
+// Get user's favorite foods
+export const useFavoriteFoods = () => {
+  return useQuery({
+    queryKey: ['favorite-foods'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('favorite_foods')
+        .select(`
+          id,
+          user_id,
+          food_id,
+          created_at,
+          foods (*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as FavoriteFood[];
+    }
+  });
+};
+
+// Add food to favorites
+export const useAddFavorite = () => {
+  return useMutation({
+    mutationFn: async (foodId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('favorite_foods')
+        .insert({ food_id: foodId, user_id: user.id })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  });
+};
+
+// Remove food from favorites
+export const useRemoveFavorite = () => {
+  return useMutation({
+    mutationFn: async (favoriteId: string) => {
+      const { error } = await supabase
+        .from('favorite_foods')
+        .delete()
+        .eq('id', favoriteId);
+
+      if (error) throw error;
+    }
+  });
+};
+
+// Get user's nutrition goals
+export const useNutritionGoals = () => {
+  return useQuery({
+    queryKey: ['nutrition-goals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nutrition_goals')
+        .select('*')
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data as NutritionGoals | null;
+    }
+  });
+};
+
+// Set user's nutrition goals
+export const useSetNutritionGoals = () => {
+  return useMutation({
+    mutationFn: async (goals: {
+      daily_calories: number;
+      daily_protein: number;
+      daily_carbs: number;
+      daily_fat: number;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('nutrition_goals')
+        .upsert({ ...goals, user_id: user.id })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  });
+};
+
+// Delete meal entry
+export const useDeleteMeal = () => {
+  return useMutation({
+    mutationFn: async (mealId: string) => {
+      const { error } = await supabase
+        .from('meal_entries')
+        .delete()
+        .eq('id', mealId);
+
+      if (error) throw error;
     }
   });
 };

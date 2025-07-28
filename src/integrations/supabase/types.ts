@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorite_foods: {
+        Row: {
+          created_at: string
+          food_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          food_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          food_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_foods_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       foods: {
         Row: {
           brand_name: string | null
@@ -93,6 +122,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nutrition_goals: {
+        Row: {
+          created_at: string
+          daily_calories: number
+          daily_carbs: number
+          daily_fat: number
+          daily_protein: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_calories?: number
+          daily_carbs?: number
+          daily_fat?: number
+          daily_protein?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_calories?: number
+          daily_carbs?: number
+          daily_fat?: number
+          daily_protein?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
