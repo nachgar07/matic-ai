@@ -11,6 +11,7 @@ import { User, Session } from '@supabase/supabase-js';
 export const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
   
   // Mock data
   const caloriesConsumed = 0;
@@ -24,6 +25,7 @@ export const Home = () => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setLoading(false);
       }
     );
 
@@ -31,6 +33,7 @@ export const Home = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -59,6 +62,17 @@ export const Home = () => {
       window.location.href = '/auth';
     }
   };
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="text-muted-foreground">Cargando...</div>
+        </div>
+      </div>
+    );
+  }
 
   // Redirect to auth if not logged in
   if (!session || !user) {
