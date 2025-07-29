@@ -99,7 +99,7 @@ export const MealPlate = ({
               {/* Imagen del plato a la izquierda */}
               <Dialog>
                 <DialogTrigger asChild>
-                  <button className="shrink-0">
+                  <button className="shrink-0 flex items-center">
                     <Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
                       <AvatarImage src={plateImage} alt={`Foto de ${editingName}`} />
                       <AvatarFallback className="text-sm font-semibold" style={{ backgroundColor: getMealTypeColor(mealType) }}>
@@ -124,7 +124,7 @@ export const MealPlate = ({
               </Dialog>
 
               {/* Contenido principal */}
-              <div className="flex flex-col gap-1 flex-1">
+              <div className="flex flex-col justify-center gap-1 flex-1 min-h-[48px]">
                 {isEditingName ? (
                   <div className="flex items-center gap-2">
                     <Input
