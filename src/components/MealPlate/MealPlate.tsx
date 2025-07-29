@@ -90,7 +90,7 @@ export const MealPlate = ({
         <Checkbox
           checked={isSelected}
           onCheckedChange={onSelectionChange}
-          className="h-5 w-5 self-center"
+          className="h-5 w-5"
         />
         
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="flex-1">
@@ -99,7 +99,7 @@ export const MealPlate = ({
               {/* Imagen del plato a la izquierda */}
               <Dialog>
                 <DialogTrigger asChild>
-                  <button className="shrink-0">
+                  <button className="shrink-0 flex items-center">
                     <Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
                       <AvatarImage src={plateImage} alt={`Foto de ${editingName}`} />
                       <AvatarFallback className="text-sm font-semibold" style={{ backgroundColor: getMealTypeColor(mealType) }}>
