@@ -31,10 +31,25 @@ serve(async (req) => {
       throw new Error('Google AI API key not configured');
     }
 
+    // Get user information from Authorization header
+    const authHeader = req.headers.get('Authorization');
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader! },
+        },
+      }
+    );
+
+    // Get user context for conversation
+    const userContext = await getUserNutritionContext(supabase);
+
     if (action === 'analyze-food') {
       return await analyzeFoodImage(imageBase64, apiKey);
     } else if (action === 'chat') {
-      return await handleConversation(text, conversationHistory, apiKey);
+      return await handleConversation(text, conversationHistory, apiKey, userContext);
     } else {
       throw new Error('Invalid action. Use "analyze-food" or "chat"');
     }
@@ -189,10 +204,152 @@ async function searchFoodInFatSecret(foodName: string) {
   }
 }
 
-async function handleConversation(text: string, conversationHistory: any[], apiKey: string) {
+async function getUserNutritionContext(supabase: any) {
+  try {
+    console.log('Getting user nutrition context...');
+    
+    // Get user info
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.log('No authenticated user found');
+      return null;
+    }
+
+    // Get user profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    // Get nutrition goals
+    const { data: goals } = await supabase
+      .from('nutrition_goals')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    // Get today's meals
+    const today = new Date().toISOString().split('T')[0];
+    const { data: todayMeals } = await supabase
+      .from('meal_entries')
+      .select(`
+        *,
+        foods (*)
+      `)
+      .eq('user_id', user.id)
+      .gte('consumed_at', `${today}T00:00:00`)
+      .lt('consumed_at', `${today}T23:59:59`)
+      .order('consumed_at', { ascending: false });
+
+    // Get recent meals (last 7 days for pattern analysis)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const { data: recentMeals } = await supabase
+      .from('meal_entries')
+      .select(`
+        *,
+        foods (*)
+      `)
+      .eq('user_id', user.id)
+      .gte('consumed_at', sevenDaysAgo.toISOString())
+      .order('consumed_at', { ascending: false })
+      .limit(50);
+
+    // Calculate today's totals
+    const todayTotals = todayMeals?.reduce((acc: any, meal: any) => {
+      if (meal.foods) {
+        const calories = (meal.foods.calories_per_serving || 0) * meal.servings;
+        const protein = (meal.foods.protein_per_serving || 0) * meal.servings;
+        const carbs = (meal.foods.carbs_per_serving || 0) * meal.servings;
+        const fat = (meal.foods.fat_per_serving || 0) * meal.servings;
+        
+        return {
+          calories: acc.calories + calories,
+          protein: acc.protein + protein,
+          carbs: acc.carbs + carbs,
+          fat: acc.fat + fat
+        };
+      }
+      return acc;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 }) || { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+    // Group today's meals by type
+    const mealsByType = todayMeals?.reduce((acc: any, meal: any) => {
+      if (!acc[meal.meal_type]) {
+        acc[meal.meal_type] = [];
+      }
+      acc[meal.meal_type].push({
+        food_name: meal.foods?.food_name || 'Comida manual',
+        servings: meal.servings,
+        calories: (meal.foods?.calories_per_serving || 0) * meal.servings,
+        protein: (meal.foods?.protein_per_serving || 0) * meal.servings
+      });
+      return acc;
+    }, {});
+
+    console.log('User context retrieved successfully');
+    
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        display_name: profile?.display_name || 'Usuario'
+      },
+      goals: goals || {
+        daily_calories: 2000,
+        daily_protein: 150,
+        daily_carbs: 250,
+        daily_fat: 67
+      },
+      today: {
+        consumed: todayTotals,
+        meals: mealsByType,
+        meal_count: todayMeals?.length || 0
+      },
+      recent_patterns: {
+        total_meals: recentMeals?.length || 0,
+        frequent_foods: getFrequentFoods(recentMeals || []),
+        meal_frequency: getMealFrequency(recentMeals || [])
+      }
+    };
+  } catch (error) {
+    console.error('Error getting user nutrition context:', error);
+    return null;
+  }
+}
+
+function getFrequentFoods(meals: any[]) {
+  const foodCounts: { [key: string]: number } = {};
+  
+  meals.forEach(meal => {
+    if (meal.foods?.food_name) {
+      foodCounts[meal.foods.food_name] = (foodCounts[meal.foods.food_name] || 0) + 1;
+    }
+  });
+  
+  return Object.entries(foodCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 5)
+    .map(([food, count]) => ({ food, count }));
+}
+
+function getMealFrequency(meals: any[]) {
+  const mealTypes: { [key: string]: number } = {};
+  
+  meals.forEach(meal => {
+    mealTypes[meal.meal_type] = (mealTypes[meal.meal_type] || 0) + 1;
+  });
+  
+  return mealTypes;
+}
+
+async function handleConversation(text: string, conversationHistory: any[], apiKey: string, userContext: any) {
   console.log('Handling conversation with Gemini...');
   
-  const systemPrompt = `Eres un asistente nutricional inteligente y amigable llamado NutriAI. Tu trabajo es:
+  // Build dynamic system prompt with user context
+  let systemPrompt = `Eres un asistente nutricional inteligente y amigable llamado NutriAI. Tu trabajo es:
 
 1. Ayudar a los usuarios con sus objetivos nutricionales
 2. Analizar sus hábitos alimenticios
@@ -207,9 +364,55 @@ Características importantes:
 - Pregunta por detalles cuando sea necesario
 - Celebra los logros del usuario
 - Ofrece alternativas saludables
-- No reemplazas el consejo médico profesional
+- No reemplazas el consejo médico profesional`;
 
-Si el usuario comparte información sobre comidas o fotos analizadas, referencia esa información en tu respuesta.`;
+  // Add user context if available
+  if (userContext) {
+    systemPrompt += `
+
+INFORMACIÓN ACTUALIZADA DEL USUARIO:
+
+Usuario: ${userContext.user.display_name}
+
+OBJETIVOS NUTRICIONALES DIARIOS:
+- Calorías: ${userContext.goals.daily_calories} kcal
+- Proteína: ${userContext.goals.daily_protein}g
+- Carbohidratos: ${userContext.goals.daily_carbs}g
+- Grasas: ${userContext.goals.daily_fat}g
+
+PROGRESO DE HOY:
+- Calorías consumidas: ${Math.round(userContext.today.consumed.calories)}/${userContext.goals.daily_calories} kcal
+- Proteína: ${Math.round(userContext.today.consumed.protein * 10) / 10}/${userContext.goals.daily_protein}g
+- Carbohidratos: ${Math.round(userContext.today.consumed.carbs * 10) / 10}/${userContext.goals.daily_carbs}g
+- Grasas: ${Math.round(userContext.today.consumed.fat * 10) / 10}/${userContext.goals.daily_fat}g
+- Total de comidas registradas hoy: ${userContext.today.meal_count}
+
+COMIDAS DE HOY:`;
+
+    // Add today's meals breakdown
+    Object.entries(userContext.today.meals).forEach(([mealType, foods]: [string, any]) => {
+      const mealTypeNames: { [key: string]: string } = {
+        breakfast: 'Desayuno',
+        lunch: 'Almuerzo', 
+        dinner: 'Cena',
+        snack: 'Snack'
+      };
+      
+      systemPrompt += `\n${mealTypeNames[mealType] || mealType}:`;
+      foods.forEach((food: any) => {
+        systemPrompt += `\n  - ${food.food_name} (${food.servings} porción${food.servings === 1 ? '' : 'es'}) - ${Math.round(food.calories)} kcal`;
+      });
+    });
+
+    if (userContext.recent_patterns.frequent_foods.length > 0) {
+      systemPrompt += `\n\nALIMENTOS MÁS FRECUENTES (últimos 7 días):`;
+      userContext.recent_patterns.frequent_foods.forEach((item: any) => {
+        systemPrompt += `\n- ${item.food} (${item.count} veces)`;
+      });
+    }
+
+    systemPrompt += `\n\nUSA ESTA INFORMACIÓN para dar consejos personalizados, celebrar el progreso, identificar patrones y sugerir mejoras específicas. Mantén un tono motivador y personaliza tus respuestas según el progreso actual del usuario.`;
+  }
 
   const messages = [
     { role: 'user', parts: [{ text: systemPrompt }] },
@@ -253,7 +456,12 @@ Si el usuario comparte información sobre comidas o fotos analizadas, referencia
   return new Response(
     JSON.stringify({ 
       response: responseText,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      user_context: userContext ? {
+        calories_remaining: userContext.goals.daily_calories - userContext.today.consumed.calories,
+        protein_remaining: userContext.goals.daily_protein - userContext.today.consumed.protein,
+        progress_percentage: Math.round((userContext.today.consumed.calories / userContext.goals.daily_calories) * 100)
+      } : null
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
