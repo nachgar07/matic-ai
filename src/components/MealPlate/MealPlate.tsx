@@ -124,9 +124,9 @@ export const MealPlate = ({
               </Dialog>
 
               {/* Contenido principal */}
-              <div className="flex items-center gap-2 flex-1">
+              <div className="flex flex-col gap-1 flex-1">
                 {isEditingName ? (
-                  <div className="flex items-center gap-2 flex-1">
+                  <div className="flex items-center gap-2">
                     <Input
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
@@ -156,39 +156,43 @@ export const MealPlate = ({
                   </div>
                 ) : (
                   <>
-                    <Badge 
-                      style={{ backgroundColor: getMealTypeColor(mealType) }}
-                      className="text-white shrink-0"
-                    >
-                      {editingName}
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0 shrink-0"
-                      onClick={() => setIsEditingName(true)}
-                    >
-                      <Edit2 size={12} />
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                      {meals.length} {meals.length === 1 ? 'ingrediente' : 'ingredientes'}
-                    </span>
+                    {/* Título y controles */}
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        style={{ backgroundColor: getMealTypeColor(mealType) }}
+                        className="text-white shrink-0"
+                      >
+                        {editingName}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 shrink-0"
+                        onClick={() => setIsEditingName(true)}
+                      >
+                        <Edit2 size={12} />
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        {meals.length} {meals.length === 1 ? 'ingrediente' : 'ingredientes'}
+                      </span>
+                    </div>
+                    
+                    {/* Estadísticas nutricionales */}
+                    <div className="flex flex-wrap gap-2 text-sm">
+                      <span className="font-medium text-primary">
+                        {Math.round(totals.calories)} cal
+                      </span>
+                      <span>P: {Math.round(totals.protein * 10) / 10}g</span>
+                      <span>C: {Math.round(totals.carbs * 10) / 10}g</span>
+                      <span>G: {Math.round(totals.fat * 10) / 10}g</span>
+                    </div>
                   </>
                 )}
               </div>
             </div>
 
             {!isEditingName && (
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex flex-wrap gap-2 text-sm">
-                  <span className="font-medium text-primary">
-                    {Math.round(totals.calories)} cal
-                  </span>
-                  <span>P: {Math.round(totals.protein * 10) / 10}g</span>
-                  <span>C: {Math.round(totals.carbs * 10) / 10}g</span>
-                  <span>G: {Math.round(totals.fat * 10) / 10}g</span>
-                </div>
-                
+              <div className="flex items-center justify-end gap-2">
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
                     {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
