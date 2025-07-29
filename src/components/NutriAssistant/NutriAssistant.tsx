@@ -106,12 +106,18 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
         content: msg.content
       }));
 
+      // Get the session to include authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.functions.invoke('gemini-food-assistant', {
         body: {
           action: 'chat',
           text: messageText,
           conversationHistory
-        }
+        },
+        headers: session?.access_token ? {
+          Authorization: `Bearer ${session.access_token}`
+        } : undefined
       });
 
       if (error) {
