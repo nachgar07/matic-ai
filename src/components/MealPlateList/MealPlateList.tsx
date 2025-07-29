@@ -85,12 +85,12 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals }: MealPlateListPro
     <div className="space-y-4">
       {/* Selection Controls */}
       <Card className="p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Checkbox
               checked={isAllSelected || (isSomeSelected && !isAllSelected)}
               onCheckedChange={handleSelectAll}
-              className="h-5 w-5"
+              className="h-5 w-5 shrink-0"
             />
             <span className="text-sm font-medium">
               {isSomeSelected 
@@ -105,10 +105,10 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals }: MealPlateListPro
               variant="destructive"
               size="sm"
               onClick={handleDeleteSelected}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               <Trash2 size={16} />
-              Eliminar seleccionados
+              <span className="sm:inline">Eliminar seleccionados</span>
             </Button>
           )}
         </div>

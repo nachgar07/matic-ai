@@ -45,10 +45,10 @@ export const MealPlate = ({
 
   const getMealTypeColor = (type: string) => {
     const colors = {
-      breakfast: "hsl(var(--warning))",
-      lunch: "hsl(var(--success))",
-      dinner: "hsl(var(--info))", 
-      snack: "hsl(var(--secondary))"
+      breakfast: "hsl(30 84% 57%)", // Orange
+      lunch: "hsl(142 76% 36%)",   // Green  
+      dinner: "hsl(262 83% 58%)",  // Purple
+      snack: "hsl(346 87% 43%)"    // Pink
     };
     return colors[type as keyof typeof colors] || "hsl(var(--muted))";
   };
@@ -88,7 +88,7 @@ export const MealPlate = ({
         />
         
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="flex-1">
-          <div className="flex items-center justify-between">
+          <div className="space-y-3">
             <div className="flex items-center gap-2 flex-1">
               {isEditingName ? (
                 <div className="flex items-center gap-2 flex-1">
@@ -105,7 +105,7 @@ export const MealPlate = ({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 shrink-0"
                     onClick={handleNameSave}
                   >
                     <Check size={14} />
@@ -113,7 +113,7 @@ export const MealPlate = ({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 shrink-0"
                     onClick={handleNameCancel}
                   >
                     <X size={14} />
@@ -123,14 +123,14 @@ export const MealPlate = ({
                 <>
                   <Badge 
                     style={{ backgroundColor: getMealTypeColor(mealType) }}
-                    className="text-white"
+                    className="text-white shrink-0"
                   >
                     {editingName}
                   </Badge>
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-6 w-6 p-0"
+                    className="h-6 w-6 p-0 shrink-0"
                     onClick={() => setIsEditingName(true)}
                   >
                     <Edit2 size={12} />
@@ -143,8 +143,8 @@ export const MealPlate = ({
             </div>
 
             {!isEditingName && (
-              <div className="flex items-center gap-4">
-                <div className="flex gap-3 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap gap-2 text-sm">
                   <span className="font-medium text-primary">
                     {Math.round(totals.calories)} cal
                   </span>
@@ -154,7 +154,7 @@ export const MealPlate = ({
                 </div>
                 
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
                     {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                   </Button>
                 </CollapsibleTrigger>
