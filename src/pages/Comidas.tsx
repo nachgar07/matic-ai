@@ -176,6 +176,12 @@ export const Comidas = () => {
             meals={meals}
             onDeleteSelectedMeals={handleDeleteSelectedMeals}
             onDeleteMeal={handleDeleteMeal}
+            plateImages={{
+              "desayuno": "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300&h=300&fit=crop&crop=center",
+              "almuerzo": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=300&h=300&fit=crop&crop=center",
+              "cena": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=300&h=300&fit=crop&crop=center",
+              "merienda": "https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=300&h=300&fit=crop&crop=center"
+            }}
           />
           </div>
         </div>

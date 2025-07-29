@@ -10,9 +10,10 @@ interface MealPlateListProps {
   meals: MealEntry[];
   onDeleteSelectedMeals?: (mealIds: string[]) => void;
   onDeleteMeal?: (mealId: string) => void;
+  plateImages?: Record<string, string>;
 }
 
-export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal }: MealPlateListProps) => {
+export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plateImages = {} }: MealPlateListProps) => {
   const [selectedPlates, setSelectedPlates] = useState<Set<string>>(new Set());
   const [plateNames, setPlateNames] = useState<Record<string, string>>({});
 
@@ -127,6 +128,7 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal }: Me
               onPlateNameChange={handlePlateNameChange}
               plateName={plateNames[mealType]}
               onDeleteMeal={onDeleteMeal}
+              plateImage={plateImages[mealType]}
             />
         ))}
       </div>

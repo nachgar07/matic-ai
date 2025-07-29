@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronDown, ChevronRight, Edit2, Check, X, Trash2 } from "lucide-react";
 import {
   Collapsible,
@@ -20,6 +22,7 @@ interface MealPlateProps {
   onPlateNameChange: (mealType: string, newName: string) => void;
   plateName?: string;
   onDeleteMeal?: (mealId: string) => void;
+  plateImage?: string;
 }
 
 export const MealPlate = ({ 
@@ -29,7 +32,8 @@ export const MealPlate = ({
   onSelectionChange,
   onPlateNameChange,
   plateName,
-  onDeleteMeal
+  onDeleteMeal,
+  plateImage
 }: MealPlateProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -123,6 +127,33 @@ export const MealPlate = ({
                 </div>
               ) : (
                 <>
+                  {/* Imagen del plato */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button className="shrink-0">
+                        <Avatar className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity">
+                          <AvatarImage src={plateImage} alt={`Foto de ${editingName}`} />
+                          <AvatarFallback className="text-xs font-semibold" style={{ backgroundColor: getMealTypeColor(mealType) }}>
+                            {editingName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="p-2 max-w-lg">
+                      {plateImage ? (
+                        <img 
+                          src={plateImage} 
+                          alt={`Foto de ${editingName}`}
+                          className="w-full h-auto rounded-lg"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64 bg-muted rounded-lg">
+                          <span className="text-muted-foreground">No hay imagen disponible</span>
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+
                   <Badge 
                     style={{ backgroundColor: getMealTypeColor(mealType) }}
                     className="text-white shrink-0"
