@@ -2,9 +2,12 @@ import { useState } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
-import { Camera, Plus, Search } from "lucide-react";
+import { Camera, Plus, Search, Sparkles } from "lucide-react";
 import { FoodSearch } from "@/components/FoodSearch/FoodSearch";
 import { MealLogger } from "@/components/MealLogger/MealLogger";
+import { PhotoCapture } from "@/components/PhotoCapture/PhotoCapture";
+import { FoodAnalysisResults } from "@/components/FoodAnalysisResults/FoodAnalysisResults";
+import { NutriAssistant } from "@/components/NutriAssistant/NutriAssistant";
 import { MealList } from "@/components/MealList/MealList";
 import { NutritionSummary } from "@/components/NutritionSummary/NutritionSummary";
 import { useUserMeals, Food, useDeleteMeal } from "@/hooks/useFatSecret";
@@ -15,6 +18,8 @@ export const Comidas = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [showFoodSearch, setShowFoodSearch] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
+  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [showAssistant, setShowAssistant] = useState(false);
   
   const { data: mealsData, isLoading } = useUserMeals();
   const { mutateAsync: deleteMeal } = useDeleteMeal();
@@ -28,7 +33,13 @@ export const Comidas = () => {
 
   const handleMealSuccess = () => {
     setSelectedFood(null);
+    setAnalysisResults(null);
     queryClient.invalidateQueries({ queryKey: ['user-meals'] });
+  };
+
+  const handleAnalysisComplete = (analysis: any) => {
+    setAnalysisResults(analysis);
+    setShowCamera(false);
   };
 
   const handleEditMeal = (meal: any) => {
@@ -94,6 +105,15 @@ export const Comidas = () => {
               <Search className="mr-3" size={24} />
               Buscar Alimentos
             </Button>
+
+            <Button
+              variant="outline"
+              className="w-full h-12"
+              onClick={() => setShowAssistant(true)}
+            >
+              <Sparkles className="mr-2" size={20} />
+              Hablar con NutriAI
+            </Button>
           </div>
 
           {/* Nutrition Summary */}
@@ -127,6 +147,30 @@ export const Comidas = () => {
           food={selectedFood}
           onClose={() => setSelectedFood(null)}
           onSuccess={handleMealSuccess}
+        />
+      )}
+
+      {/* Photo Capture Modal */}
+      {showCamera && (
+        <PhotoCapture
+          onAnalysisComplete={handleAnalysisComplete}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
+
+      {/* Analysis Results Modal */}
+      {analysisResults && (
+        <FoodAnalysisResults
+          analysis={analysisResults}
+          onClose={() => setAnalysisResults(null)}
+          onSuccess={handleMealSuccess}
+        />
+      )}
+
+      {/* NutriAI Assistant */}
+      {showAssistant && (
+        <NutriAssistant
+          onClose={() => setShowAssistant(false)}
         />
       )}
     </>

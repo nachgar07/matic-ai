@@ -1,0 +1,330 @@
+import { useState } from 'react';
+import { Check, Edit2, Plus, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { useAddMeal } from '@/hooks/useFatSecret';
+import { useQueryClient } from '@tanstack/react-query';
+
+interface AnalyzedFood {
+  name: string;
+  estimated_portion: string;
+  estimated_calories: number;
+  confidence: number;
+  fatsecret_data?: {
+    food_id: string;
+    food_name: string;
+    calories_per_serving?: number;
+    protein_per_serving?: number;
+    carbs_per_serving?: number;
+    fat_per_serving?: number;
+  };
+}
+
+interface FoodAnalysisResultsProps {
+  analysis: {
+    foods: AnalyzedFood[];
+    total_estimated_calories: number;
+    suggestions: string[];
+    originalImage: string;
+  };
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalysisResultsProps) => {
+  const [editingFood, setEditingFood] = useState<number | null>(null);
+  const [editedFoods, setEditedFoods] = useState(analysis.foods);
+  const [selectedMealTypes, setSelectedMealTypes] = useState<Record<number, string>>({});
+  const [servings, setServings] = useState<Record<number, number>>({});
+  const { toast } = useToast();
+  const addMealMutation = useAddMeal();
+  const queryClient = useQueryClient();
+
+  const updateFood = (index: number, field: string, value: any) => {
+    const updated = [...editedFoods];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditedFoods(updated);
+  };
+
+  const addFoodToMeal = async (food: AnalyzedFood, index: number) => {
+    const mealType = selectedMealTypes[index] as 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    const foodServings = servings[index] || 1;
+
+    if (!mealType) {
+      toast({
+        title: "Selecciona el tipo de comida",
+        description: "Por favor indica si es desayuno, almuerzo, cena o snack.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // If we have FatSecret data, use that food_id, otherwise we'll need to search
+      let foodIdToUse = food.fatsecret_data?.food_id;
+
+      if (!foodIdToUse) {
+        toast({
+          title: "Alimento no encontrado",
+          description: `No se encontró "${food.name}" en la base de datos. Puedes buscarlo manualmente.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      await addMealMutation.mutateAsync({
+        foodId: foodIdToUse,
+        servings: foodServings,
+        mealType
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ['user-meals'] });
+
+      toast({
+        title: "Comida agregada",
+        description: `${food.name} se agregó a tu registro de ${getMealTypeLabel(mealType)}.`
+      });
+
+    } catch (error) {
+      console.error('Error adding food to meal:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo agregar la comida. Intenta de nuevo.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const addAllFoods = async () => {
+    const foodsWithMealType = editedFoods.filter((_, index) => selectedMealTypes[index]);
+    
+    if (foodsWithMealType.length === 0) {
+      toast({
+        title: "Configura los alimentos",
+        description: "Selecciona el tipo de comida para al menos un alimento.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      for (let i = 0; i < editedFoods.length; i++) {
+        if (selectedMealTypes[i] && editedFoods[i].fatsecret_data?.food_id) {
+          await addFoodToMeal(editedFoods[i], i);
+        }
+      }
+
+      toast({
+        title: "¡Comidas agregadas!",
+        description: `Se agregaron ${foodsWithMealType.length} alimentos a tu registro.`
+      });
+
+      onSuccess();
+    } catch (error) {
+      console.error('Error adding all foods:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema agregando algunas comidas.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getMealTypeLabel = (type: string) => {
+    const labels = {
+      breakfast: 'desayuno',
+      lunch: 'almuerzo', 
+      dinner: 'cena',
+      snack: 'snack'
+    };
+    return labels[type as keyof typeof labels] || type;
+  };
+
+  const totalCalories = editedFoods.reduce((sum, food) => {
+    const serving = servings[editedFoods.indexOf(food)] || 1;
+    return sum + (food.estimated_calories * serving);
+  }, 0);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <Card className="w-full max-w-4xl bg-background max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h3 className="text-xl font-semibold mb-2">Análisis de Alimentos</h3>
+              <p className="text-sm text-muted-foreground">
+                Se identificaron {editedFoods.length} alimentos • ~{Math.round(totalCalories)} calorías
+              </p>
+            </div>
+            <Button variant="ghost" onClick={onClose}>×</Button>
+          </div>
+
+          {/* Original image preview */}
+          <div className="mb-6">
+            <img
+              src={analysis.originalImage}
+              alt="Foto analizada"
+              className="w-full max-h-32 object-contain rounded-lg bg-muted"
+            />
+          </div>
+
+          {/* Foods list */}
+          <div className="space-y-4 mb-6">
+            {editedFoods.map((food, index) => (
+              <Card key={index} className="p-4">
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-medium">{food.name}</h4>
+                      <Badge variant={food.confidence > 0.8 ? "default" : "secondary"}>
+                        {Math.round(food.confidence * 100)}% confianza
+                      </Badge>
+                      {food.fatsecret_data && (
+                        <Badge variant="outline">
+                          <Check className="h-3 w-3 mr-1" />
+                          En base de datos
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Portion */}
+                      <div>
+                        <label className="text-sm text-muted-foreground">Porción</label>
+                        {editingFood === index ? (
+                          <Input
+                            value={food.estimated_portion}
+                            onChange={(e) => updateFood(index, 'estimated_portion', e.target.value)}
+                            className="mt-1"
+                          />
+                        ) : (
+                          <p className="mt-1">{food.estimated_portion}</p>
+                        )}
+                      </div>
+
+                      {/* Servings */}
+                      <div>
+                        <label className="text-sm text-muted-foreground">Porciones</label>
+                        <Input
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          value={servings[index] || 1}
+                          onChange={(e) => setServings({...servings, [index]: parseFloat(e.target.value) || 1})}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {/* Meal type */}
+                      <div>
+                        <label className="text-sm text-muted-foreground">Tipo de comida</label>
+                        <Select
+                          value={selectedMealTypes[index] || ""}
+                          onValueChange={(value) => setSelectedMealTypes({...selectedMealTypes, [index]: value})}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Seleccionar..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="breakfast">Desayuno</SelectItem>
+                            <SelectItem value="lunch">Almuerzo</SelectItem>
+                            <SelectItem value="dinner">Cena</SelectItem>
+                            <SelectItem value="snack">Snack</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Nutritional info */}
+                    <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Calorías:</span>
+                        <span className="ml-1 font-medium">
+                          {Math.round(food.estimated_calories * (servings[index] || 1))}
+                        </span>
+                      </div>
+                      {food.fatsecret_data && (
+                        <>
+                          <div>
+                            <span className="text-muted-foreground">Proteína:</span>
+                            <span className="ml-1 font-medium">
+                              {Math.round((food.fatsecret_data.protein_per_serving || 0) * (servings[index] || 1))}g
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Carbos:</span>
+                            <span className="ml-1 font-medium">
+                              {Math.round((food.fatsecret_data.carbs_per_serving || 0) * (servings[index] || 1))}g
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Grasa:</span>
+                            <span className="ml-1 font-medium">
+                              {Math.round((food.fatsecret_data.fat_per_serving || 0) * (servings[index] || 1))}g
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingFood(editingFood === index ? null : index)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    
+                    <Button
+                      onClick={() => addFoodToMeal(food, index)}
+                      disabled={!selectedMealTypes[index] || !food.fatsecret_data?.food_id}
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Agregar
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* AI Suggestions */}
+          {analysis.suggestions && analysis.suggestions.length > 0 && (
+            <Card className="p-4 mb-6 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+              <div className="flex items-start gap-2">
+                <Sparkles className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                    Consejos Nutricionales
+                  </h5>
+                  <ul className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
+                    {analysis.suggestions.map((suggestion, index) => (
+                      <li key={index}>• {suggestion}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancelar
+            </Button>
+            <Button onClick={addAllFoods} className="flex-1">
+              Agregar Todas las Comidas
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
