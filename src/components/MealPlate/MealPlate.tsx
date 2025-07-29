@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MealEntry } from "@/hooks/useFatSecret";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +12,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { MealEntry } from "@/hooks/useFatSecret";
 
 interface MealPlateProps {
   mealType: string;
@@ -39,27 +39,35 @@ export const MealPlate = ({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingName, setEditingName] = useState(plateName || getDefaultPlateName(mealType));
 
-  function getDefaultPlateName(type: string) {
-    const labels = {
+  function getDefaultPlateName(mealType: string) {
+    const names = {
       breakfast: "Desayuno",
       lunch: "Almuerzo", 
       dinner: "Cena",
-      snack: "Snack"
+      snack: "Merienda",
+      desayuno: "Desayuno",
+      almuerzo: "Almuerzo",
+      cena: "Cena",
+      merienda: "Merienda"
     };
-    return labels[type as keyof typeof labels] || type;
+    return names[mealType as keyof typeof names] || mealType;
   }
 
-  const getMealTypeColor = (type: string) => {
+  function getMealTypeColor(mealType: string) {
     const colors = {
-      breakfast: "hsl(30 84% 57%)", // Orange
-      lunch: "hsl(142 76% 36%)",   // Green  
-      dinner: "hsl(262 83% 58%)",  // Purple
-      snack: "hsl(346 87% 43%)"    // Pink
+      breakfast: "#ff9500",
+      lunch: "#34c759",
+      dinner: "#af52de", 
+      snack: "#ff3b30",
+      desayuno: "#ff9500",
+      almuerzo: "#34c759",
+      cena: "#af52de",
+      merienda: "#ff3b30"
     };
-    return colors[type as keyof typeof colors] || "hsl(var(--muted))";
-  };
+    return colors[mealType as keyof typeof colors] || "#007aff";
+  }
 
-  // Calculate totals
+  // Calculate totals for this meal type
   const totals = meals.reduce((acc, meal) => {
     const calories = (meal.foods.calories_per_serving || 0) * meal.servings;
     const protein = (meal.foods.protein_per_serving || 0) * meal.servings;
@@ -85,173 +93,176 @@ export const MealPlate = ({
   };
 
   return (
-    <Card className="py-8 px-6 flex items-center justify-center min-h-[120px]">
-      <div className="flex items-center gap-3 w-full">
+    <Card className="p-4">
+      {/* Header Section - Perfectly aligned */}
+      <div className="flex items-center gap-4 min-h-[60px]">
+        {/* Checkbox */}
         <Checkbox
           checked={isSelected}
           onCheckedChange={onSelectionChange}
           className="h-5 w-5"
         />
         
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="flex-1">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 flex-1">
-              {/* Imagen del plato a la izquierda */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <button className="shrink-0 flex items-center">
-                    <Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
-                      <AvatarImage src={plateImage} alt={`Foto de ${editingName}`} />
-                      <AvatarFallback className="text-sm font-semibold" style={{ backgroundColor: getMealTypeColor(mealType) }}>
-                        {editingName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="p-2 max-w-lg">
-                  {plateImage ? (
-                    <img 
-                      src={plateImage} 
-                      alt={`Foto de ${editingName}`}
-                      className="w-full h-auto rounded-lg"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-64 bg-muted rounded-lg">
-                      <span className="text-muted-foreground">No hay imagen disponible</span>
-                    </div>
-                  )}
-                </DialogContent>
-              </Dialog>
-
-              {/* Contenido principal centrado verticalmente */}
-              <div className="flex flex-col justify-center flex-1">
-                {isEditingName ? (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      className="h-8 text-sm"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleNameSave();
-                        if (e.key === 'Escape') handleNameCancel();
-                      }}
-                      autoFocus
-                    />
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 shrink-0"
-                      onClick={handleNameSave}
-                    >
-                      <Check size={14} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 shrink-0"
-                      onClick={handleNameCancel}
-                    >
-                      <X size={14} />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {/* Título y controles */}
-                    <div className="flex items-center gap-2">
-                      <Badge 
-                        style={{ backgroundColor: getMealTypeColor(mealType) }}
-                        className="text-white shrink-0"
-                      >
-                        {editingName}
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0 shrink-0"
-                        onClick={() => setIsEditingName(true)}
-                      >
-                        <Edit2 size={12} />
-                      </Button>
-                      <span className="text-sm text-muted-foreground">
-                        {meals.length} {meals.length === 1 ? 'ingrediente' : 'ingredientes'}
-                      </span>
-                    </div>
-                    
-                    {/* Estadísticas nutricionales */}
-                    <div className="flex flex-wrap gap-2 text-sm">
-                      <span className="font-medium text-primary">
-                        {Math.round(totals.calories)} cal
-                      </span>
-                      <span>P: {Math.round(totals.protein * 10) / 10}g</span>
-                      <span>C: {Math.round(totals.carbs * 10) / 10}g</span>
-                      <span>G: {Math.round(totals.fat * 10) / 10}g</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {!isEditingName && (
-              <div className="flex items-center justify-end gap-2">
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
-                    {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                  </Button>
-                </CollapsibleTrigger>
+        {/* Avatar */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="shrink-0">
+              <Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
+                <AvatarImage src={plateImage} alt={`Foto de ${editingName}`} />
+                <AvatarFallback className="text-sm font-semibold" style={{ backgroundColor: getMealTypeColor(mealType) }}>
+                  {editingName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </DialogTrigger>
+          <DialogContent className="p-2 max-w-lg">
+            {plateImage ? (
+              <img 
+                src={plateImage} 
+                alt={`Foto de ${editingName}`}
+                className="w-full h-auto rounded-lg"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-64 bg-muted rounded-lg">
+                <span className="text-muted-foreground">No hay imagen disponible</span>
               </div>
             )}
-          </div>
+          </DialogContent>
+        </Dialog>
 
-          <CollapsibleContent className="mt-3">
-            <div className="space-y-2 pl-6 border-l-2 border-muted">
-              {meals.map((meal) => {
-                const itemCalories = Math.round((meal.foods.calories_per_serving || 0) * meal.servings);
-                const itemProtein = Math.round((meal.foods.protein_per_serving || 0) * meal.servings * 10) / 10;
-                const itemCarbs = Math.round((meal.foods.carbs_per_serving || 0) * meal.servings * 10) / 10;
-                const itemFat = Math.round((meal.foods.fat_per_serving || 0) * meal.servings * 10) / 10;
-
-                return (
-                  <div key={meal.id} className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2">
-                        <h5 className="font-medium text-sm">{meal.foods.food_name}</h5>
-                        {meal.foods.brand_name && (
-                          <span className="text-xs text-muted-foreground">
-                            • {meal.foods.brand_name}
-                          </span>
-                        )}
-                      </div>
-                      {onDeleteMeal && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0 shrink-0 hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => onDeleteMeal(meal.id)}
-                        >
-                          <Trash2 size={12} />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <p className="text-xs text-muted-foreground mb-2">
-                      {meal.servings}x {meal.foods.serving_description || "porción"}
-                    </p>
-                    
-                    <div className="flex gap-3 text-xs">
-                      <span className="font-medium text-primary">
-                        {itemCalories} cal
-                      </span>
-                      <span>P: {itemProtein}g</span>
-                      <span>C: {itemCarbs}g</span>
-                      <span>G: {itemFat}g</span>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* Content */}
+        <div className="flex-1 flex flex-col justify-center">
+          {isEditingName ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                className="h-8 text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleNameSave();
+                  if (e.key === 'Escape') handleNameCancel();
+                }}
+                autoFocus
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 shrink-0"
+                onClick={handleNameSave}
+              >
+                <Check size={14} />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 shrink-0"
+                onClick={handleNameCancel}
+              >
+                <X size={14} />
+              </Button>
             </div>
-          </CollapsibleContent>
+          ) : (
+            <div className="space-y-1">
+              {/* Title row */}
+              <div className="flex items-center gap-2">
+                <Badge 
+                  style={{ backgroundColor: getMealTypeColor(mealType) }}
+                  className="text-white shrink-0"
+                >
+                  {editingName}
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0 shrink-0"
+                  onClick={() => setIsEditingName(true)}
+                >
+                  <Edit2 size={12} />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {meals.length} {meals.length === 1 ? 'ingrediente' : 'ingredientes'}
+                </span>
+              </div>
+              
+              {/* Stats row */}
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span className="font-medium text-primary">
+                  {Math.round(totals.calories)} cal
+                </span>
+                <span>P: {Math.round(totals.protein * 10) / 10}g</span>
+                <span>C: {Math.round(totals.carbs * 10) / 10}g</span>
+                <span>G: {Math.round(totals.fat * 10) / 10}g</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Expand button */}
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="shrink-0">
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </Button>
+          </CollapsibleTrigger>
         </Collapsible>
       </div>
+
+      {/* Collapsible Content */}
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleContent className="space-y-3 mt-3">
+          {meals.map((meal) => {
+            const calories = (meal.foods.calories_per_serving || 0) * meal.servings;
+            const protein = (meal.foods.protein_per_serving || 0) * meal.servings;
+            const carbs = (meal.foods.carbs_per_serving || 0) * meal.servings;
+            const fat = (meal.foods.fat_per_serving || 0) * meal.servings;
+
+            return (
+              <div key={meal.id} className="p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2">
+                    <h5 className="font-medium text-sm">{meal.foods.food_name}</h5>
+                    {meal.foods.brand_name && (
+                      <span className="text-xs text-muted-foreground">
+                        • {meal.foods.brand_name}
+                      </span>
+                    )}
+                  </div>
+                  {onDeleteMeal && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => onDeleteMeal(meal.id)}
+                    >
+                      <Trash2 size={12} />
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
+                  <span>{meal.servings} {meal.foods.serving_description || 'porción'}</span>
+                  <span>{Math.round(calories)} cal</span>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="text-center p-2 rounded bg-background">
+                    <div className="font-medium">{Math.round(protein * 10) / 10}g</div>
+                    <div className="text-muted-foreground">Proteína</div>
+                  </div>
+                  <div className="text-center p-2 rounded bg-background">
+                    <div className="font-medium">{Math.round(carbs * 10) / 10}g</div>
+                    <div className="text-muted-foreground">Carbohidratos</div>
+                  </div>
+                  <div className="text-center p-2 rounded bg-background">
+                    <div className="font-medium">{Math.round(fat * 10) / 10}g</div>
+                    <div className="text-muted-foreground">Grasas</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </CollapsibleContent>
+      </Collapsible>
     </Card>
   );
 };
