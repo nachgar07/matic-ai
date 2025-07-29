@@ -24,27 +24,12 @@ serve(async (req) => {
   }
 
   try {
-    const { action, imageBase64, text, conversationHistory } = await req.json();
+    const { action, imageBase64, text, conversationHistory, userContext } = await req.json();
     const apiKey = Deno.env.get('GOOGLE_AI_API_KEY');
     
     if (!apiKey) {
       throw new Error('Google AI API key not configured');
     }
-
-    // Get user information from Authorization header
-    const authHeader = req.headers.get('Authorization');
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader! },
-        },
-      }
-    );
-
-    // Get user context for conversation
-    const userContext = await getUserNutritionContext(supabase);
 
     if (action === 'analyze-food') {
       return await analyzeFoodImage(imageBase64, apiKey);
@@ -204,182 +189,9 @@ async function searchFoodInFatSecret(foodName: string) {
   }
 }
 
-async function getUserNutritionContext(supabase: any) {
-  try {
-    console.log('Getting user nutrition context...');
-    
-    // Get user info
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) {
-      console.error('Error getting user:', userError);
-      return null;
-    }
-    if (!user) {
-      console.log('No authenticated user found');
-      return null;
-    }
-    
-    console.log('User found:', user.id, user.email);
-
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    
-    if (profileError) {
-      console.log('Profile error (might not exist):', profileError);
-    }
-
-    // Get nutrition goals
-    const { data: goals, error: goalsError } = await supabase
-      .from('nutrition_goals')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-    
-    if (goalsError) {
-      console.log('Goals error (might not exist):', goalsError);
-    }
-
-    // Get today's meals
-    const today = new Date().toISOString().split('T')[0];
-    console.log('Looking for meals on:', today);
-    
-    const { data: todayMeals, error: mealsError } = await supabase
-      .from('meal_entries')
-      .select(`
-        *,
-        foods (*)
-      `)
-      .eq('user_id', user.id)
-      .gte('consumed_at', `${today}T00:00:00`)
-      .lt('consumed_at', `${today}T23:59:59`)
-      .order('consumed_at', { ascending: false });
-
-    if (mealsError) {
-      console.error('Error getting today meals:', mealsError);
-    } else {
-      console.log('Found', todayMeals?.length || 0, 'meals today');
-    }
-
-    // Get recent meals (last 7 days for pattern analysis)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const { data: recentMeals, error: recentError } = await supabase
-      .from('meal_entries')
-      .select(`
-        *,
-        foods (*)
-      `)
-      .eq('user_id', user.id)
-      .gte('consumed_at', sevenDaysAgo.toISOString())
-      .order('consumed_at', { ascending: false })
-      .limit(50);
-
-    if (recentError) {
-      console.error('Error getting recent meals:', recentError);
-    } else {
-      console.log('Found', recentMeals?.length || 0, 'recent meals');
-    }
-
-    // Calculate today's totals
-    const todayTotals = todayMeals?.reduce((acc: any, meal: any) => {
-      if (meal.foods) {
-        const calories = (meal.foods.calories_per_serving || 0) * meal.servings;
-        const protein = (meal.foods.protein_per_serving || 0) * meal.servings;
-        const carbs = (meal.foods.carbs_per_serving || 0) * meal.servings;
-        const fat = (meal.foods.fat_per_serving || 0) * meal.servings;
-        
-        return {
-          calories: acc.calories + calories,
-          protein: acc.protein + protein,
-          carbs: acc.carbs + carbs,
-          fat: acc.fat + fat
-        };
-      }
-      return acc;
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0 }) || { calories: 0, protein: 0, carbs: 0, fat: 0 };
-
-    // Group today's meals by type
-    const mealsByType = todayMeals?.reduce((acc: any, meal: any) => {
-      if (!acc[meal.meal_type]) {
-        acc[meal.meal_type] = [];
-      }
-      acc[meal.meal_type].push({
-        food_name: meal.foods?.food_name || 'Comida manual',
-        servings: meal.servings,
-        calories: (meal.foods?.calories_per_serving || 0) * meal.servings,
-        protein: (meal.foods?.protein_per_serving || 0) * meal.servings
-      });
-      return acc;
-    }, {});
-
-    console.log('Today totals:', todayTotals);
-    console.log('Meals by type:', Object.keys(mealsByType));
-    
-    const context = {
-      user: {
-        id: user.id,
-        email: user.email,
-        display_name: profile?.display_name || 'Usuario'
-      },
-      goals: goals || {
-        daily_calories: 2000,
-        daily_protein: 150,
-        daily_carbs: 250,
-        daily_fat: 67
-      },
-      today: {
-        consumed: todayTotals,
-        meals: mealsByType,
-        meal_count: todayMeals?.length || 0
-      },
-      recent_patterns: {
-        total_meals: recentMeals?.length || 0,
-        frequent_foods: getFrequentFoods(recentMeals || []),
-        meal_frequency: getMealFrequency(recentMeals || [])
-      }
-    };
-    
-    console.log('User context retrieved successfully');
-    return context;
-    
-  } catch (error) {
-    console.error('Error getting user nutrition context:', error);
-    return null;
-  }
-}
-
-function getFrequentFoods(meals: any[]) {
-  const foodCounts: { [key: string]: number } = {};
-  
-  meals.forEach(meal => {
-    if (meal.foods?.food_name) {
-      foodCounts[meal.foods.food_name] = (foodCounts[meal.foods.food_name] || 0) + 1;
-    }
-  });
-  
-  return Object.entries(foodCounts)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 5)
-    .map(([food, count]) => ({ food, count }));
-}
-
-function getMealFrequency(meals: any[]) {
-  const mealTypes: { [key: string]: number } = {};
-  
-  meals.forEach(meal => {
-    mealTypes[meal.meal_type] = (mealTypes[meal.meal_type] || 0) + 1;
-  });
-  
-  return mealTypes;
-}
-
 async function handleConversation(text: string, conversationHistory: any[], apiKey: string, userContext: any) {
   console.log('Handling conversation with Gemini...');
+  console.log('User context received:', userContext ? 'yes' : 'no');
   
   // Build dynamic system prompt with user context
   let systemPrompt = `Eres un asistente nutricional inteligente y amigable llamado NutriAI. Tu trabajo es:

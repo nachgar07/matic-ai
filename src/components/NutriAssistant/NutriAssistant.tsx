@@ -84,6 +84,126 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
     }
   }, [messages]);
 
+  const getUserNutritionContext = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      // Get nutrition goals
+      const { data: goals } = await supabase
+        .from('nutrition_goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      // Get today's meals
+      const today = new Date().toISOString().split('T')[0];
+      const { data: todayMeals } = await supabase
+        .from('meal_entries')
+        .select(`
+          *,
+          foods (*)
+        `)
+        .eq('user_id', user.id)
+        .gte('consumed_at', `${today}T00:00:00`)
+        .lt('consumed_at', `${today}T23:59:59`)
+        .order('consumed_at', { ascending: false });
+
+      // Get recent meals (last 7 days for pattern analysis)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data: recentMeals } = await supabase
+        .from('meal_entries')
+        .select(`
+          *,
+          foods (*)
+        `)
+        .eq('user_id', user.id)
+        .gte('consumed_at', sevenDaysAgo.toISOString())
+        .order('consumed_at', { ascending: false })
+        .limit(50);
+
+      // Calculate today's totals
+      const todayTotals = todayMeals?.reduce((acc: any, meal: any) => {
+        if (meal.foods) {
+          const calories = (meal.foods.calories_per_serving || 0) * meal.servings;
+          const protein = (meal.foods.protein_per_serving || 0) * meal.servings;
+          const carbs = (meal.foods.carbs_per_serving || 0) * meal.servings;
+          const fat = (meal.foods.fat_per_serving || 0) * meal.servings;
+          
+          return {
+            calories: acc.calories + calories,
+            protein: acc.protein + protein,
+            carbs: acc.carbs + carbs,
+            fat: acc.fat + fat
+          };
+        }
+        return acc;
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0 }) || { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+      // Group today's meals by type
+      const mealsByType = todayMeals?.reduce((acc: any, meal: any) => {
+        if (!acc[meal.meal_type]) {
+          acc[meal.meal_type] = [];
+        }
+        acc[meal.meal_type].push({
+          food_name: meal.foods?.food_name || 'Comida manual',
+          servings: meal.servings,
+          calories: (meal.foods?.calories_per_serving || 0) * meal.servings,
+          protein: (meal.foods?.protein_per_serving || 0) * meal.servings
+        });
+        return acc;
+      }, {});
+
+      // Get frequent foods
+      const foodCounts: { [key: string]: number } = {};
+      recentMeals?.forEach(meal => {
+        if (meal.foods?.food_name) {
+          foodCounts[meal.foods.food_name] = (foodCounts[meal.foods.food_name] || 0) + 1;
+        }
+      });
+      
+      const frequentFoods = Object.entries(foodCounts)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5)
+        .map(([food, count]) => ({ food, count }));
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          display_name: profile?.display_name || 'Usuario'
+        },
+        goals: goals || {
+          daily_calories: 2000,
+          daily_protein: 150,
+          daily_carbs: 250,
+          daily_fat: 67
+        },
+        today: {
+          consumed: todayTotals,
+          meals: mealsByType,
+          meal_count: todayMeals?.length || 0
+        },
+        recent_patterns: {
+          total_meals: recentMeals?.length || 0,
+          frequent_foods: frequentFoods
+        }
+      };
+    } catch (error) {
+      console.error('Error getting user context:', error);
+      return null;
+    }
+  };
+
   const handleSendMessage = async (text?: string, addToUI = true) => {
     const messageText = text || inputText.trim();
     if (!messageText || isLoading) return;
@@ -106,18 +226,16 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
         content: msg.content
       }));
 
-      // Get the session to include authorization
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      // Get user context from frontend
+      const userContext = await getUserNutritionContext();
+
       const { data, error } = await supabase.functions.invoke('gemini-food-assistant', {
         body: {
           action: 'chat',
           text: messageText,
-          conversationHistory
-        },
-        headers: session?.access_token ? {
-          Authorization: `Bearer ${session.access_token}`
-        } : undefined
+          conversationHistory,
+          userContext // Pass context directly from frontend
+        }
       });
 
       if (error) {
