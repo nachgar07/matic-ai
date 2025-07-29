@@ -90,7 +90,7 @@ export const MealPlate = ({
         <Checkbox
           checked={isSelected}
           onCheckedChange={onSelectionChange}
-          className="h-5 w-5"
+          className="h-5 w-5 self-center"
         />
         
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="flex-1">
