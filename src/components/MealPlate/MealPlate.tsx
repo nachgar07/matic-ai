@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronDown, ChevronRight, Edit2, Check, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Edit2, Check, X, Trash2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -19,6 +19,7 @@ interface MealPlateProps {
   onSelectionChange: (selected: boolean) => void;
   onPlateNameChange: (mealType: string, newName: string) => void;
   plateName?: string;
+  onDeleteMeal?: (mealId: string) => void;
 }
 
 export const MealPlate = ({ 
@@ -27,7 +28,8 @@ export const MealPlate = ({
   isSelected, 
   onSelectionChange,
   onPlateNameChange,
-  plateName 
+  plateName,
+  onDeleteMeal
 }: MealPlateProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -172,12 +174,24 @@ export const MealPlate = ({
 
                 return (
                   <div key={meal.id} className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h5 className="font-medium text-sm">{meal.foods.food_name}</h5>
-                      {meal.foods.brand_name && (
-                        <span className="text-xs text-muted-foreground">
-                          • {meal.foods.brand_name}
-                        </span>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2">
+                        <h5 className="font-medium text-sm">{meal.foods.food_name}</h5>
+                        {meal.foods.brand_name && (
+                          <span className="text-xs text-muted-foreground">
+                            • {meal.foods.brand_name}
+                          </span>
+                        )}
+                      </div>
+                      {onDeleteMeal && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0 shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => onDeleteMeal(meal.id)}
+                        >
+                          <Trash2 size={12} />
+                        </Button>
                       )}
                     </div>
                     

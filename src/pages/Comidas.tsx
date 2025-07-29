@@ -172,10 +172,11 @@ export const Comidas = () => {
                 </Button>
               )}
             </div>
-            <MealPlateList 
-              meals={meals}
-              onDeleteSelectedMeals={handleDeleteSelectedMeals}
-            />
+          <MealPlateList 
+            meals={meals}
+            onDeleteSelectedMeals={handleDeleteSelectedMeals}
+            onDeleteMeal={handleDeleteMeal}
+          />
           </div>
         </div>
 

@@ -9,9 +9,10 @@ import { MealPlate } from "@/components/MealPlate/MealPlate";
 interface MealPlateListProps {
   meals: MealEntry[];
   onDeleteSelectedMeals?: (mealIds: string[]) => void;
+  onDeleteMeal?: (mealId: string) => void;
 }
 
-export const MealPlateList = ({ meals, onDeleteSelectedMeals }: MealPlateListProps) => {
+export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal }: MealPlateListProps) => {
   const [selectedPlates, setSelectedPlates] = useState<Set<string>>(new Set());
   const [plateNames, setPlateNames] = useState<Record<string, string>>({});
 
@@ -117,15 +118,16 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals }: MealPlateListPro
       {/* Meal Plates */}
       <div className="space-y-3">
         {Object.entries(groupedMeals).map(([mealType, mealList]) => (
-          <MealPlate
-            key={mealType}
-            mealType={mealType}
-            meals={mealList}
-            isSelected={selectedPlates.has(mealType)}
-            onSelectionChange={(selected) => handlePlateSelection(mealType, selected)}
-            onPlateNameChange={handlePlateNameChange}
-            plateName={plateNames[mealType]}
-          />
+            <MealPlate
+              key={mealType}
+              mealType={mealType}
+              meals={mealList}
+              isSelected={selectedPlates.has(mealType)}
+              onSelectionChange={(selected) => handlePlateSelection(mealType, selected)}
+              onPlateNameChange={handlePlateNameChange}
+              plateName={plateNames[mealType]}
+              onDeleteMeal={onDeleteMeal}
+            />
         ))}
       </div>
     </div>
