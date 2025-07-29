@@ -95,84 +95,87 @@ export const MealPlate = ({
         
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="flex-1">
           <div className="space-y-3">
-            <div className="flex items-center gap-2 flex-1">
-              {isEditingName ? (
-                <div className="flex items-center gap-2 flex-1">
-                  <Input
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    className="h-8 text-sm"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleNameSave();
-                      if (e.key === 'Escape') handleNameCancel();
-                    }}
-                    autoFocus
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 shrink-0"
-                    onClick={handleNameSave}
-                  >
-                    <Check size={14} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 shrink-0"
-                    onClick={handleNameCancel}
-                  >
-                    <X size={14} />
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {/* Imagen del plato */}
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <button className="shrink-0">
-                        <Avatar className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity">
-                          <AvatarImage src={plateImage} alt={`Foto de ${editingName}`} />
-                          <AvatarFallback className="text-xs font-semibold" style={{ backgroundColor: getMealTypeColor(mealType) }}>
-                            {editingName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="p-2 max-w-lg">
-                      {plateImage ? (
-                        <img 
-                          src={plateImage} 
-                          alt={`Foto de ${editingName}`}
-                          className="w-full h-auto rounded-lg"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-64 bg-muted rounded-lg">
-                          <span className="text-muted-foreground">No hay imagen disponible</span>
-                        </div>
-                      )}
-                    </DialogContent>
-                  </Dialog>
+            <div className="flex items-center gap-3 flex-1">
+              {/* Imagen del plato a la izquierda */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="shrink-0">
+                    <Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
+                      <AvatarImage src={plateImage} alt={`Foto de ${editingName}`} />
+                      <AvatarFallback className="text-sm font-semibold" style={{ backgroundColor: getMealTypeColor(mealType) }}>
+                        {editingName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="p-2 max-w-lg">
+                  {plateImage ? (
+                    <img 
+                      src={plateImage} 
+                      alt={`Foto de ${editingName}`}
+                      className="w-full h-auto rounded-lg"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-64 bg-muted rounded-lg">
+                      <span className="text-muted-foreground">No hay imagen disponible</span>
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
 
-                  <Badge 
-                    style={{ backgroundColor: getMealTypeColor(mealType) }}
-                    className="text-white shrink-0"
-                  >
-                    {editingName}
-                  </Badge>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0 shrink-0"
-                    onClick={() => setIsEditingName(true)}
-                  >
-                    <Edit2 size={12} />
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    {meals.length} {meals.length === 1 ? 'ingrediente' : 'ingredientes'}
-                  </span>
-                </>
-              )}
+              {/* Contenido principal */}
+              <div className="flex items-center gap-2 flex-1">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      className="h-8 text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleNameSave();
+                        if (e.key === 'Escape') handleNameCancel();
+                      }}
+                      autoFocus
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 shrink-0"
+                      onClick={handleNameSave}
+                    >
+                      <Check size={14} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 shrink-0"
+                      onClick={handleNameCancel}
+                    >
+                      <X size={14} />
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Badge 
+                      style={{ backgroundColor: getMealTypeColor(mealType) }}
+                      className="text-white shrink-0"
+                    >
+                      {editingName}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 shrink-0"
+                      onClick={() => setIsEditingName(true)}
+                    >
+                      <Edit2 size={12} />
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      {meals.length} {meals.length === 1 ? 'ingrediente' : 'ingredientes'}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
 
             {!isEditingName && (

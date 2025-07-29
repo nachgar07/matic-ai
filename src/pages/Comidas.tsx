@@ -22,6 +22,9 @@ export const Comidas = () => {
   const [analysisResults, setAnalysisResults] = useState<any>(null);
   const [showAssistant, setShowAssistant] = useState(false);
   
+  // Estado para manejar las imágenes de cada plato
+  const [plateImages, setPlateImages] = useState<Record<string, string>>({});
+  
   const { data: mealsData, isLoading } = useUserMeals();
   const { mutateAsync: deleteMeal } = useDeleteMeal();
   const queryClient = useQueryClient();
@@ -40,6 +43,30 @@ export const Comidas = () => {
   };
 
   const handleAnalysisComplete = (analysis: any) => {
+    // Guardar la imagen original para el tipo de comida detectado
+    if (analysis.originalImage && analysis.foods && analysis.foods.length > 0) {
+      // Obtener la hora actual para determinar el tipo de comida más probable
+      const now = new Date();
+      const hour = now.getHours();
+      
+      let mealType = "almuerzo"; // default
+      if (hour >= 6 && hour < 11) {
+        mealType = "desayuno";
+      } else if (hour >= 11 && hour < 16) {
+        mealType = "almuerzo";
+      } else if (hour >= 16 && hour < 20) {
+        mealType = "merienda";
+      } else {
+        mealType = "cena";
+      }
+      
+      // Actualizar las imágenes de platos con la imagen capturada
+      setPlateImages(prev => ({
+        ...prev,
+        [mealType]: analysis.originalImage
+      }));
+    }
+    
     setAnalysisResults(analysis);
     setShowCamera(false);
   };
@@ -176,12 +203,7 @@ export const Comidas = () => {
             meals={meals}
             onDeleteSelectedMeals={handleDeleteSelectedMeals}
             onDeleteMeal={handleDeleteMeal}
-            plateImages={{
-              "desayuno": "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300&h=300&fit=crop&crop=center",
-              "almuerzo": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=300&h=300&fit=crop&crop=center",
-              "cena": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=300&h=300&fit=crop&crop=center",
-              "merienda": "https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=300&h=300&fit=crop&crop=center"
-            }}
+            plateImages={plateImages}
           />
           </div>
         </div>
