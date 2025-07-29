@@ -8,7 +8,7 @@ import { MealLogger } from "@/components/MealLogger/MealLogger";
 import { PhotoCapture } from "@/components/PhotoCapture/PhotoCapture";
 import { FoodAnalysisResults } from "@/components/FoodAnalysisResults/FoodAnalysisResults";
 import { NutriAssistant } from "@/components/NutriAssistant/NutriAssistant";
-import { MealList } from "@/components/MealList/MealList";
+import { MealPlateList } from "@/components/MealPlateList/MealPlateList";
 import { NutritionSummary } from "@/components/NutritionSummary/NutritionSummary";
 import { useUserMeals, Food, useDeleteMeal } from "@/hooks/useFatSecret";
 import { useQueryClient } from "@tanstack/react-query";
@@ -61,6 +61,23 @@ export const Comidas = () => {
       toast({
         title: "Error",
         description: "No se pudo eliminar la comida",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteSelectedMeals = async (mealIds: string[]) => {
+    try {
+      await Promise.all(mealIds.map(id => deleteMeal(id)));
+      queryClient.invalidateQueries({ queryKey: ['user-meals'] });
+      toast({
+        title: "Comidas eliminadas",
+        description: `${mealIds.length} comida${mealIds.length === 1 ? '' : 's'} eliminada${mealIds.length === 1 ? '' : 's'} correctamente`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron eliminar algunas comidas",
         variant: "destructive"
       });
     }
@@ -155,10 +172,9 @@ export const Comidas = () => {
                 </Button>
               )}
             </div>
-            <MealList 
+            <MealPlateList 
               meals={meals}
-              onEditMeal={handleEditMeal}
-              onDeleteMeal={handleDeleteMeal}
+              onDeleteSelectedMeals={handleDeleteSelectedMeals}
             />
           </div>
         </div>
