@@ -35,7 +35,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         global: {
           headers: { Authorization: authHeader! },
@@ -209,29 +209,45 @@ async function getUserNutritionContext(supabase: any) {
     console.log('Getting user nutrition context...');
     
     // Get user info
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) {
+      console.error('Error getting user:', userError);
+      return null;
+    }
     if (!user) {
       console.log('No authenticated user found');
       return null;
     }
+    
+    console.log('User found:', user.id, user.email);
 
     // Get user profile
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
+    
+    if (profileError) {
+      console.log('Profile error (might not exist):', profileError);
+    }
 
     // Get nutrition goals
-    const { data: goals } = await supabase
+    const { data: goals, error: goalsError } = await supabase
       .from('nutrition_goals')
       .select('*')
       .eq('user_id', user.id)
       .single();
+    
+    if (goalsError) {
+      console.log('Goals error (might not exist):', goalsError);
+    }
 
     // Get today's meals
     const today = new Date().toISOString().split('T')[0];
-    const { data: todayMeals } = await supabase
+    console.log('Looking for meals on:', today);
+    
+    const { data: todayMeals, error: mealsError } = await supabase
       .from('meal_entries')
       .select(`
         *,
@@ -242,11 +258,17 @@ async function getUserNutritionContext(supabase: any) {
       .lt('consumed_at', `${today}T23:59:59`)
       .order('consumed_at', { ascending: false });
 
+    if (mealsError) {
+      console.error('Error getting today meals:', mealsError);
+    } else {
+      console.log('Found', todayMeals?.length || 0, 'meals today');
+    }
+
     // Get recent meals (last 7 days for pattern analysis)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
-    const { data: recentMeals } = await supabase
+    const { data: recentMeals, error: recentError } = await supabase
       .from('meal_entries')
       .select(`
         *,
@@ -256,6 +278,12 @@ async function getUserNutritionContext(supabase: any) {
       .gte('consumed_at', sevenDaysAgo.toISOString())
       .order('consumed_at', { ascending: false })
       .limit(50);
+
+    if (recentError) {
+      console.error('Error getting recent meals:', recentError);
+    } else {
+      console.log('Found', recentMeals?.length || 0, 'recent meals');
+    }
 
     // Calculate today's totals
     const todayTotals = todayMeals?.reduce((acc: any, meal: any) => {
@@ -289,9 +317,10 @@ async function getUserNutritionContext(supabase: any) {
       return acc;
     }, {});
 
-    console.log('User context retrieved successfully');
+    console.log('Today totals:', todayTotals);
+    console.log('Meals by type:', Object.keys(mealsByType));
     
-    return {
+    const context = {
       user: {
         id: user.id,
         email: user.email,
@@ -314,6 +343,10 @@ async function getUserNutritionContext(supabase: any) {
         meal_frequency: getMealFrequency(recentMeals || [])
       }
     };
+    
+    console.log('User context retrieved successfully');
+    return context;
+    
   } catch (error) {
     console.error('Error getting user nutrition context:', error);
     return null;
