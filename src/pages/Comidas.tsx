@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
-import { Camera, Plus, Search, Sparkles } from "lucide-react";
+import { Camera, Plus, Search, Sparkles, Calendar } from "lucide-react";
 import { FoodSearch } from "@/components/FoodSearch/FoodSearch";
 import { MealLogger } from "@/components/MealLogger/MealLogger";
 import { PhotoCapture } from "@/components/PhotoCapture/PhotoCapture";
@@ -13,6 +13,7 @@ import { NutritionSummary } from "@/components/NutritionSummary/NutritionSummary
 import { useUserMeals, Food, useDeleteMeal } from "@/hooks/useFatSecret";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 
 export const Comidas = () => {
   const [showCamera, setShowCamera] = useState(false);
@@ -25,6 +26,7 @@ export const Comidas = () => {
   const { mutateAsync: deleteMeal } = useDeleteMeal();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { syncMealsToCalendar, isLoading: isCalendarLoading } = useGoogleCalendar();
 
   const handleFoodSelect = (food: Food) => {
     setSelectedFood(food);
@@ -61,6 +63,24 @@ export const Comidas = () => {
         description: "No se pudo eliminar la comida",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleSyncToCalendar = async () => {
+    if (meals.length === 0) {
+      toast({
+        title: "No hay comidas",
+        description: "No tienes comidas registradas para sincronizar hoy",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await syncMealsToCalendar(meals, today);
+    } catch (error) {
+      // Error already handled in the hook
     }
   };
 
@@ -121,7 +141,20 @@ export const Comidas = () => {
 
           {/* Recent Meals */}
           <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-4">Comidas de Hoy</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Comidas de Hoy</h2>
+              {meals.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSyncToCalendar}
+                  disabled={isCalendarLoading}
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  {isCalendarLoading ? 'Sincronizando...' : 'Sincronizar con Google Calendar'}
+                </Button>
+              )}
+            </div>
             <MealList 
               meals={meals}
               onEditMeal={handleEditMeal}

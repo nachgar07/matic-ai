@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAddMeal } from '@/hooks/useFatSecret';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AnalyzedFood {
   name: string;
@@ -64,16 +65,28 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
     }
 
     try {
-      // If we have FatSecret data, use that food_id, otherwise we'll need to search
       let foodIdToUse = food.fatsecret_data?.food_id;
 
+      // If no FatSecret data, create a manual food entry with estimated values
       if (!foodIdToUse) {
-        toast({
-          title: "Alimento no encontrado",
-          description: `No se encontró "${food.name}" en la base de datos. Puedes buscarlo manualmente.`,
-          variant: "destructive"
+        const foodPayload = {
+          food_id: `manual_${Date.now()}_${index}`,
+          food_name: food.name,
+          brand_name: "Estimado por IA",
+          calories_per_serving: food.estimated_calories,
+          protein_per_serving: Math.round(food.estimated_calories * 0.15 / 4), // 15% protein estimate
+          carbs_per_serving: Math.round(food.estimated_calories * 0.5 / 4), // 50% carbs estimate  
+          fat_per_serving: Math.round(food.estimated_calories * 0.35 / 9), // 35% fat estimate
+          serving_description: food.estimated_portion
+        };
+
+        // Store the food in the foods table first using Supabase function
+        const { data: insertedFood, error: foodError } = await supabase.functions.invoke('add-manual-food', {
+          body: foodPayload
         });
-        return;
+
+        if (foodError) throw foodError;
+        foodIdToUse = insertedFood.id;
       }
 
       await addMealMutation.mutateAsync({
@@ -92,7 +105,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
     } catch (error) {
       console.error('Error adding food to meal:', error);
       toast({
-        title: "Error",
+        title: "Error", 
         description: "No se pudo agregar la comida. Intenta de nuevo.",
         variant: "destructive"
       });
@@ -113,7 +126,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
 
     try {
       for (let i = 0; i < editedFoods.length; i++) {
-        if (selectedMealTypes[i] && editedFoods[i].fatsecret_data?.food_id) {
+        if (selectedMealTypes[i]) {
           await addFoodToMeal(editedFoods[i], i);
         }
       }
@@ -283,7 +296,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
                     
                     <Button
                       onClick={() => addFoodToMeal(food, index)}
-                      disabled={!selectedMealTypes[index] || !food.fatsecret_data?.food_id}
+                      disabled={!selectedMealTypes[index]}
                       size="sm"
                     >
                       <Plus className="h-4 w-4 mr-1" />
