@@ -43,6 +43,10 @@ export const Comidas = () => {
   };
 
   const handleAnalysisComplete = (analysis: any) => {
+    console.log("🔍 Analysis received:", analysis);
+    console.log("🖼️ Original image exists:", !!analysis.originalImage);
+    console.log("🍽️ Foods detected:", analysis.foods?.length || 0);
+    
     // Guardar la imagen original para el tipo de comida detectado
     if (analysis.originalImage && analysis.foods && analysis.foods.length > 0) {
       // Obtener la hora actual para determinar el tipo de comida más probable
@@ -60,11 +64,20 @@ export const Comidas = () => {
         mealType = "cena";
       }
       
+      console.log("⏰ Detected meal type:", mealType);
+      console.log("🖼️ Setting image for meal type:", mealType);
+      
       // Actualizar las imágenes de platos con la imagen capturada
-      setPlateImages(prev => ({
-        ...prev,
-        [mealType]: analysis.originalImage
-      }));
+      setPlateImages(prev => {
+        const newPlateImages = {
+          ...prev,
+          [mealType]: analysis.originalImage
+        };
+        console.log("🗂️ Updated plateImages:", newPlateImages);
+        return newPlateImages;
+      });
+    } else {
+      console.log("❌ No image or foods to save");
     }
     
     setAnalysisResults(analysis);

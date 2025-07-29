@@ -17,6 +17,8 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
   const [selectedPlates, setSelectedPlates] = useState<Set<string>>(new Set());
   const [plateNames, setPlateNames] = useState<Record<string, string>>({});
 
+  console.log("📋 MealPlateList received plateImages:", plateImages);
+
   const groupedMeals = meals.reduce((acc, meal) => {
     if (!acc[meal.meal_type]) {
       acc[meal.meal_type] = [];
@@ -118,7 +120,9 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
 
       {/* Meal Plates */}
       <div className="space-y-3">
-        {Object.entries(groupedMeals).map(([mealType, mealList]) => (
+        {Object.entries(groupedMeals).map(([mealType, mealList]) => {
+          console.log(`🍽️ Rendering MealPlate for ${mealType}, image:`, plateImages[mealType] ? "exists" : "missing");
+          return (
             <MealPlate
               key={mealType}
               mealType={mealType}
@@ -130,7 +134,8 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
               onDeleteMeal={onDeleteMeal}
               plateImage={plateImages[mealType]}
             />
-        ))}
+          );
+        })}
       </div>
     </div>
   );

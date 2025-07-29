@@ -39,6 +39,8 @@ export const MealPlate = ({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingName, setEditingName] = useState(plateName || getDefaultPlateName(mealType));
 
+  console.log("🍽️ MealPlate render:", { mealType, plateImage: !!plateImage });
+
   function getDefaultPlateName(mealType: string) {
     const names = {
       breakfast: "Desayuno",
