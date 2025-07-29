@@ -85,7 +85,7 @@ export const MealPlate = ({
   };
 
   return (
-    <Card className="p-4 flex items-center min-h-[80px]">
+    <Card className="p-6 flex items-center justify-center min-h-[100px]">
       <div className="flex items-center gap-3 w-full">
         <Checkbox
           checked={isSelected}
