@@ -103,6 +103,9 @@ export const Home = () => {
         <CalorieRing
           consumed={caloriesConsumed}
           target={caloriesTarget}
+          protein={0}
+          carbs={0}
+          fat={0}
           size={220}
         />
       </div>

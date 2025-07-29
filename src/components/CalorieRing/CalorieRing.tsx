@@ -1,16 +1,38 @@
 interface CalorieRingProps {
   consumed: number;
   target: number;
+  protein: number;
+  carbs: number;
+  fat: number;
   size?: number;
 }
 
-export const CalorieRing = ({ consumed, target, size = 200 }: CalorieRingProps) => {
+export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200 }: CalorieRingProps) => {
   const remaining = Math.max(0, target - consumed);
   const percentage = Math.min(100, (consumed / target) * 100);
   const radius = (size - 20) / 2;
   const circumference = 2 * Math.PI * radius;
-  const strokeDasharray = circumference;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  
+  // Calculate calories from macros (protein and carbs = 4 cal/g, fat = 9 cal/g)
+  const proteinCals = protein * 4;
+  const carbsCals = carbs * 4;
+  const fatCals = fat * 9;
+  const totalMacroCals = proteinCals + carbsCals + fatCals;
+  
+  // Calculate proportions for each macro based on consumed calories
+  const proteinPercentage = totalMacroCals > 0 ? (proteinCals / consumed) * percentage : 0;
+  const carbsPercentage = totalMacroCals > 0 ? (carbsCals / consumed) * percentage : 0;
+  const fatPercentage = totalMacroCals > 0 ? (fatCals / consumed) * percentage : 0;
+  
+  // Calculate stroke dash arrays for each segment
+  const proteinStroke = (proteinPercentage / 100) * circumference;
+  const carbsStroke = (carbsPercentage / 100) * circumference;
+  const fatStroke = (fatPercentage / 100) * circumference;
+  
+  // Calculate offsets for positioning segments
+  const proteinOffset = circumference - proteinStroke;
+  const carbsOffset = circumference - proteinStroke - carbsStroke;
+  const fatOffset = circumference - proteinStroke - carbsStroke - fatStroke;
 
   return (
     <div className="flex flex-col items-center">
@@ -29,15 +51,42 @@ export const CalorieRing = ({ consumed, target, size = 200 }: CalorieRingProps) 
             strokeWidth="8"
             fill="transparent"
           />
+          {/* Protein segment (red) */}
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="hsl(var(--primary))"
+            stroke="#ff6b6b"
             strokeWidth="8"
             fill="transparent"
-            strokeDasharray={strokeDasharray}
-            strokeDashoffset={strokeDashoffset}
+            strokeDasharray={`${proteinStroke} ${circumference - proteinStroke}`}
+            strokeDashoffset={proteinOffset}
+            strokeLinecap="round"
+            className="transition-all duration-500 ease-in-out"
+          />
+          {/* Carbs segment (blue) */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#4ecdc4"
+            strokeWidth="8"
+            fill="transparent"
+            strokeDasharray={`${carbsStroke} ${circumference - carbsStroke}`}
+            strokeDashoffset={carbsOffset}
+            strokeLinecap="round"
+            className="transition-all duration-500 ease-in-out"
+          />
+          {/* Fat segment (yellow) */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#ffa726"
+            strokeWidth="8"
+            fill="transparent"
+            strokeDasharray={`${fatStroke} ${circumference - fatStroke}`}
+            strokeDashoffset={fatOffset}
             strokeLinecap="round"
             className="transition-all duration-500 ease-in-out"
           />

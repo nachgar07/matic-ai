@@ -23,6 +23,9 @@ export const NutritionSummary = ({ dailyTotals }: NutritionSummaryProps) => {
         <CalorieRing 
           consumed={dailyTotals.calories} 
           target={goals.calories}
+          protein={dailyTotals.protein}
+          carbs={dailyTotals.carbs}
+          fat={dailyTotals.fat}
           size={160}
         />
       </Card>
