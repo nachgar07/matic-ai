@@ -51,12 +51,12 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200 
             strokeWidth="8"
             fill="transparent"
           />
-          {/* Protein segment (red) */}
+          {/* Protein segment (red/orange) */}
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#ff6b6b"
+            stroke="#ff6b35"
             strokeWidth="8"
             fill="transparent"
             strokeDasharray={`${proteinStroke} ${circumference - proteinStroke}`}
@@ -64,12 +64,12 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200 
             strokeLinecap="round"
             className="transition-all duration-500 ease-in-out"
           />
-          {/* Carbs segment (blue) */}
+          {/* Carbs segment (yellow/gold) */}
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#4ecdc4"
+            stroke="#ffa726"
             strokeWidth="8"
             fill="transparent"
             strokeDasharray={`${carbsStroke} ${circumference - carbsStroke}`}
@@ -77,12 +77,12 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200 
             strokeLinecap="round"
             className="transition-all duration-500 ease-in-out"
           />
-          {/* Fat segment (yellow) */}
+          {/* Fat segment (green) */}
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#ffa726"
+            stroke="#4caf50"
             strokeWidth="8"
             fill="transparent"
             strokeDasharray={`${fatStroke} ${circumference - fatStroke}`}

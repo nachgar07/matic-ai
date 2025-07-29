@@ -4,9 +4,10 @@ interface MacroCardProps {
   current: number;
   target: number;
   unit: string;
+  color?: string;
 }
 
-export const MacroCard = ({ icon, label, current, target, unit }: MacroCardProps) => {
+export const MacroCard = ({ icon, label, current, target, unit, color = "#6366f1" }: MacroCardProps) => {
   const percentage = (current / target) * 100;
 
   return (
@@ -22,8 +23,11 @@ export const MacroCard = ({ icon, label, current, target, unit }: MacroCardProps
         </div>
         <div className="w-full bg-muted rounded-full h-2">
           <div
-            className="bg-primary h-2 rounded-full transition-all duration-300"
-            style={{ width: `${Math.min(100, percentage)}%` }}
+            className="h-2 rounded-full transition-all duration-300"
+            style={{ 
+              width: `${Math.min(100, percentage)}%`,
+              backgroundColor: color
+            }}
           />
         </div>
       </div>

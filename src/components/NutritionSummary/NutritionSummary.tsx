@@ -38,6 +38,7 @@ export const NutritionSummary = ({ dailyTotals }: NutritionSummaryProps) => {
           current={Math.round(dailyTotals.protein * 10) / 10}
           target={goals.protein}
           unit="g"
+          color="#ff6b35"
         />
         <MacroCard
           icon="🍞"
@@ -45,6 +46,7 @@ export const NutritionSummary = ({ dailyTotals }: NutritionSummaryProps) => {
           current={Math.round(dailyTotals.carbs * 10) / 10}
           target={goals.carbs}
           unit="g"
+          color="#ffa726"
         />
         <MacroCard
           icon="🥑"
@@ -52,6 +54,7 @@ export const NutritionSummary = ({ dailyTotals }: NutritionSummaryProps) => {
           current={Math.round(dailyTotals.fat * 10) / 10}
           target={goals.fat}
           unit="g"
+          color="#4caf50"
         />
       </div>
 
