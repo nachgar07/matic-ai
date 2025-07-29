@@ -13,6 +13,7 @@ interface PhotoCaptureProps {
 export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,10 +30,16 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
         }
       });
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-      }
+      streamRef.current = stream;
+      setIsCameraOpen(true);
+      
+      // Wait a bit for state to update, then set video source
+      setTimeout(() => {
+        if (videoRef.current && streamRef.current) {
+          videoRef.current.srcObject = streamRef.current;
+        }
+      }, 100);
+      
     } catch (error) {
       console.error('Error accessing camera:', error);
       toast({
@@ -48,6 +55,7 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    setIsCameraOpen(false);
   };
 
   const capturePhoto = () => {
@@ -138,11 +146,9 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
     }
   };
 
-  const isCameraActive = streamRef.current !== null;
-
   return (
     <div className="fixed inset-0 bg-black z-50">
-      {isCameraActive ? (
+      {isCameraOpen && !capturedImage ? (
         // Full screen camera view
         <div className="relative w-full h-full">
           <video
