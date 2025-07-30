@@ -44,17 +44,37 @@ export const Archivos = () => {
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const { toast } = useToast();
 
-  // Persistencia local como backup
+  // Persistencia local como backup - limitada para evitar quota exceeded
   const saveToLocalStorage = (gastos: Gasto[]) => {
     if (user) {
-      localStorage.setItem(`gastos_${user.id}`, JSON.stringify(gastos));
+      try {
+        // Guardar solo los últimos 20 gastos para evitar quota exceeded
+        const limitedGastos = gastos.slice(0, 20);
+        localStorage.setItem(`gastos_${user.id}`, JSON.stringify(limitedGastos));
+      } catch (error) {
+        console.warn('LocalStorage quota exceeded, clearing old data:', error);
+        // Si falla, limpiar storage anterior y guardar solo los últimos 10
+        try {
+          localStorage.removeItem(`gastos_${user.id}`);
+          const veryLimitedGastos = gastos.slice(0, 10);
+          localStorage.setItem(`gastos_${user.id}`, JSON.stringify(veryLimitedGastos));
+        } catch (secondError) {
+          console.error('Failed to save to localStorage even after cleanup:', secondError);
+        }
+      }
     }
   };
 
   const loadFromLocalStorage = (): Gasto[] => {
     if (user) {
-      const saved = localStorage.getItem(`gastos_${user.id}`);
-      return saved ? JSON.parse(saved) : [];
+      try {
+        const saved = localStorage.getItem(`gastos_${user.id}`);
+        return saved ? JSON.parse(saved) : [];
+      } catch (error) {
+        console.warn('Error loading from localStorage, clearing data:', error);
+        localStorage.removeItem(`gastos_${user.id}`);
+        return [];
+      }
     }
     return [];
   };
