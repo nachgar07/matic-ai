@@ -300,6 +300,43 @@ COMIDAS DE HOY:`;
         messages: messages,
         max_tokens: 800,
         temperature: 0.7,
+        tools: [{
+          type: 'function',
+          function: {
+            name: 'create_meal',
+            description: 'Registra alimentos en el diario nutricional del usuario. Usa esta función cuando el usuario mencione que comió algo o quiera registrar una comida.',
+            parameters: {
+              type: 'object',
+              properties: {
+                foods: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: {
+                        type: 'string',
+                        description: 'Nombre del alimento en español'
+                      },
+                      servings: {
+                        type: 'number',
+                        description: 'Cantidad de porciones (ej: 1, 0.5, 2)'
+                      }
+                    },
+                    required: ['name', 'servings']
+                  },
+                  description: 'Lista de alimentos a registrar'
+                },
+                meal_type: {
+                  type: 'string',
+                  enum: ['breakfast', 'lunch', 'dinner', 'snack'],
+                  description: 'Tipo de comida: breakfast (desayuno), lunch (almuerzo), dinner (cena), snack (merienda)'
+                }
+              },
+              required: ['foods', 'meal_type']
+            }
+          }
+        }],
+        tool_choice: 'auto'
       })
     });
 
@@ -323,7 +360,39 @@ COMIDAS DE HOY:`;
       throw new Error('Respuesta inválida de OpenAI API');
     }
 
-    const responseText = result.choices[0].message.content || 'Lo siento, no pude procesar tu mensaje.';
+    const choice = result.choices[0];
+    const message = choice.message;
+
+    // Check if OpenAI wants to call a function
+    if (message.tool_calls && message.tool_calls.length > 0) {
+      const toolCall = message.tool_calls[0];
+      
+      if (toolCall.function.name === 'create_meal') {
+        console.log('OpenAI requested meal creation:', toolCall.function.arguments);
+        
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          const mealResult = await executeCreateMeal(args, userContext);
+          
+          return new Response(
+            JSON.stringify(mealResult),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } catch (error) {
+          console.error('Error executing meal creation:', error);
+          return new Response(
+            JSON.stringify({
+              response: `Hubo un error al registrar la comida: ${error.message}. Puedes intentar agregarla manualmente.`,
+              timestamp: new Date().toISOString(),
+              provider: 'openai'
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    }
+
+    const responseText = message.content || 'Lo siento, no pude procesar tu mensaje.';
 
     return new Response(
       JSON.stringify({ 
@@ -342,5 +411,108 @@ COMIDAS DE HOY:`;
   } catch (error) {
     console.error('Error in handleConversation:', error);
     throw error;
+  }
+}
+
+async function executeCreateMeal(args: any, userContext: any) {
+  console.log('Executing create_meal function with args:', args);
+  
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get user ID from context
+    if (!userContext?.user?.id) {
+      throw new Error('User context not available');
+    }
+
+    // Create Authorization header for the function call
+    const authToken = `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`;
+    
+    // Call create-meal-from-chat function
+    const createMealResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/create-meal-from-chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authToken,
+        'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+        'x-user-id': userContext.user.id
+      },
+      body: JSON.stringify({
+        foods: args.foods || [],
+        meal_type: args.meal_type || 'snack'
+      })
+    });
+
+    if (!createMealResponse.ok) {
+      const errorText = await createMealResponse.text();
+      console.error('Error calling create-meal-from-chat:', errorText);
+      throw new Error(`Failed to create meal: ${errorText}`);
+    }
+
+    const data = await createMealResponse.json();
+    console.log('Meal creation result:', data);
+
+    // Generate response based on results
+    let response = '';
+    const mealTypeNames = {
+      breakfast: 'desayuno',
+      lunch: 'almuerzo', 
+      dinner: 'cena',
+      snack: 'snack'
+    };
+
+    if (data.success && data.foods_saved > 0) {
+      response = `¡Perfecto! He registrado tu ${mealTypeNames[args.meal_type] || 'comida'}:\n\n`;
+      
+      data.results.filter((r: any) => r.saved).forEach((food: any) => {
+        response += `• ${food.food_data.food_name} (${food.servings} porción${food.servings === 1 ? '' : 'es'}) - ${food.total_calories} kcal\n`;
+      });
+      
+      response += `\n📊 **Totales:** ${data.totals.calories} kcal, ${data.totals.protein}g proteína, ${data.totals.carbs}g carbohidratos, ${data.totals.fat}g grasa`;
+      
+      if (userContext?.goals) {
+        const newCalories = userContext.today.consumed.calories + data.totals.calories;
+        const remaining = userContext.goals.daily_calories - newCalories;
+        response += `\n\n🎯 Llevas ${Math.round(newCalories)} de tus ${userContext.goals.daily_calories} calorías diarias. ${remaining > 0 ? `Te quedan ${Math.round(remaining)} kcal.` : '¡Objetivo alcanzado!'}`;
+      }
+    } else {
+      response = `He intentado registrar tu comida, pero `;
+      if (data.foods_found === 0) {
+        response += 'no pude encontrar los alimentos en la base de datos. ¿Podrías ser más específico con los nombres?';
+      } else {
+        response += `solo pude encontrar ${data.foods_found} de ${data.foods_processed} alimentos. Los que no encontré podrías agregarlos manualmente.`;
+      }
+    }
+
+    if (data.results.some((r: any) => !r.found)) {
+      response += '\n\n❓ **No encontré:** ';
+      response += data.results.filter((r: any) => !r.found).map((r: any) => r.food_name).join(', ');
+    }
+
+    return {
+      response,
+      meal_created: true,
+      meal_data: data,
+      timestamp: new Date().toISOString(),
+      provider: 'openai',
+      user_context: userContext ? {
+        calories_remaining: userContext.goals.daily_calories - (userContext.today.consumed.calories + (data.totals?.calories || 0)),
+        protein_remaining: userContext.goals.daily_protein - (userContext.today.consumed.protein + (data.totals?.protein || 0)),
+        progress_percentage: Math.round(((userContext.today.consumed.calories + (data.totals?.calories || 0)) / userContext.goals.daily_calories) * 100)
+      } : null
+    };
+
+  } catch (error) {
+    console.error('Error in executeCreateMeal:', error);
+    return {
+      response: `Lo siento, hubo un error al registrar tu comida: ${error.message}. Puedes intentar agregarla manualmente.`,
+      meal_created: false,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      provider: 'openai'
+    };
   }
 }
