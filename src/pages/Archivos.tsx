@@ -159,7 +159,7 @@ export const Archivos = () => {
     };
   }, []);
 
-  const loadExpenses = async (userId: string, dateFilter?: Date) => {
+  const loadExpenses = async (userId: string, dateFilter?: Date | null, showRecent?: boolean) => {
     if (!userId) return;
     
     try {
@@ -179,6 +179,11 @@ export const Archivos = () => {
         const selectedDate = format(dateFilter, 'yyyy-MM-dd');
         query = query.eq('expense_date', selectedDate);
         console.log('📅 Filtering by date:', selectedDate);
+      } else if (showRecent) {
+        // Mostrar gastos de las últimas 24 horas basado en created_at
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte('created_at', yesterday);
+        console.log('📅 Filtering recent (last 24h):', yesterday);
       }
 
       const { data: expenses, error } = await query.order('expense_date', { ascending: false });
@@ -473,6 +478,18 @@ export const Archivos = () => {
               className="text-xs"
             >
               Hoy
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFilterDate(null);
+                if (user) loadExpenses(user.id, null, true);
+              }}
+              className="text-xs"
+            >
+              Recientes
             </Button>
           </div>
         </div>

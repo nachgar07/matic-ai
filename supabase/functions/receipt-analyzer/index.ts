@@ -134,10 +134,45 @@ Instrucciones importantes:
     console.log('Raw response:', analysisText);
     
     try {
-      // Clean the response to extract JSON
-      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+      // Clean the response to extract JSON - handle markdown code blocks
+      let jsonText = analysisText.trim();
+      
+      // Remove markdown code blocks if present
+      if (jsonText.startsWith('```json')) {
+        jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (jsonText.startsWith('```')) {
+        jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      // Try to extract JSON object
+      const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No se encontró JSON en la respuesta');
+        // If OpenAI responded with text instead of JSON, create a fallback response
+        console.log('OpenAI returned text response, creating fallback analysis');
+        const fallbackAnalysis: ReceiptAnalysisResult = {
+          store_name: 'Análisis manual requerido',
+          date: new Date().toISOString().split('T')[0],
+          total_amount: 0,
+          items: [{
+            product_name: 'Producto no identificado',
+            quantity: '1x',
+            unit_price: 0,
+            total_price: 0
+          }],
+          payment_method: 'No especificado',
+          confidence: 0.1
+        };
+        
+        return new Response(
+          JSON.stringify({
+            ...fallbackAnalysis,
+            processing_time: new Date().toISOString(),
+            provider: 'openai',
+            raw_response: analysisText,
+            note: 'El análisis automático no pudo procesar esta imagen. Por favor revise manualmente.'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       
       const analysis: ReceiptAnalysisResult = JSON.parse(jsonMatch[0]);
