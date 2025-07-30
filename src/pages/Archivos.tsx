@@ -27,11 +27,29 @@ export const Archivos = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [showPhotoCapture, setShowPhotoCapture] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const { toast } = useToast();
 
+  // Verificar autenticación
   useEffect(() => {
-    fetchGastos();
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error de autenticación",
+          description: "Por favor inicia sesión para continuar",
+          variant: "destructive"
+        });
+        // Redirigir a login si es necesario
+        return;
+      }
+      setUser(user);
+      fetchGastos();
+    };
+    
+    checkAuth();
   }, []);
+
 
   const fetchGastos = async () => {
     try {

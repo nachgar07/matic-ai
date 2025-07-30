@@ -8,50 +8,53 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Get authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      console.error('No authorization header found');
+      return new Response(
+        JSON.stringify({ error: 'Authorization header required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Create client with service role key
-    const supabaseAdmin = createClient(
+    console.log('Auth header received:', authHeader.substring(0, 20) + '...');
+
+    // Create Supabase client with service role key for database operations
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Create client with user auth for getting user info
-    const supabaseAuth = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
+    // Get user from JWT token
+    const jwt = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(jwt);
+    
+    if (userError || !user) {
+      console.error('Authentication failed:', userError);
+      return new Response(
+        JSON.stringify({ error: 'User not authenticated' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('User authenticated successfully:', user.id);
 
     const { action, expenseData, expenseId, updateData } = await req.json();
-
-    // Get the current user using the auth client
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
-    if (userError || !user) {
-      console.error('Auth error:', userError);
-      throw new Error('User not authenticated');
-    }
-    
-    console.log('User authenticated:', user.id);
+    console.log('Action requested:', action);
 
     switch (action) {
       case 'create': {
         console.log('Creating expense with data:', expenseData);
         
-        // Crear el gasto principal
-        const { data: expense, error: expenseError } = await supabaseAdmin
+        // Create the main expense
+        const { data: expense, error: expenseError } = await supabase
           .from('expenses')
           .insert({
             user_id: user.id,
@@ -67,10 +70,13 @@ serve(async (req) => {
 
         if (expenseError) {
           console.error('Error creating expense:', expenseError);
-          throw expenseError;
+          return new Response(
+            JSON.stringify({ error: expenseError.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
-        // Crear los items del gasto
+        // Create expense items
         if (expenseData.items && expenseData.items.length > 0) {
           const items = expenseData.items.map((item: any) => ({
             expense_id: expense.id,
@@ -80,16 +86,20 @@ serve(async (req) => {
             total_price: item.total_price
           }));
 
-          const { error: itemsError } = await supabaseAdmin
+          const { error: itemsError } = await supabase
             .from('expense_items')
             .insert(items);
 
           if (itemsError) {
             console.error('Error creating expense items:', itemsError);
-            throw itemsError;
+            return new Response(
+              JSON.stringify({ error: itemsError.message }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
           }
         }
 
+        console.log('Expense created successfully:', expense.id);
         return new Response(
           JSON.stringify({ success: true, expense }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -97,9 +107,9 @@ serve(async (req) => {
       }
 
       case 'list': {
-        console.log('Fetching expenses list');
+        console.log('Fetching expenses for user:', user.id);
         
-        const { data: expenses, error } = await supabaseAdmin
+        const { data: expenses, error } = await supabase
           .from('expenses')
           .select(`
             *,
@@ -110,9 +120,13 @@ serve(async (req) => {
 
         if (error) {
           console.error('Error fetching expenses:', error);
-          throw error;
+          return new Response(
+            JSON.stringify({ error: error.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
+        console.log('Found', expenses?.length || 0, 'expenses');
         return new Response(
           JSON.stringify({ expenses }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -121,12 +135,15 @@ serve(async (req) => {
 
       case 'get': {
         if (!expenseId) {
-          throw new Error('Expense ID is required');
+          return new Response(
+            JSON.stringify({ error: 'Expense ID is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
         console.log('Fetching expense:', expenseId);
         
-        const { data: expense, error } = await supabaseAdmin
+        const { data: expense, error } = await supabase
           .from('expenses')
           .select(`
             *,
@@ -138,7 +155,10 @@ serve(async (req) => {
 
         if (error) {
           console.error('Error fetching expense:', error);
-          throw error;
+          return new Response(
+            JSON.stringify({ error: error.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
         return new Response(
@@ -149,12 +169,15 @@ serve(async (req) => {
 
       case 'update': {
         if (!expenseId || !updateData) {
-          throw new Error('Expense ID and update data are required');
+          return new Response(
+            JSON.stringify({ error: 'Expense ID and update data are required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
         console.log('Updating expense:', expenseId, updateData);
         
-        const { data: expense, error } = await supabaseAdmin
+        const { data: expense, error } = await supabase
           .from('expenses')
           .update(updateData)
           .eq('id', expenseId)
@@ -164,7 +187,10 @@ serve(async (req) => {
 
         if (error) {
           console.error('Error updating expense:', error);
-          throw error;
+          return new Response(
+            JSON.stringify({ error: error.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
         return new Response(
@@ -175,12 +201,15 @@ serve(async (req) => {
 
       case 'delete': {
         if (!expenseId) {
-          throw new Error('Expense ID is required');
+          return new Response(
+            JSON.stringify({ error: 'Expense ID is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
         console.log('Deleting expense:', expenseId);
         
-        const { error } = await supabaseAdmin
+        const { error } = await supabase
           .from('expenses')
           .delete()
           .eq('id', expenseId)
@@ -188,7 +217,10 @@ serve(async (req) => {
 
         if (error) {
           console.error('Error deleting expense:', error);
-          throw error;
+          return new Response(
+            JSON.stringify({ error: error.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
         return new Response(
@@ -198,13 +230,16 @@ serve(async (req) => {
       }
 
       default:
-        throw new Error('Invalid action');
+        return new Response(
+          JSON.stringify({ error: 'Invalid action' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
     }
 
   } catch (error) {
-    console.error('Error in expense-manager:', error);
+    console.error('Unexpected error in expense-manager:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error: ' + error.message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
