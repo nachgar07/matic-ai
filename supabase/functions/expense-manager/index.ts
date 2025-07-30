@@ -18,9 +18,16 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    const supabase = createClient(
+    // Create client with service role key
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Create client with user auth for getting user info
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
           headers: { Authorization: authHeader },
@@ -30,8 +37,8 @@ serve(async (req) => {
 
     const { action, expenseData, expenseId, updateData } = await req.json();
 
-    // Get the current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Get the current user using the auth client
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
     if (userError || !user) {
       console.error('Auth error:', userError);
       throw new Error('User not authenticated');
@@ -44,7 +51,7 @@ serve(async (req) => {
         console.log('Creating expense with data:', expenseData);
         
         // Crear el gasto principal
-        const { data: expense, error: expenseError } = await supabase
+        const { data: expense, error: expenseError } = await supabaseAdmin
           .from('expenses')
           .insert({
             user_id: user.id,
@@ -73,7 +80,7 @@ serve(async (req) => {
             total_price: item.total_price
           }));
 
-          const { error: itemsError } = await supabase
+          const { error: itemsError } = await supabaseAdmin
             .from('expense_items')
             .insert(items);
 
@@ -92,12 +99,13 @@ serve(async (req) => {
       case 'list': {
         console.log('Fetching expenses list');
         
-        const { data: expenses, error } = await supabase
+        const { data: expenses, error } = await supabaseAdmin
           .from('expenses')
           .select(`
             *,
             expense_items (*)
           `)
+          .eq('user_id', user.id)
           .order('expense_date', { ascending: false });
 
         if (error) {
@@ -118,13 +126,14 @@ serve(async (req) => {
 
         console.log('Fetching expense:', expenseId);
         
-        const { data: expense, error } = await supabase
+        const { data: expense, error } = await supabaseAdmin
           .from('expenses')
           .select(`
             *,
             expense_items (*)
           `)
           .eq('id', expenseId)
+          .eq('user_id', user.id)
           .single();
 
         if (error) {
@@ -145,10 +154,11 @@ serve(async (req) => {
 
         console.log('Updating expense:', expenseId, updateData);
         
-        const { data: expense, error } = await supabase
+        const { data: expense, error } = await supabaseAdmin
           .from('expenses')
           .update(updateData)
           .eq('id', expenseId)
+          .eq('user_id', user.id)
           .select()
           .single();
 
@@ -170,10 +180,11 @@ serve(async (req) => {
 
         console.log('Deleting expense:', expenseId);
         
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from('expenses')
           .delete()
-          .eq('id', expenseId);
+          .eq('id', expenseId)
+          .eq('user_id', user.id);
 
         if (error) {
           console.error('Error deleting expense:', error);
