@@ -344,7 +344,7 @@ REGLA CRÍTICA PARA LÍMITES NUTRICIONALES:
           type: 'function',
           function: {
             name: 'create_meal',
-            description: 'Registra alimentos en el diario nutricional del usuario. IMPORTANTE: Solo usa alimentos comunes que existan en bases de datos nutricionales. Evita nombres muy específicos o preparaciones complejas. Cuando el usuario pida múltiples comidas (desayuno, almuerzo, cena), haz UNA llamada por cada tipo de comida.',
+            description: 'Registra alimentos en el diario nutricional del usuario. IMPORTANTE: NO uses esta función cuando el usuario pida múltiples comidas (desayuno, almuerzo, cena) - en ese caso SOLO sugiere las comidas y espera confirmación. USA esta función únicamente cuando: 1) El usuario pida registrar UNA comida específica, 2) El usuario confirme explícitamente que quiere registrar las comidas sugeridas anteriormente.',
             parameters: {
               type: 'object',
               properties: {
