@@ -44,7 +44,7 @@ serve(async (req) => {
     // Extract user ID from auth token
     let userId: string;
     
-    if (authHeader.includes('service_role')) {
+    if (authHeader.includes('Bearer') && req.headers.get('x-user-id')) {
       // This is an internal call, we need to get user_id from request body or headers
       const userIdHeader = req.headers.get('x-user-id');
       if (!userIdHeader) {
