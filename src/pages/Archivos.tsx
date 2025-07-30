@@ -3,111 +3,128 @@ import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Mic, FileText, Plus, MoreVertical } from "lucide-react";
+import { PhotoCapture } from "@/components/PhotoCapture/PhotoCapture";
+import { Mic, FileText, Plus, MoreVertical, Camera, Receipt } from "lucide-react";
 
-interface Archivo {
+interface Gasto {
   id: string;
   nombre: string;
   fechaCreacion: string;
-  tipo: "excel_voz";
-  contenido: string;
-  preview: string[];
+  tipo: "ticket" | "excel_voz";
+  total: number;
+  items: Array<{
+    producto: string;
+    cantidad: string;
+    precio: number;
+  }>;
+  imagenTicket?: string;
 }
 
 export const Archivos = () => {
-  const [archivos] = useState<Archivo[]>([
+  const [gastos] = useState<Gasto[]>([
     {
       id: "1",
-      nombre: "Lista de compras semanal",
+      nombre: "Compra Supermercado",
       fechaCreacion: "2024-01-26",
-      tipo: "excel_voz",
-      contenido: "{}",
-      preview: ["Producto | Cantidad | Precio", "Manzanas | 2kg | $5.00"]
+      tipo: "ticket",
+      total: 25.50,
+      items: [
+        { producto: "Manzanas", cantidad: "2kg", precio: 5.00 },
+        { producto: "Pan", cantidad: "1 unidad", precio: 2.50 },
+        { producto: "Leche", cantidad: "1L", precio: 3.00 }
+      ]
     }
   ]);
 
   const [isRecording, setIsRecording] = useState(false);
+  const [showPhotoCapture, setShowPhotoCapture] = useState(false);
+
+  const handleTicketAnalysis = (analysis: any) => {
+    console.log('Análisis del ticket:', analysis);
+    // Aquí procesarías los datos del ticket
+    setShowPhotoCapture(false);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header 
-        title="Mis Archivos"
+        title="Mis Gastos"
         rightAction={
-          <Button size="sm" className="rounded-full">
-            <Plus size={16} />
+          <Button size="sm" className="rounded-full" onClick={() => setShowPhotoCapture(true)}>
+            <Camera size={16} />
           </Button>
         }
       />
       
       <div className="p-4 space-y-4">
-        {/* Voice Recording Section */}
-        <Card className="p-6">
-          <h3 className="font-semibold mb-4 text-center">Crear tabla por voz</h3>
-          
-          <div className="flex flex-col items-center space-y-4">
-            <button
-              onClick={() => setIsRecording(!isRecording)}
-              className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${
-                isRecording 
-                  ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                  : 'bg-primary hover:bg-primary/90'
-              }`}
-            >
-              <Mic className="text-white" size={32} />
-            </button>
-            
-            <div className="text-center">
-              <div className="text-sm font-medium">
-                {isRecording ? "Grabando..." : "Presiona para hablar"}
+        {/* Photo Capture Section */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="p-4">
+            <div className="flex flex-col items-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Camera className="text-primary" size={24} />
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {isRecording ? "Tap para detener" : "Describe tu tabla en voz alta"}
+              <div className="text-center">
+                <div className="text-sm font-medium">Tomar Foto</div>
+                <div className="text-xs text-muted-foreground">Del ticket</div>
               </div>
+              <Button 
+                size="sm" 
+                className="w-full"
+                onClick={() => setShowPhotoCapture(true)}
+              >
+                Capturar
+              </Button>
             </div>
+          </Card>
 
-            {isRecording && (
-              <div className="w-full max-w-xs">
-                <div className="bg-muted rounded-lg p-3 text-sm">
-                  <span className="text-muted-foreground">Texto detectado:</span>
-                  <div className="mt-1">
-                    "Crear una tabla con productos, cantidad y precio..."
-                  </div>
-                </div>
+          <Card className="p-4">
+            <div className="flex flex-col items-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                <Mic className="text-accent" size={24} />
               </div>
-            )}
+              <div className="text-center">
+                <div className="text-sm font-medium">Por Voz</div>
+                <div className="text-xs text-muted-foreground">Dictar gastos</div>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsRecording(!isRecording)}
+              >
+                {isRecording ? "Detener" : "Hablar"}
+              </Button>
+            </div>
+          </Card>
+        </div>
 
-            <Button 
-              disabled={!isRecording}
-              className="w-full max-w-xs"
-            >
-              Generar Tabla
-            </Button>
-          </div>
-        </Card>
-
-        {/* Files List */}
+        {/* Gastos List */}
         <div>
-          <h3 className="font-semibold mb-4">Archivos Recientes</h3>
+          <h3 className="font-semibold mb-4">Gastos Recientes</h3>
           
-          {archivos.length === 0 ? (
+          {gastos.length === 0 ? (
             <div className="bg-card rounded-lg p-6 text-center">
-              <FileText className="mx-auto mb-4 text-muted-foreground" size={48} />
+              <Receipt className="mx-auto mb-4 text-muted-foreground" size={48} />
               <div className="text-muted-foreground mb-2">
-                No tienes archivos creados
+                No tienes gastos registrados
               </div>
               <div className="text-sm text-muted-foreground">
-                Crea tu primera tabla usando tu voz
+                Toma una foto de tu primer ticket
               </div>
             </div>
           ) : (
             <div className="space-y-3">
-              {archivos.map((archivo) => (
-                <Card key={archivo.id} className="p-4">
+              {gastos.map((gasto) => (
+                <Card key={gasto.id} className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h4 className="font-medium">{archivo.nombre}</h4>
+                      <h4 className="font-medium">{gasto.nombre}</h4>
                       <div className="text-sm text-muted-foreground">
-                        {new Date(archivo.fechaCreacion).toLocaleDateString()}
+                        {new Date(gasto.fechaCreacion).toLocaleDateString()}
+                      </div>
+                      <div className="text-lg font-semibold text-primary mt-1">
+                        ${gasto.total.toFixed(2)}
                       </div>
                     </div>
                     <Button variant="ghost" size="sm">
@@ -117,12 +134,18 @@ export const Archivos = () => {
 
                   {/* Preview */}
                   <div className="bg-muted rounded-lg p-3 mb-3">
-                    <div className="text-xs text-muted-foreground mb-2">Vista previa:</div>
-                    {archivo.preview.map((row, index) => (
-                      <div key={index} className="text-sm font-mono">
-                        {row}
+                    <div className="text-xs text-muted-foreground mb-2">Productos:</div>
+                    {gasto.items.slice(0, 2).map((item, index) => (
+                      <div key={index} className="text-sm flex justify-between">
+                        <span>{item.producto} ({item.cantidad})</span>
+                        <span>${item.precio.toFixed(2)}</span>
                       </div>
                     ))}
+                    {gasto.items.length > 2 && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        +{gasto.items.length - 2} productos más
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -146,12 +169,20 @@ export const Archivos = () => {
         {/* Quick Create Button */}
         <Button 
           size="lg"
-          className="w-full h-16 bg-accent text-accent-foreground hover:bg-accent/90"
+          className="w-full h-16 bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={() => setShowPhotoCapture(true)}
         >
-          <Mic className="mr-3" size={24} />
-          Crear Nueva Tabla por Voz
+          <Camera className="mr-3" size={24} />
+          Escanear Nuevo Ticket
         </Button>
       </div>
+
+      {showPhotoCapture && (
+        <PhotoCapture
+          onAnalysisComplete={handleTicketAnalysis}
+          onClose={() => setShowPhotoCapture(false)}
+        />
+      )}
 
       <BottomNavigation />
     </div>
