@@ -52,37 +52,49 @@ export const Archivos = () => {
 
 
   const fetchGastos = async () => {
+    if (!user) return;
+    
     try {
-      const { data, error } = await supabase.functions.invoke('expense-manager', {
-        body: { action: 'list' },
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
+      setLoading(true);
+      console.log('Fetching expenses for user:', user.id);
+      
+      // Usar directamente las tablas de Supabase con RLS
+      const { data: expenses, error } = await supabase
+        .from('expenses')
+        .select(`
+          *,
+          expense_items (*)
+        `)
+        .order('expense_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching expenses:', error);
+        throw error;
+      }
 
-      // Convertir la data de Supabase al formato esperado
-      const gastosFormateados: Gasto[] = data.expenses.map((expense: any) => ({
+      console.log('Found expenses:', expenses);
+
+      // Transformar los datos al formato esperado
+      const gastosTransformados = expenses?.map(expense => ({
         id: expense.id,
-        nombre: expense.store_name || 'Gasto sin nombre',
-        fechaCreacion: expense.expense_date,
-        tipo: 'ticket',
-        total: parseFloat(expense.total_amount),
-        items: expense.expense_items.map((item: any) => ({
+        nombre: expense.store_name || 'Establecimiento desconocido',
+        fechaCreacion: expense.created_at,
+        tipo: 'ticket' as const,
+        total: parseFloat(expense.total_amount.toString()),
+        items: expense.expense_items?.map(item => ({
           producto: item.product_name,
           cantidad: item.quantity,
-          precio: parseFloat(item.total_price)
-        })),
+          precio: parseFloat(item.total_price.toString())
+        })) || [],
         imagenTicket: expense.receipt_image
-      }));
+      })) || [];
 
-      setGastos(gastosFormateados);
+      setGastos(gastosTransformados);
     } catch (error) {
-      console.error('Error fetching gastos:', error);
+      console.error('Error loading expenses:', error);
       toast({
         title: "Error",
-        description: "No se pudieron cargar los gastos",
+        description: `No se pudieron cargar los gastos: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -93,47 +105,59 @@ export const Archivos = () => {
   const handleTicketAnalysis = async (analysis: any) => {
     console.log('Análisis del ticket:', analysis);
     
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Usuario no autenticado",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
-      const expenseData = {
-        store_name: analysis.store_name || 'Establecimiento desconocido',
-        date: analysis.date || new Date().toISOString().split('T')[0],
-        total_amount: parseFloat(analysis.total_amount) || 0,
-        payment_method: analysis.payment_method || 'efectivo',
-        receipt_image: analysis.originalImage,
-        confidence: parseFloat(analysis.confidence) || 0.5,
-        items: (analysis.items || []).map((item: any) => ({
+      // Crear el gasto principal directamente en Supabase
+      const { data: expense, error: expenseError } = await supabase
+        .from('expenses')
+        .insert({
+          user_id: user.id,
+          store_name: analysis.store_name || 'Establecimiento desconocido',
+          expense_date: analysis.date || new Date().toISOString().split('T')[0],
+          total_amount: parseFloat(analysis.total_amount) || 0,
+          payment_method: analysis.payment_method || 'efectivo',
+          receipt_image: analysis.originalImage,
+          confidence: parseFloat(analysis.confidence) || 0.5
+        })
+        .select()
+        .single();
+
+      if (expenseError) {
+        console.error('Error creating expense:', expenseError);
+        throw expenseError;
+      }
+
+      // Crear los items del gasto
+      if (analysis.items && analysis.items.length > 0) {
+        const items = analysis.items.map((item: any) => ({
+          expense_id: expense.id,
           product_name: item.product_name || 'Producto desconocido',
           quantity: item.quantity || '1x',
           unit_price: parseFloat(item.unit_price) || 0,
           total_price: parseFloat(item.total_price) || 0
-        }))
-      };
+        }));
 
-      console.log('Expense data to save:', expenseData);
+        const { error: itemsError } = await supabase
+          .from('expense_items')
+          .insert(items);
 
-      const { data, error } = await supabase.functions.invoke('expense-manager', {
-        body: { 
-          action: 'create',
-          expenseData 
-        },
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        if (itemsError) {
+          console.error('Error creating expense items:', itemsError);
+          throw itemsError;
         }
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      if (data?.error) {
-        console.error('Function returned error:', data.error);
-        throw new Error(data.error);
       }
 
       toast({
         title: "¡Gasto registrado!",
-        description: `Se registró el gasto de ${expenseData.store_name} por $${expenseData.total_amount}`
+        description: `Se registró el gasto de ${analysis.store_name || 'Establecimiento'} por $${analysis.total_amount}`
       });
 
       // Refrescar la lista
@@ -150,18 +174,18 @@ export const Archivos = () => {
   };
 
   const handleDeleteGasto = async (gastoId: string) => {
+    if (!user) return;
+    
     try {
-      const { error } = await supabase.functions.invoke('expense-manager', {
-        body: { 
-          action: 'delete',
-          expenseId: gastoId 
-        },
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
+      const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', gastoId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting expense:', error);
+        throw error;
+      }
 
       toast({
         title: "Gasto eliminado",
@@ -173,7 +197,7 @@ export const Archivos = () => {
       console.error('Error deleting expense:', error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el gasto",
+        description: `No se pudo eliminar el gasto: ${error.message}`,
         variant: "destructive"
       });
     }
