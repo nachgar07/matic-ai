@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Camera, Plus, Search, Sparkles, Calendar } from "lucide-react";
 import { FoodSearch } from "@/components/FoodSearch/FoodSearch";
 import { MealLogger } from "@/components/MealLogger/MealLogger";
-import { PhotoCapture } from "@/components/PhotoCapture/PhotoCapture";
+import { FoodPhotoCapture } from "@/components/FoodPhotoCapture/FoodPhotoCapture";
 import { FoodAnalysisResults } from "@/components/FoodAnalysisResults/FoodAnalysisResults";
 import { NutriAssistant } from "@/components/NutriAssistant/NutriAssistant";
 import { MealPlateList } from "@/components/MealPlateList/MealPlateList";
@@ -218,9 +218,9 @@ export const Comidas = () => {
         />
       )}
 
-      {/* Photo Capture Modal */}
+      {/* Food Photo Capture Modal */}
       {showCamera && (
-        <PhotoCapture
+        <FoodPhotoCapture
           onAnalysisComplete={handleAnalysisComplete}
           onClose={() => setShowCamera(false)}
         />
