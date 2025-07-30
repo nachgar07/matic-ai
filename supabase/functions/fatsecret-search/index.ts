@@ -245,6 +245,8 @@ serve(async (req) => {
           console.log(`Found ${foods.length} foods for "${searchTerm}"`);
           
           // Sort foods by relevance - prioritize simple, basic foods
+          console.log(`Raw foods found for "${searchTerm}":`, foods.slice(0, 5).map(f => ({ name: f.food_name, brand: f.brand_name })));
+          
           const sortedFoods = foods.sort((a, b) => {
             const aName = a.food_name.toLowerCase();
             const bName = b.food_name.toLowerCase();
@@ -262,6 +264,10 @@ serve(async (req) => {
               (b.brand_name && b.brand_name.includes(brand)) || bName.includes(brand.toLowerCase())
             );
             
+            // Log problematic brands for debugging
+            if (aHasBadBrand) console.log(`Penalizing "${a.food_name}" for bad brand/name`);
+            if (bHasBadBrand) console.log(`Penalizing "${b.food_name}" for bad brand/name`);
+            
             if (aHasBadBrand && !bHasBadBrand) return 1;
             if (!aHasBadBrand && bHasBadBrand) return -1;
             
@@ -270,11 +276,16 @@ serve(async (req) => {
               'style', 'seasoned', 'recipe', 'fritters', 'frituras', 'fried', 'frito', 'frita',
               'stuffed', 'rellena', 'battered', 'breaded', 'tempura', 'crispy', 'crunchy',
               'sauce', 'salsa', 'gravy', 'creamy', 'cheesy', 'spicy', 'hot', 'buffalo',
-              'barbecue', 'teriyaki', 'honey', 'glazed', 'marinated', 'grilled', 'roasted'
+              'barbecue', 'teriyaki', 'honey', 'glazed', 'marinated', 'grilled', 'roasted',
+              'stew', 'guisada', 'guisado', 'carne guisada'
             ];
             
             const aIsComplex = complexIndicators.some(indicator => aName.includes(indicator));
             const bIsComplex = complexIndicators.some(indicator => bName.includes(indicator));
+            
+            // Log complex foods for debugging
+            if (aIsComplex) console.log(`Penalizing "${a.food_name}" for complex preparation`);
+            if (bIsComplex) console.log(`Penalizing "${b.food_name}" for complex preparation`);
             
             if (aIsComplex && !bIsComplex) return 1;
             if (!aIsComplex && bIsComplex) return -1;
@@ -309,6 +320,8 @@ serve(async (req) => {
             // Final tiebreaker: alphabetical
             return aName.localeCompare(bName);
           });
+          
+          console.log(`Sorted foods for "${searchTerm}":`, sortedFoods.slice(0, 5).map(f => ({ name: f.food_name, brand: f.brand_name })));
           
           // Process foods and filter duplicates
           for (const food of sortedFoods) {

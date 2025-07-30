@@ -79,13 +79,14 @@ serve(async (req) => {
       // Simplify search term - remove preparation details
       let searchTerm = food.name.toLowerCase();
       
-      // Extract basic ingredient from complex preparations
-      if (searchTerm.includes('pollo')) searchTerm = 'pollo';
-      else if (searchTerm.includes('papa') && (searchTerm.includes('hervida') || searchTerm.includes('hervido'))) searchTerm = 'papa hervida';
-      else if (searchTerm.includes('puré') && searchTerm.includes('papa')) searchTerm = 'puré papas';
-      else if (searchTerm.includes('arroz')) searchTerm = 'arroz';
-      else if (searchTerm.includes('pescado')) searchTerm = 'pescado';
-      else if (searchTerm.includes('carne')) searchTerm = 'carne';
+      // Extract basic ingredient from complex preparations and use better search terms
+      if (searchTerm.includes('pollo')) searchTerm = 'chicken';
+      else if (searchTerm.includes('papa') && (searchTerm.includes('hervida') || searchTerm.includes('hervido'))) searchTerm = 'potato boiled';
+      else if (searchTerm.includes('papa')) searchTerm = 'potato';
+      else if (searchTerm.includes('puré') && searchTerm.includes('papa')) searchTerm = 'mashed potato';
+      else if (searchTerm.includes('arroz')) searchTerm = 'rice';
+      else if (searchTerm.includes('pescado')) searchTerm = 'fish';
+      else if (searchTerm.includes('carne')) searchTerm = 'beef';
       
       console.log(`Simplified search term: ${searchTerm}`);
       
@@ -118,7 +119,7 @@ serve(async (req) => {
 
       // Take the first result (best match)
       const selectedFood = searchData.foods[0];
-      console.log(`Found food:`, selectedFood);
+      console.log(`Selected food for "${food.name}":`, { name: selectedFood.food_name, brand: selectedFood.brand_name });
 
       // Use the servings calculated by OpenAI
       const servings = food.servings;
