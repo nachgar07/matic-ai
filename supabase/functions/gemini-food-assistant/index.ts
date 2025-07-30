@@ -270,26 +270,50 @@ COMIDAS DE HOY:`;
     { role: 'user', parts: [{ text: text }] }
   ];
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: messages,
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-      }
-    })
-  });
+  let response;
+  let retries = 3;
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: messages,
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          }
+        })
+      });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Gemini conversation error:', errorText);
-    throw new Error(`Gemini API error: ${response.status}`);
+      if (response.ok) {
+        break; // Success, exit retry loop
+      }
+
+      const errorText = await response.text();
+      console.error(`Gemini API error (attempt ${i + 1}):`, errorText);
+      
+      // If it's a 503 (overloaded) and we have retries left, wait and retry
+      if (response.status === 503 && i < retries - 1) {
+        console.log(`Retrying in ${(i + 1) * 2} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, (i + 1) * 2000));
+        continue;
+      }
+      
+      // If it's the last retry or a different error, throw
+      throw new Error(`Gemini API error: ${response.status}`);
+    } catch (error) {
+      if (i === retries - 1) {
+        throw error;
+      }
+      console.log(`Network error, retrying in ${(i + 1) * 2} seconds...`);
+      await new Promise(resolve => setTimeout(resolve, (i + 1) * 2000));
+    }
   }
 
   const result = await response.json();
