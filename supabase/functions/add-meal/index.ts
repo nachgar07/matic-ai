@@ -53,12 +53,27 @@ serve(async (req) => {
       );
     }
 
-    // Insert meal entry
+    // First, find the food by food_id to get the UUID
+    const { data: foodData, error: foodError } = await supabase
+      .from('foods')
+      .select('id')
+      .eq('food_id', foodId)
+      .single();
+
+    if (foodError || !foodData) {
+      console.error('Error finding food:', foodError);
+      return new Response(
+        JSON.stringify({ error: 'Food not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Insert meal entry using the UUID
     const { data: mealEntry, error: insertError } = await supabase
       .from('meal_entries')
       .insert({
         user_id: user.id,
-        food_id: foodId,
+        food_id: foodData.id,
         servings: parseFloat(servings),
         meal_type: mealType,
         plate_image: plateImage || null
