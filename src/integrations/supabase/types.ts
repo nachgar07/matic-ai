@@ -41,6 +41,83 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_items: {
+        Row: {
+          created_at: string
+          expense_id: string
+          id: string
+          product_name: string
+          quantity: string
+          total_price: number
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string
+          expense_id: string
+          id?: string
+          product_name: string
+          quantity: string
+          total_price: number
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string
+          expense_id?: string
+          id?: string
+          product_name?: string
+          quantity?: string
+          total_price?: number
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_items_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          expense_date: string
+          id: string
+          payment_method: string | null
+          receipt_image: string | null
+          store_name: string | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          expense_date: string
+          id?: string
+          payment_method?: string | null
+          receipt_image?: string | null
+          store_name?: string | null
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          expense_date?: string
+          id?: string
+          payment_method?: string | null
+          receipt_image?: string | null
+          store_name?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorite_foods: {
         Row: {
           created_at: string

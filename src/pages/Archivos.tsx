@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PhotoCapture } from "@/components/PhotoCapture/PhotoCapture";
-import { Mic, FileText, Plus, MoreVertical, Camera, Receipt } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Mic, FileText, Plus, MoreVertical, Camera, Receipt, Trash2, Edit, Eye } from "lucide-react";
 
 interface Gasto {
   id: string;
@@ -21,28 +23,118 @@ interface Gasto {
 }
 
 export const Archivos = () => {
-  const [gastos] = useState<Gasto[]>([
-    {
-      id: "1",
-      nombre: "Compra Supermercado",
-      fechaCreacion: "2024-01-26",
-      tipo: "ticket",
-      total: 25.50,
-      items: [
-        { producto: "Manzanas", cantidad: "2kg", precio: 5.00 },
-        { producto: "Pan", cantidad: "1 unidad", precio: 2.50 },
-        { producto: "Leche", cantidad: "1L", precio: 3.00 }
-      ]
-    }
-  ]);
-
+  const [gastos, setGastos] = useState<Gasto[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [showPhotoCapture, setShowPhotoCapture] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const handleTicketAnalysis = (analysis: any) => {
+  useEffect(() => {
+    fetchGastos();
+  }, []);
+
+  const fetchGastos = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('expense-manager', {
+        body: { action: 'list' }
+      });
+
+      if (error) throw error;
+
+      // Convertir la data de Supabase al formato esperado
+      const gastosFormateados: Gasto[] = data.expenses.map((expense: any) => ({
+        id: expense.id,
+        nombre: expense.store_name || 'Gasto sin nombre',
+        fechaCreacion: expense.expense_date,
+        tipo: 'ticket',
+        total: parseFloat(expense.total_amount),
+        items: expense.expense_items.map((item: any) => ({
+          producto: item.product_name,
+          cantidad: item.quantity,
+          precio: parseFloat(item.total_price)
+        })),
+        imagenTicket: expense.receipt_image
+      }));
+
+      setGastos(gastosFormateados);
+    } catch (error) {
+      console.error('Error fetching gastos:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los gastos",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTicketAnalysis = async (analysis: any) => {
     console.log('Análisis del ticket:', analysis);
-    // Aquí procesarías los datos del ticket
-    setShowPhotoCapture(false);
+    
+    try {
+      const expenseData = {
+        store_name: analysis.store_name || 'Establecimiento desconocido',
+        date: analysis.date || new Date().toISOString().split('T')[0],
+        total_amount: analysis.total_amount || 0,
+        payment_method: analysis.payment_method,
+        receipt_image: analysis.originalImage,
+        confidence: analysis.confidence || 0.5,
+        items: analysis.items || []
+      };
+
+      const { data, error } = await supabase.functions.invoke('expense-manager', {
+        body: { 
+          action: 'create',
+          expenseData 
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "¡Gasto registrado!",
+        description: `Se registró el gasto de ${expenseData.store_name} por $${expenseData.total_amount}`
+      });
+
+      // Refrescar la lista
+      fetchGastos();
+      setShowPhotoCapture(false);
+    } catch (error) {
+      console.error('Error saving expense:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el gasto",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteGasto = async (gastoId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('expense-manager', {
+        body: { 
+          action: 'delete',
+          expenseId: gastoId 
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Gasto eliminado",
+        description: "El gasto se eliminó correctamente"
+      });
+
+      fetchGastos();
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el gasto",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -103,7 +195,13 @@ export const Archivos = () => {
         <div>
           <h3 className="font-semibold mb-4">Gastos Recientes</h3>
           
-          {gastos.length === 0 ? (
+          {loading ? (
+            <div className="bg-card rounded-lg p-6 text-center">
+              <div className="text-muted-foreground">
+                Cargando gastos...
+              </div>
+            </div>
+          ) : gastos.length === 0 ? (
             <div className="bg-card rounded-lg p-6 text-center">
               <Receipt className="mx-auto mb-4 text-muted-foreground" size={48} />
               <div className="text-muted-foreground mb-2">
@@ -127,9 +225,15 @@ export const Archivos = () => {
                         ${gasto.total.toFixed(2)}
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical size={16} />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDeleteGasto(gasto.id)}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Preview */}
@@ -151,13 +255,12 @@ export const Archivos = () => {
                   {/* Actions */}
                   <div className="flex space-x-2">
                     <Button variant="outline" size="sm" className="flex-1">
+                      <Eye size={14} className="mr-1" />
                       Ver
                     </Button>
                     <Button variant="outline" size="sm" className="flex-1">
+                      <Edit size={14} className="mr-1" />
                       Editar
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Compartir
                     </Button>
                   </div>
                 </Card>
