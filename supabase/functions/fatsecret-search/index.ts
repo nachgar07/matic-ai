@@ -130,6 +130,50 @@ function translateFoodTerm(term: string): string[] {
   return translations[lowerTerm] || [term];
 }
 
+// Intelligent search term conversion
+function getSmartSearchTerm(originalTerm: string): string {
+  const lowerTerm = originalTerm.toLowerCase();
+  
+  console.log(`Original search term: "${originalTerm}"`);
+  
+  // Direct translations for better basic food results
+  if (lowerTerm.includes('papa') && (lowerTerm.includes('hervida') || lowerTerm.includes('hervido'))) {
+    console.log('Converting papa hervida to potato boiled');
+    return 'potato boiled';
+  }
+  if (lowerTerm.includes('papa') && lowerTerm.includes('puré')) {
+    console.log('Converting puré de papa to mashed potato');
+    return 'mashed potato';
+  }
+  if (lowerTerm.includes('papa')) {
+    console.log('Converting papa to potato');
+    return 'potato';
+  }
+  if (lowerTerm.includes('pollo') && lowerTerm.includes('plancha')) {
+    console.log('Converting pollo a la plancha to grilled chicken');
+    return 'grilled chicken';
+  }
+  if (lowerTerm.includes('pollo')) {
+    console.log('Converting pollo to chicken');
+    return 'chicken';
+  }
+  if (lowerTerm.includes('arroz')) {
+    console.log('Converting arroz to rice');
+    return 'rice';
+  }
+  if (lowerTerm.includes('pescado')) {
+    console.log('Converting pescado to fish');
+    return 'fish';
+  }
+  if (lowerTerm.includes('carne')) {
+    console.log('Converting carne to beef');
+    return 'beef';
+  }
+  
+  console.log(`No translation applied, using: "${originalTerm}"`);
+  return originalTerm;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -162,12 +206,15 @@ serve(async (req) => {
     );
 
     console.log('Searching FatSecret API for:', searchQuery, 'page:', page);
+    
+    // Use smart search term for better results
+    const smartSearchTerm = getSmartSearchTerm(searchQuery);
 
-    // First check if we have existing foods in our database
+    // First check if we have existing foods in our database using both original and smart terms
     const { data: existingFoods } = await supabase
       .from('foods')
       .select('*')
-      .ilike('food_name', `%${searchQuery}%`)
+      .or(`food_name.ilike.%${searchQuery}%,food_name.ilike.%${smartSearchTerm}%`)
       .range(page * limit, (page + 1) * limit - 1);
 
     // If we have enough existing foods, return them first for speed
@@ -179,10 +226,10 @@ serve(async (req) => {
       );
     }
 
-    // Translate search terms if needed (only for first page)
-    const searchTerms = page === 0 ? searchQuery.split(' ') : [searchQuery];
-    const translatedTerms = page === 0 ? searchTerms.flatMap(term => translateFoodTerm(term)) : [];
-    const allSearchTerms = [...new Set([searchQuery, ...translatedTerms])];
+    // Use smart search term for API calls
+    const searchTerms = page === 0 ? [smartSearchTerm] : [searchQuery];
+    const translatedTerms = page === 0 ? smartSearchTerm.split(' ').flatMap(term => translateFoodTerm(term)) : [];
+    const allSearchTerms = [...new Set([smartSearchTerm, ...translatedTerms])];
     
     console.log('Search terms to try:', allSearchTerms);
 
