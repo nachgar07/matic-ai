@@ -103,11 +103,19 @@ Instrucciones importantes:
     })
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Gemini API error:', errorText);
-    throw new Error(`Gemini API error: ${response.status} ${errorText}`);
-  }
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Gemini API error:', errorText);
+      
+      // Manejar diferentes tipos de errores
+      if (response.status === 503) {
+        throw new Error('El servicio de análisis está temporalmente sobrecargado. Por favor, intenta de nuevo en unos minutos.');
+      } else if (response.status === 429) {
+        throw new Error('Se ha excedido el límite de solicitudes. Por favor, espera un momento antes de intentar de nuevo.');
+      } else {
+        throw new Error(`Error del servicio de análisis: ${response.status}`);
+      }
+    }
 
   const result = await response.json();
   console.log('Gemini response:', JSON.stringify(result, null, 2));

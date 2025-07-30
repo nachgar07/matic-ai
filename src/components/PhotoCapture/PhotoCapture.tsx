@@ -127,11 +127,31 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
         originalImage: capturedImage
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing image:', error);
+      
+      let errorMessage = "No se pudo analizar la imagen. El servicio puede estar temporalmente sobrecargado.";
+      
+      if (error.message && error.message.includes('sobrecargado')) {
+        errorMessage = error.message;
+        // Reintentar automáticamente después de 5 segundos
+        toast({
+          title: "Servicio temporalmente no disponible",
+          description: errorMessage + " Reintentando en 5 segundos...",
+          variant: "destructive",
+        });
+        
+        setTimeout(() => {
+          if (capturedImage) {
+            analyzeImage();
+          }
+        }, 5000);
+        return;
+      }
+      
       toast({
         title: "Error en el análisis",
-        description: "No se pudo analizar la imagen. Por favor, intenta de nuevo.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
