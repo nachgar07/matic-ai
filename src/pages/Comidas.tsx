@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,16 @@ export const Comidas = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { syncMealsToCalendar, isLoading: isCalendarLoading } = useGoogleCalendar();
+
+  // Listen for meal creation events from chat
+  useEffect(() => {
+    const handleMealCreated = () => {
+      queryClient.invalidateQueries({ queryKey: ['user-meals'] });
+    };
+
+    window.addEventListener('meal-created', handleMealCreated);
+    return () => window.removeEventListener('meal-created', handleMealCreated);
+  }, [queryClient]);
 
   const handleFoodSelect = (food: Food) => {
     setSelectedFood(food);

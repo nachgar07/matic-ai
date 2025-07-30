@@ -163,7 +163,10 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
   useEffect(() => {
     // Scroll to bottom when new messages are added
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
     }
   }, [messages]);
 
@@ -346,15 +349,18 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // If a meal was created, show success toast
+      // Save assistant message to database
+      await saveMessageToDb(assistantMessage.content, 'assistant');
+
+      // If a meal was created, show success toast and refresh data
       if (data.meal_created && data.meal_data?.success) {
         toast({
           title: "¡Comida registrada!",
           description: `Se agregó tu ${getMealTypeName(data.meal_data.meal_type)} con ${data.meal_data.totals.calories} kcal`,
         });
         
-        // The page will update automatically via existing data fetching mechanisms
-        // No need to force reload - let the natural data flow handle updates
+        // Trigger data refresh on parent component
+        window.dispatchEvent(new CustomEvent('meal-created'));
       }
 
     } catch (error) {
