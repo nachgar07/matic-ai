@@ -252,7 +252,8 @@ serve(async (req) => {
             // Skip if we already have this food name
             if (seenFoodNames.has(food.food_name.toLowerCase())) continue;
             seenFoodNames.add(food.food_name.toLowerCase());
-          try {
+            
+            try {
             // Check if food exists in our database
             const { data: existingFood } = await supabase
               .from('foods')
@@ -327,6 +328,7 @@ serve(async (req) => {
           } catch (error) {
             console.error('Error processing food:', food.food_id, error);
             continue;
+            }
           }
         }
       }
