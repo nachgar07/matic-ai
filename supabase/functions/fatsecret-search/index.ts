@@ -175,8 +175,8 @@ serve(async (req) => {
     
     let allProcessedFoods = [];
     
-    // Try searching with each term
-    for (const searchTerm of allSearchTerms.slice(0, 3)) { // Limit to 3 searches max
+    // Try searching with each term - optimized for speed
+    for (const searchTerm of allSearchTerms.slice(0, 2)) { // Limit to 2 searches max
       try {
         console.log('Trying search term:', searchTerm);
         
@@ -193,7 +193,7 @@ serve(async (req) => {
           method: 'foods.search',
           search_expression: searchTerm,
           format: 'json',
-          max_results: '20'
+          max_results: '10' // Reduced from 20 to 10 for faster results
         };
 
         // Generate signature
@@ -228,11 +228,12 @@ serve(async (req) => {
           continue;
         }
 
-        // Process search results
+        // Process search results - optimized batch processing
         const foods = data.foods?.food || [];
         console.log(`Found ${foods.length} foods for "${searchTerm}"`);
         
-        for (const food of foods.slice(0, 10)) {
+        // Process first 5 foods only for speed
+        for (const food of foods.slice(0, 5)) {
           try {
             // Check if food exists in our database
             const { data: existingFood } = await supabase
@@ -311,8 +312,8 @@ serve(async (req) => {
           }
         }
         
-        // If we have enough results, break
-        if (allProcessedFoods.length >= 15) {
+        // If we have enough results, break early for speed
+        if (allProcessedFoods.length >= 8) {
           break;
         }
         
