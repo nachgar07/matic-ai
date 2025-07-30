@@ -106,9 +106,8 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
       // Convert image to base64 without the data URL prefix
       const base64Image = capturedImage.split(',')[1];
       
-      const { data, error } = await supabase.functions.invoke('openai-food-assistant', {
+      const { data, error } = await supabase.functions.invoke('receipt-analyzer', {
         body: {
-          action: 'analyze-food',
           imageBase64: base64Image
         }
       });
@@ -119,7 +118,7 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
 
       toast({
         title: "Análisis completado",
-        description: `Se identificaron ${data.foods?.length || 0} alimentos en la imagen.`
+        description: `Se identificaron ${data.items?.length || 0} productos en el recibo.`
       });
 
       onAnalysisComplete({
