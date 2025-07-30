@@ -76,12 +76,19 @@ export const Archivos = () => {
       const expenseData = {
         store_name: analysis.store_name || 'Establecimiento desconocido',
         date: analysis.date || new Date().toISOString().split('T')[0],
-        total_amount: analysis.total_amount || 0,
-        payment_method: analysis.payment_method,
+        total_amount: parseFloat(analysis.total_amount) || 0,
+        payment_method: analysis.payment_method || 'efectivo',
         receipt_image: analysis.originalImage,
-        confidence: analysis.confidence || 0.5,
-        items: analysis.items || []
+        confidence: parseFloat(analysis.confidence) || 0.5,
+        items: (analysis.items || []).map((item: any) => ({
+          product_name: item.product_name || 'Producto desconocido',
+          quantity: item.quantity || '1x',
+          unit_price: parseFloat(item.unit_price) || 0,
+          total_price: parseFloat(item.total_price) || 0
+        }))
       };
+
+      console.log('Expense data to save:', expenseData);
 
       const { data, error } = await supabase.functions.invoke('expense-manager', {
         body: { 
@@ -90,7 +97,15 @@ export const Archivos = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        throw new Error(data.error);
+      }
 
       toast({
         title: "¡Gasto registrado!",
@@ -104,7 +119,7 @@ export const Archivos = () => {
       console.error('Error saving expense:', error);
       toast({
         title: "Error",
-        description: "No se pudo guardar el gasto",
+        description: `No se pudo guardar el gasto: ${error.message || 'Error desconocido'}`,
         variant: "destructive"
       });
     }
