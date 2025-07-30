@@ -59,11 +59,14 @@ export const Archivos = () => {
 
 
   const fetchGastos = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, skipping fetch');
+      return;
+    }
     
     try {
+      console.log('Starting fetchGastos for user:', user.id);
       setLoading(true);
-      console.log('Fetching expenses for user:', user.id);
       
       // Usar directamente las tablas de Supabase con RLS
       const { data: expenses, error } = await supabase
@@ -74,12 +77,14 @@ export const Archivos = () => {
         `)
         .order('expense_date', { ascending: false });
 
+      console.log('Supabase query completed. Error:', error, 'Data:', expenses);
+
       if (error) {
         console.error('Error fetching expenses:', error);
         throw error;
       }
 
-      console.log('Found expenses:', expenses);
+      console.log('Found expenses:', expenses?.length || 0);
 
       // Transformar los datos al formato esperado
       const gastosTransformados = expenses?.map(expense => ({
@@ -96,6 +101,7 @@ export const Archivos = () => {
         imagenTicket: expense.receipt_image
       })) || [];
 
+      console.log('Transformed gastos:', gastosTransformados);
       setGastos(gastosTransformados);
     } catch (error) {
       console.error('Error loading expenses:', error);
@@ -105,6 +111,7 @@ export const Archivos = () => {
         variant: "destructive"
       });
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
     }
   };
@@ -181,13 +188,20 @@ export const Archivos = () => {
   };
 
   const handleDeleteGasto = async (gastoId: string) => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found for delete');
+      return;
+    }
     
     try {
+      console.log('Deleting expense:', gastoId);
+      
       const { error } = await supabase
         .from('expenses')
         .delete()
         .eq('id', gastoId);
+
+      console.log('Delete completed. Error:', error);
 
       if (error) {
         console.error('Error deleting expense:', error);
@@ -199,7 +213,9 @@ export const Archivos = () => {
         description: "El gasto se eliminó correctamente"
       });
 
-      fetchGastos();
+      console.log('Calling fetchGastos after delete');
+      await fetchGastos();
+      console.log('fetchGastos completed after delete');
     } catch (error) {
       console.error('Error deleting expense:', error);
       toast({
