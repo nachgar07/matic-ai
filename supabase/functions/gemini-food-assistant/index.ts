@@ -436,21 +436,31 @@ async function executeCreateMeal(args: any, userContext: any) {
       throw new Error('User context not available');
     }
 
-    const { data, error } = await supabase.functions.invoke('create-meal-from-chat', {
-      body: {
+    // Create Authorization header for the function call
+    const authToken = `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`;
+    
+    // Call create-meal-from-chat function
+    const createMealResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/create-meal-from-chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authToken,
+        'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+        'x-user-id': userContext.user.id
+      },
+      body: JSON.stringify({
         foods: args.foods || [],
         meal_type: args.meal_type || 'snack'
-      },
-      headers: {
-        Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-      }
+      })
     });
 
-    if (error) {
-      console.error('Error calling create-meal-from-chat:', error);
-      throw error;
+    if (!createMealResponse.ok) {
+      const errorText = await createMealResponse.text();
+      console.error('Error calling create-meal-from-chat:', errorText);
+      throw new Error(`Failed to create meal: ${errorText}`);
     }
 
+    const data = await createMealResponse.json();
     console.log('Meal creation result:', data);
 
     // Generate response based on results

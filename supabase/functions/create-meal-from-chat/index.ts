@@ -35,20 +35,40 @@ serve(async (req) => {
       throw new Error('Authorization header is required');
     }
 
+    // Initialize Supabase client with service role key for internal operations
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: { headers: { Authorization: authHeader } }
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      throw new Error('User not authenticated');
+    // Extract user ID from auth token
+    let userId: string;
+    
+    if (authHeader.includes('service_role')) {
+      // This is an internal call, we need to get user_id from request body or headers
+      const userIdHeader = req.headers.get('x-user-id');
+      if (!userIdHeader) {
+        throw new Error('User ID required for service role calls');
+      }
+      userId = userIdHeader;
+    } else {
+      // This is a user call, validate the token
+      const userClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        {
+          global: { headers: { Authorization: authHeader } }
+        }
+      );
+
+      const { data: { user }, error: userError } = await userClient.auth.getUser();
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+      userId = user.id;
     }
 
-    console.log('User authenticated:', user.id);
+    console.log('User authenticated:', userId);
 
     // Search for each food and create meal entries
     const mealEntries = [];
@@ -95,7 +115,7 @@ serve(async (req) => {
       const { data: mealEntry, error: mealError } = await supabase
         .from('meal_entries')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           food_id: selectedFood.id,
           servings: servings,
           meal_type: meal_type,
