@@ -37,9 +37,25 @@ export const Archivos = () => {
   const [editForm, setEditForm] = useState<Partial<Gasto>>({});
   const { toast } = useToast();
 
-  // Verificar autenticación y cargar datos
+  // Persistencia local como backup
+  const saveToLocalStorage = (gastos: Gasto[]) => {
+    if (user) {
+      localStorage.setItem(`gastos_${user.id}`, JSON.stringify(gastos));
+    }
+  };
+
+  const loadFromLocalStorage = (): Gasto[] => {
+    if (user) {
+      const saved = localStorage.getItem(`gastos_${user.id}`);
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  };
+
+  // Verificar autenticación y cargar datos con realtime
   useEffect(() => {
     let isMounted = true;
+    let realtimeChannel = null;
 
     const initializeApp = async () => {
       try {
@@ -61,6 +77,29 @@ export const Archivos = () => {
           
           // Cargar gastos inmediatamente con el usuario autenticado
           await loadExpenses(session.user.id);
+          
+          // Configurar realtime para escuchar cambios en expenses
+          realtimeChannel = supabase
+            .channel('expenses-changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*', // Escuchar INSERT, UPDATE, DELETE
+                schema: 'public',
+                table: 'expenses',
+                filter: `user_id=eq.${session.user.id}`
+              },
+              (payload) => {
+                console.log('🔄 Realtime expense change:', payload);
+                // Recargar gastos cuando hay cambios
+                if (isMounted && session.user) {
+                  loadExpenses(session.user.id);
+                }
+              }
+            )
+            .subscribe();
+            
+          console.log('📡 Realtime channel configured');
         } else {
           console.log('⚠️ No authenticated user');
           if (isMounted) {
@@ -104,6 +143,9 @@ export const Archivos = () => {
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
     };
   }, []);
 
@@ -152,13 +194,26 @@ export const Archivos = () => {
 
       console.log('✅ Transformed expenses:', gastosTransformados.length);
       setGastos(gastosTransformados);
+      saveToLocalStorage(gastosTransformados);
     } catch (error) {
       console.error('💥 Load expenses error:', error);
-      toast({
-        title: "Error",
-        description: `No se pudieron cargar los gastos: ${error.message}`,
-        variant: "destructive"
-      });
+      
+      // Intentar cargar desde localStorage como fallback
+      const localData = loadFromLocalStorage();
+      if (localData.length > 0) {
+        console.log('📱 Loading from localStorage as fallback');
+        setGastos(localData);
+        toast({
+          title: "Datos cargados desde caché local",
+          description: "Se mostraron los datos guardados localmente"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: `No se pudieron cargar los gastos: ${error.message}`,
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
