@@ -168,8 +168,7 @@ serve(async (req) => {
       .from('foods')
       .select('*')
       .ilike('food_name', `%${searchQuery}%`)
-      .limit(limit)
-      .offset(page * limit);
+      .range(page * limit, (page + 1) * limit - 1);
 
     // If we have enough existing foods, return them first for speed
     if (existingFoods && existingFoods.length >= limit && page === 0) {
