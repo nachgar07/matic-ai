@@ -77,9 +77,21 @@ serve(async (req) => {
     for (const food of foods) {
       console.log(`Searching for food: ${food.name}`);
       
+      // Simplify search term - remove preparation details
+      let searchTerm = food.name.toLowerCase();
+      
+      // Extract basic ingredient from complex preparations
+      if (searchTerm.includes('pollo')) searchTerm = 'pollo';
+      else if (searchTerm.includes('puré') && searchTerm.includes('papa')) searchTerm = 'puré papas';
+      else if (searchTerm.includes('arroz')) searchTerm = 'arroz';
+      else if (searchTerm.includes('pescado')) searchTerm = 'pescado';
+      else if (searchTerm.includes('carne')) searchTerm = 'carne';
+      
+      console.log(`Simplified search term: ${searchTerm}`);
+      
       // Search for the food using FatSecret
       const { data: searchData, error: searchError } = await supabase.functions.invoke('fatsecret-search', {
-        body: { searchQuery: food.name }
+        body: { searchQuery: searchTerm }
       });
 
       if (searchError) {

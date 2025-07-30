@@ -244,8 +244,29 @@ serve(async (req) => {
           const foods = data.foods?.food || [];
           console.log(`Found ${foods.length} foods for "${searchTerm}"`);
           
+          // Sort foods by relevance - prioritize simple, basic foods
+          const sortedFoods = foods.sort((a, b) => {
+            // Penalize foods with brands (they tend to be processed)
+            const aBrand = a.brand_name ? 1 : 0;
+            const bBrand = b.brand_name ? 1 : 0;
+            
+            // Penalize foods with complex descriptions
+            const aComplex = (a.food_name.split(' ').length > 4) ? 1 : 0;
+            const bComplex = (b.food_name.split(' ').length > 4) ? 1 : 0;
+            
+            // Penalize foods with parentheses (usually specific preparations)
+            const aParens = a.food_name.includes('(') ? 1 : 0;
+            const bParens = b.food_name.includes('(') ? 1 : 0;
+            
+            // Calculate penalty score (lower is better)
+            const aPenalty = aBrand + aComplex + aParens;
+            const bPenalty = bBrand + bComplex + bParens;
+            
+            return aPenalty - bPenalty;
+          });
+          
           // Process foods and filter duplicates
-          for (const food of foods) {
+          for (const food of sortedFoods) {
             if (allProcessedFoods.length >= limit) break;
             
             // Skip if we already have this food name
