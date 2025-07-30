@@ -36,7 +36,10 @@ export const Archivos = () => {
   const fetchGastos = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('expense-manager', {
-        body: { action: 'list' }
+        body: { action: 'list' },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        }
       });
 
       if (error) throw error;
@@ -94,6 +97,9 @@ export const Archivos = () => {
         body: { 
           action: 'create',
           expenseData 
+        },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
       });
 
@@ -131,6 +137,9 @@ export const Archivos = () => {
         body: { 
           action: 'delete',
           expenseId: gastoId 
+        },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
       });
 
