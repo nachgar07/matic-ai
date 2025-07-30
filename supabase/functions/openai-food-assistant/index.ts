@@ -241,9 +241,12 @@ CAPACIDADES AVANZADAS:
 IMPORTANTE: 
 - Usa SOLO alimentos simples y comunes (pollo, arroz, huevo, pan, leche, etc.)
 - EVITA nombres complejos como "quinoa cocida", "salmón a la plancha" - usa "quinoa" y "salmón"
-- Cuando el usuario pida múltiples comidas, sugiere alimentos simples para cada tipo
-- Para registrar múltiples comidas, dile al usuario que las registrarás una por una
-- Si el usuario quiere registrar varias comidas, primero sugiere alimentos simples que existan`;
+
+REGLAS PARA MÚLTIPLES COMIDAS:
+- Cuando el usuario pida crear MÚLTIPLES comidas (desayuno, almuerzo, cena), NO uses la función create_meal inmediatamente
+- PRIMERO presenta una sugerencia completa con las tres comidas calculadas exactamente para las calorías restantes
+- SOLO usa create_meal DESPUÉS de que el usuario confirme explícitamente que quiere registrar las comidas sugeridas
+- Cuando sugiera, calcula que la suma total no exceda las calorías y macros restantes`;
 
   // Add user context if available
   if (userContext) {
