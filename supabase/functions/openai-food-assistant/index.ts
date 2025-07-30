@@ -261,7 +261,7 @@ PROGRESO DE HOY:
 - Grasas: ${Math.round(userContext.today.consumed.fat * 10) / 10}/${userContext.goals.daily_fat}g
 - Total de comidas registradas hoy: ${userContext.today.meal_count}
 
-COMIDAS DE HOY:`;
+COMIDAS DE HOY (NO REPITAS ESTOS ALIMENTOS - CREA COMIDAS NUEVAS Y DIFERENTES):`;
 
     // Add today's meals breakdown
     Object.entries(userContext.today.meals).forEach(([mealType, foods]: [string, any]) => {
@@ -298,7 +298,17 @@ USA ESTA INFORMACIÓN para:
 4. Sugerir comidas específicas que encajen en las calorías y macros restantes
 5. Mantener un tono motivador y personalizar respuestas según el progreso actual
 
-REGLA CRÍTICA: Cuando crees comidas, asegúrate de que la suma total del día NO EXCEDA los objetivos nutricionales del usuario. Si está cerca del límite, sugiere porciones más pequeñas o alimentos más ligeros.`;
+REGLA CRÍTICA PARA VARIEDAD: 
+- NUNCA repitas los alimentos que ya están registrados hoy
+- SIEMPRE crea comidas completamente NUEVAS y DIFERENTES 
+- Usa ingredientes y preparaciones distintas a las ya consumidas
+- Varía las fuentes de proteína, carbohidratos y vegetales
+- Cuando el usuario pida múltiples comidas, cada una debe ser única y diferente
+
+REGLA CRÍTICA PARA LÍMITES NUTRICIONALES: 
+- La suma total del día NO DEBE EXCEDER los objetivos nutricionales del usuario
+- Si está cerca del límite, sugiere porciones más pequeñas o alimentos más ligeros
+- Calcula exactamente cuánto puede comer sin exceder los límites`;
   }
 
   const messages = [
