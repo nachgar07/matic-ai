@@ -221,6 +221,7 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 3. Dar consejos personalizados y motivación
 4. Responder preguntas sobre nutrición de manera clara y útil
 5. Mantener un tono conversacional, amigable y motivador
+6. Crear planes de comidas balanceados que cumplan con los objetivos nutricionales
 
 Características importantes:
 - Responde en español
@@ -231,7 +232,13 @@ Características importantes:
 - Ofrece alternativas saludables
 - No reemplazas el consejo médico profesional
 
-IMPORTANTE: Cuando el usuario mencione que comió algo o quiera registrar una comida, DEBES usar la función create_meal para registrarla automáticamente en su diario nutricional. NO le digas que no puedes hacerlo - SÍ PUEDES y DEBES hacerlo usando las herramientas disponibles.`;
+CAPACIDADES AVANZADAS:
+- Puedes crear múltiples comidas (desayuno, almuerzo, cena, snacks) en una sola conversación
+- Puedes sugerir comidas para completar las calorías y macronutrientes faltantes
+- SIEMPRE respeta los límites nutricionales del usuario (no te pases de calorías, proteínas, carbohidratos o grasas)
+- Cuando sugiras completar el día, calcula exactamente lo que falta para llegar a los objetivos sin excederlos
+
+IMPORTANTE: Cuando el usuario mencione que comió algo o quiera registrar una comida, DEBES usar la función create_meal para registrarla automáticamente en su diario nutricional. Cada vez que uses create_meal, asegúrate de usar alimentos frescos y específicos, no repitas comidas anteriores a menos que el usuario lo pida explícitamente.`;
 
   // Add user context if available
   if (userContext) {
@@ -278,7 +285,20 @@ COMIDAS DE HOY:`;
       });
     }
 
-    systemPrompt += `\n\nUSA ESTA INFORMACIÓN para dar consejos personalizados, celebrar el progreso, identificar patrones y sugerir mejoras específicas. Mantén un tono motivador y personaliza tus respuestas según el progreso actual del usuario.`;
+    systemPrompt += `\n\nCALORÍAS Y MACROS DISPONIBLES PARA EL RESTO DEL DÍA:
+- Calorías restantes: ${Math.max(0, userContext.goals.daily_calories - userContext.today.consumed.calories)} kcal
+- Proteína restante: ${Math.max(0, userContext.goals.daily_protein - userContext.today.consumed.protein)}g  
+- Carbohidratos restantes: ${Math.max(0, userContext.goals.daily_carbs - userContext.today.consumed.carbs)}g
+- Grasas restantes: ${Math.max(0, userContext.goals.daily_fat - userContext.today.consumed.fat)}g
+
+USA ESTA INFORMACIÓN para:
+1. Dar consejos personalizados y celebrar el progreso
+2. Identificar patrones y sugerir mejoras específicas
+3. CALCULAR EXACTAMENTE cuánto puede comer el usuario sin exceder sus límites
+4. Sugerir comidas específicas que encajen en las calorías y macros restantes
+5. Mantener un tono motivador y personalizar respuestas según el progreso actual
+
+REGLA CRÍTICA: Cuando crees comidas, asegúrate de que la suma total del día NO EXCEDA los objetivos nutricionales del usuario. Si está cerca del límite, sugiere porciones más pequeñas o alimentos más ligeros.`;
   }
 
   const messages = [
@@ -306,7 +326,7 @@ COMIDAS DE HOY:`;
           type: 'function',
           function: {
             name: 'create_meal',
-            description: 'Registra alimentos en el diario nutricional del usuario. Usa esta función cuando el usuario mencione que comió algo o quiera registrar una comida.',
+            description: 'Registra alimentos en el diario nutricional del usuario. Usa esta función cuando el usuario mencione que comió algo, quiera registrar una comida, o cuando sugiera comidas para completar el día. IMPORTANTE: Cada llamada debe registrar alimentos específicos mencionados por el usuario en esa conversación, no repitas comidas anteriores.',
             parameters: {
               type: 'object',
               properties: {
