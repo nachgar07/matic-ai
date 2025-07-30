@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAddMeal } from '@/hooks/useFatSecret';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AnalyzedFood {
   name: string;
@@ -45,6 +46,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
   const { toast } = useToast();
   const addMealMutation = useAddMeal();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const updateFood = (index: number, field: string, value: any) => {
     const updated = [...editedFoods];
@@ -180,31 +182,31 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
   }, 0);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <Card className="w-full max-w-4xl bg-background max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-6">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
+      <Card className={`w-full ${isMobile ? 'max-w-full' : 'max-w-4xl'} bg-background max-h-[95vh] overflow-y-auto`}>
+        <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
+          <div className={`flex justify-between items-start mb-4 ${isMobile ? 'mb-4' : 'mb-6'}`}>
             <div>
-              <h3 className="text-xl font-semibold mb-2">Análisis de Alimentos</h3>
+              <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold mb-2`}>Análisis de Alimentos</h3>
               <p className="text-sm text-muted-foreground">
                 Se identificaron {editedFoods.length} alimentos • ~{Math.round(totalCalories)} calorías
               </p>
             </div>
-            <Button variant="ghost" onClick={onClose}>×</Button>
+            <Button variant="ghost" onClick={onClose} size={isMobile ? "sm" : "default"}>×</Button>
           </div>
 
           {/* Original image preview */}
-          <div className="mb-6">
+          <div className={`${isMobile ? 'mb-4' : 'mb-6'}`}>
             <img
               src={analysis.originalImage}
               alt="Foto analizada"
-              className="w-full max-h-32 object-contain rounded-lg bg-muted"
+              className={`w-full ${isMobile ? 'max-h-24' : 'max-h-32'} object-contain rounded-lg bg-muted`}
             />
           </div>
 
           {/* Global meal type selector */}
-          <Card className="p-4 mb-6 bg-primary/5 border-primary/20">
-            <div className="flex items-center gap-4">
+          <Card className={`${isMobile ? 'p-3 mb-4' : 'p-4 mb-6'} bg-primary/5 border-primary/20`}>
+            <div className={`${isMobile ? 'flex-col gap-3' : 'flex items-center gap-4'}`}>
               <div className="flex-1">
                 <label className="text-sm font-medium text-muted-foreground">
                   Asignar todos los alimentos como:
@@ -228,6 +230,8 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
                 onClick={applyGlobalMealType}
                 disabled={!globalMealType}
                 variant="outline"
+                className={isMobile ? 'w-full' : ''}
+                size={isMobile ? 'sm' : 'default'}
               >
                 Aplicar a Todos
               </Button>
@@ -238,25 +242,27 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
           </Card>
 
           {/* Foods list */}
-          <div className="space-y-4 mb-6">
+          <div className={`space-y-4 ${isMobile ? 'mb-4' : 'mb-6'}`}>
             {editedFoods.map((food, index) => (
-              <Card key={index} className="p-4">
-                <div className="flex items-start gap-4">
+              <Card key={index} className={`${isMobile ? 'p-3' : 'p-4'}`}>
+                <div className={`${isMobile ? 'flex-col space-y-3' : 'flex items-start gap-4'}`}>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className={`flex ${isMobile ? 'flex-col gap-1' : 'items-center gap-2'} mb-2`}>
                       <h4 className="font-medium">{food.name}</h4>
-                      <Badge variant={food.confidence > 0.8 ? "default" : "secondary"}>
-                        {Math.round(food.confidence * 100)}% confianza
-                      </Badge>
-                      {food.fatsecret_data && (
-                        <Badge variant="outline">
-                          <Check className="h-3 w-3 mr-1" />
-                          En base de datos
+                      <div className="flex gap-2 flex-wrap">
+                        <Badge variant={food.confidence > 0.8 ? "default" : "secondary"} className={isMobile ? 'text-xs' : ''}>
+                          {Math.round(food.confidence * 100)}% confianza
                         </Badge>
-                      )}
+                        {food.fatsecret_data && (
+                          <Badge variant="outline" className={isMobile ? 'text-xs' : ''}>
+                            <Check className="h-3 w-3 mr-1" />
+                            En base de datos
+                          </Badge>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-3 gap-4'}`}>
                       {/* Portion */}
                       <div>
                         <label className="text-sm text-muted-foreground">Porción</label>
@@ -267,7 +273,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
                             className="mt-1"
                           />
                         ) : (
-                          <p className="mt-1">{food.estimated_portion}</p>
+                          <p className={`mt-1 ${isMobile ? 'text-sm' : ''}`}>{food.estimated_portion}</p>
                         )}
                       </div>
 
@@ -307,30 +313,30 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
                     </div>
 
                     {/* Nutritional info */}
-                    <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      <div>
+                    <div className={`mt-3 grid ${isMobile ? 'grid-cols-1 gap-1' : 'grid-cols-2 md:grid-cols-4 gap-2'} text-sm`}>
+                      <div className={isMobile ? 'flex justify-between' : ''}>
                         <span className="text-muted-foreground">Calorías:</span>
-                        <span className="ml-1 font-medium">
+                        <span className={`${isMobile ? '' : 'ml-1'} font-medium`}>
                           {Math.round(food.estimated_calories * (servings[index] || 1))}
                         </span>
                       </div>
                       {food.fatsecret_data && (
                         <>
-                          <div>
+                          <div className={isMobile ? 'flex justify-between' : ''}>
                             <span className="text-muted-foreground">Proteína:</span>
-                            <span className="ml-1 font-medium">
+                            <span className={`${isMobile ? '' : 'ml-1'} font-medium`}>
                               {Math.round((food.fatsecret_data.protein_per_serving || 0) * (servings[index] || 1))}g
                             </span>
                           </div>
-                          <div>
+                          <div className={isMobile ? 'flex justify-between' : ''}>
                             <span className="text-muted-foreground">Carbos:</span>
-                            <span className="ml-1 font-medium">
+                            <span className={`${isMobile ? '' : 'ml-1'} font-medium`}>
                               {Math.round((food.fatsecret_data.carbs_per_serving || 0) * (servings[index] || 1))}g
                             </span>
                           </div>
-                          <div>
+                          <div className={isMobile ? 'flex justify-between' : ''}>
                             <span className="text-muted-foreground">Grasa:</span>
-                            <span className="ml-1 font-medium">
+                            <span className={`${isMobile ? '' : 'ml-1'} font-medium`}>
                               {Math.round((food.fatsecret_data.fat_per_serving || 0) * (servings[index] || 1))}g
                             </span>
                           </div>
@@ -339,7 +345,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className={`flex ${isMobile ? 'justify-end gap-2' : 'gap-2'}`}>
                     <Button
                       variant="ghost"
                       size="icon"
