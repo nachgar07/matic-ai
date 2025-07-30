@@ -37,61 +37,58 @@ export const Archivos = () => {
   const [editForm, setEditForm] = useState<Partial<Gasto>>({});
   const { toast } = useToast();
 
-  // Verificar autenticación
+  // Verificar autenticación y cargar datos
   useEffect(() => {
-    const checkAuth = async () => {
+    let isMounted = true;
+
+    const initializeApp = async () => {
       try {
-        console.log('Checking authentication...');
-        
-        // Primero intentar obtener la sesión actual
+        console.log('🚀 Initializing app...');
+        setLoading(true);
+
+        // Obtener la sesión actual
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log('Session check:', session?.user?.id || 'No session', sessionError);
-        
-        if (session?.user) {
-          console.log('User found from session:', session.user.id);
-          setUser(session.user);
-          await fetchGastos(session.user);
+        console.log('📋 Session check:', session?.user?.id || 'No session');
+
+        if (sessionError) {
+          console.error('❌ Session error:', sessionError);
           return;
         }
 
-        // Si no hay sesión, intentar obtener el usuario directamente
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        console.log('User check:', user?.id || 'No user', userError);
-        
-        if (user) {
-          console.log('User found:', user.id);
-          setUser(user);
-          await fetchGastos(user);
+        if (session?.user && isMounted) {
+          console.log('✅ User authenticated:', session.user.id);
+          setUser(session.user);
+          
+          // Cargar gastos inmediatamente con el usuario autenticado
+          await loadExpenses(session.user.id);
         } else {
-          console.log('No authenticated user found');
-          setLoading(false);
-          toast({
-            title: "No autenticado",
-            description: "Por favor inicia sesión para ver tus gastos",
-            variant: "destructive"
-          });
+          console.log('⚠️ No authenticated user');
+          if (isMounted) {
+            setLoading(false);
+            toast({
+              title: "Sesión requerida",
+              description: "Por favor inicia sesión para ver tus gastos",
+              variant: "destructive"
+            });
+          }
         }
       } catch (error) {
-        console.error('Auth check error:', error);
-        setLoading(false);
-        toast({
-          title: "Error de autenticación",
-          description: "Problema al verificar la autenticación",
-          variant: "destructive"
-        });
+        console.error('💥 Auth initialization error:', error);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
-    
-    checkAuth();
 
-    // Escuchar cambios de autenticación
+    // Listener para cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        if (session?.user) {
+        console.log('🔄 Auth state changed:', event, session?.user?.id);
+        
+        if (session?.user && isMounted) {
           setUser(session.user);
-          await fetchGastos(session.user);
-        } else {
+          await loadExpenses(session.user.id);
+        } else if (isMounted) {
           setUser(null);
           setGastos([]);
           setLoading(false);
@@ -99,40 +96,35 @@ export const Archivos = () => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    initializeApp();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-
-  const fetchGastos = async (currentUser = user) => {
-    if (!currentUser) {
-      console.log('No user provided, skipping fetch');
-      setLoading(false);
-      return;
-    }
-    
+  const loadExpenses = async (userId: string) => {
     try {
-      console.log('Starting fetchGastos for user:', currentUser.id);
+      console.log('📊 Loading expenses for user:', userId);
       setLoading(true);
-      
-      // Usar directamente las tablas de Supabase con RLS
+
       const { data: expenses, error } = await supabase
         .from('expenses')
         .select(`
           *,
           expense_items (*)
         `)
+        .eq('user_id', userId)
         .order('expense_date', { ascending: false });
 
-      console.log('Supabase query completed. Error:', error, 'Data:', expenses);
+      console.log('📈 Query result - Error:', error, 'Count:', expenses?.length || 0);
 
       if (error) {
-        console.error('Error fetching expenses:', error);
+        console.error('❌ Database error:', error);
         throw error;
       }
 
-      console.log('Found expenses:', expenses?.length || 0);
-
-      // Transformar los datos al formato esperado
       const gastosTransformados = expenses?.map(expense => ({
         id: expense.id,
         nombre: expense.store_name || 'Establecimiento desconocido',
@@ -147,26 +139,34 @@ export const Archivos = () => {
         imagenTicket: expense.receipt_image
       })) || [];
 
-      console.log('Transformed gastos:', gastosTransformados);
+      console.log('✅ Transformed expenses:', gastosTransformados.length);
       setGastos(gastosTransformados);
     } catch (error) {
-      console.error('Error loading expenses:', error);
+      console.error('💥 Load expenses error:', error);
       toast({
         title: "Error",
         description: `No se pudieron cargar los gastos: ${error.message}`,
         variant: "destructive"
       });
     } finally {
-      console.log('Setting loading to false');
       setLoading(false);
     }
   };
 
+
+  const fetchGastos = async () => {
+    if (!user) {
+      console.log('⚠️ No user available for fetch');
+      return;
+    }
+    await loadExpenses(user.id);
+  };
+
   const handleTicketAnalysis = async (analysis: any) => {
-    console.log('Análisis del ticket:', analysis);
+    console.log('🎯 Ticket analysis received:', analysis);
     
     if (!user) {
-      console.log('No user found for ticket analysis');
+      console.log('❌ No user found for ticket analysis');
       toast({
         title: "Error",
         description: "Usuario no autenticado",
@@ -176,6 +176,8 @@ export const Archivos = () => {
     }
     
     try {
+      console.log('💾 Saving expense to database...');
+      
       // Crear el gasto principal directamente en Supabase
       const { data: expense, error: expenseError } = await supabase
         .from('expenses')
@@ -191,13 +193,16 @@ export const Archivos = () => {
         .select()
         .single();
 
+      console.log('💿 Expense created:', expense?.id, 'Error:', expenseError);
+
       if (expenseError) {
-        console.error('Error creating expense:', expenseError);
+        console.error('❌ Error creating expense:', expenseError);
         throw expenseError;
       }
 
       // Crear los items del gasto
       if (analysis.items && analysis.items.length > 0) {
+        console.log('📝 Creating expense items:', analysis.items.length);
         const items = analysis.items.map((item: any) => ({
           expense_id: expense.id,
           product_name: item.product_name || 'Producto desconocido',
@@ -210,22 +215,26 @@ export const Archivos = () => {
           .from('expense_items')
           .insert(items);
 
+        console.log('📋 Items created. Error:', itemsError);
+
         if (itemsError) {
-          console.error('Error creating expense items:', itemsError);
+          console.error('❌ Error creating expense items:', itemsError);
           throw itemsError;
         }
       }
 
+      console.log('✅ Expense saved successfully!');
       toast({
         title: "¡Gasto registrado!",
         description: `Se registró el gasto de ${analysis.store_name || 'Establecimiento'} por $${analysis.total_amount}`
       });
 
-      // Refrescar la lista
-      await fetchGastos();
+      // Refrescar la lista inmediatamente
+      console.log('🔄 Refreshing expenses list...');
+      await loadExpenses(user.id);
       setShowPhotoCapture(false);
     } catch (error) {
-      console.error('Error saving expense:', error);
+      console.error('💥 Error saving expense:', error);
       toast({
         title: "Error",
         description: `No se pudo guardar el gasto: ${error.message || 'Error desconocido'}`,
