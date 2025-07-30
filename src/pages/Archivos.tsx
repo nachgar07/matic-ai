@@ -105,6 +105,8 @@ export const Archivos = () => {
   }, []);
 
   const loadExpenses = async (userId: string) => {
+    if (!userId) return;
+    
     try {
       console.log('📊 Loading expenses for user:', userId);
       setLoading(true);
