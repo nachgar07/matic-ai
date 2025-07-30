@@ -238,7 +238,12 @@ CAPACIDADES AVANZADAS:
 - SIEMPRE respeta los límites nutricionales del usuario (no te pases de calorías, proteínas, carbohidratos o grasas)
 - Cuando sugiras completar el día, calcula exactamente lo que falta para llegar a los objetivos sin excederlos
 
-IMPORTANTE: Cuando el usuario mencione que comió algo o quiera registrar una comida, DEBES usar la función create_meal para registrarla automáticamente en su diario nutricional. Cada vez que uses create_meal, asegúrate de usar alimentos frescos y específicos, no repitas comidas anteriores a menos que el usuario lo pida explícitamente.`;
+IMPORTANTE: 
+- Usa SOLO alimentos simples y comunes (pollo, arroz, huevo, pan, leche, etc.)
+- EVITA nombres complejos como "quinoa cocida", "salmón a la plancha" - usa "quinoa" y "salmón"
+- Cuando el usuario pida múltiples comidas, sugiere alimentos simples para cada tipo
+- Para registrar múltiples comidas, dile al usuario que las registrarás una por una
+- Si el usuario quiere registrar varias comidas, primero sugiere alimentos simples que existan`;
 
   // Add user context if available
   if (userContext) {
@@ -336,7 +341,7 @@ REGLA CRÍTICA PARA LÍMITES NUTRICIONALES:
           type: 'function',
           function: {
             name: 'create_meal',
-            description: 'Registra alimentos en el diario nutricional del usuario. Usa esta función cuando el usuario mencione que comió algo, quiera registrar una comida, o cuando sugiera comidas para completar el día. IMPORTANTE: Cada llamada debe registrar alimentos específicos mencionados por el usuario en esa conversación, no repitas comidas anteriores.',
+            description: 'Registra alimentos en el diario nutricional del usuario. IMPORTANTE: Solo usa alimentos comunes que existan en bases de datos nutricionales. Evita nombres muy específicos o preparaciones complejas. Cuando el usuario pida múltiples comidas (desayuno, almuerzo, cena), haz UNA llamada por cada tipo de comida.',
             parameters: {
               type: 'object',
               properties: {
@@ -347,7 +352,7 @@ REGLA CRÍTICA PARA LÍMITES NUTRICIONALES:
                     properties: {
                       name: {
                         type: 'string',
-                        description: 'Nombre del alimento en español'
+                        description: 'Nombre SIMPLE del alimento en español (ej: "pollo", "arroz", "huevo", "avena", no "quinoa cocida con especias")'
                       },
                       servings: {
                         type: 'number',
@@ -356,7 +361,7 @@ REGLA CRÍTICA PARA LÍMITES NUTRICIONALES:
                     },
                     required: ['name', 'servings']
                   },
-                  description: 'Lista de alimentos a registrar'
+                  description: 'Lista de alimentos SIMPLES y COMUNES'
                 },
                 meal_type: {
                   type: 'string',
