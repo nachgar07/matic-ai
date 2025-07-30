@@ -246,21 +246,37 @@ serve(async (req) => {
           
           // Sort foods by relevance - prioritize simple, basic foods
           const sortedFoods = foods.sort((a, b) => {
-            // Penalize foods with brands (they tend to be processed)
-            const aBrand = a.brand_name ? 1 : 0;
-            const bBrand = b.brand_name ? 1 : 0;
+            // Heavily penalize complex branded items
+            const complexBrands = ['Papa John\'s', 'Taco Bell', 'McDonald\'s', 'KFC', 'Burger King', 'Trader Joe\'s'];
+            const aIsComplex = complexBrands.some(brand => a.brand_name?.includes(brand));
+            const bIsComplex = complexBrands.some(brand => b.brand_name?.includes(brand));
+            
+            if (aIsComplex && !bIsComplex) return 1;
+            if (!aIsComplex && bIsComplex) return -1;
+            
+            // Prioritize foods without brands or with basic database entries
+            const aIsBasic = !a.brand_name || a.brand_name === 'Base de datos común';
+            const bIsBasic = !b.brand_name || b.brand_name === 'Base de datos común';
+            
+            if (aIsBasic && !bIsBasic) return -1;
+            if (!aIsBasic && bIsBasic) return 1;
             
             // Penalize foods with complex descriptions
-            const aComplex = (a.food_name.split(' ').length > 4) ? 1 : 0;
-            const bComplex = (b.food_name.split(' ').length > 4) ? 1 : 0;
+            const aComplex = (a.food_name.split(' ').length > 3) ? 1 : 0;
+            const bComplex = (b.food_name.split(' ').length > 3) ? 1 : 0;
             
-            // Penalize foods with parentheses (usually specific preparations)
-            const aParens = a.food_name.includes('(') ? 1 : 0;
-            const bParens = b.food_name.includes('(') ? 1 : 0;
+            // Penalize foods with style indicators or complex preparations
+            const aHasComplexPrep = a.food_name.includes('(') || a.food_name.includes('Style') || 
+                                   a.food_name.includes('Seasoned') || a.food_name.includes('Recipe');
+            const bHasComplexPrep = b.food_name.includes('(') || b.food_name.includes('Style') || 
+                                   b.food_name.includes('Seasoned') || b.food_name.includes('Recipe');
             
-            // Calculate penalty score (lower is better)
-            const aPenalty = aBrand + aComplex + aParens;
-            const bPenalty = bBrand + bComplex + bParens;
+            if (aHasComplexPrep && !bHasComplexPrep) return 1;
+            if (!aHasComplexPrep && bHasComplexPrep) return -1;
+            
+            // Calculate final penalty score (lower is better)
+            const aPenalty = aComplex;
+            const bPenalty = bComplex;
             
             return aPenalty - bPenalty;
           });

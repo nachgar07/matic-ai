@@ -9,8 +9,7 @@ const corsHeaders = {
 
 interface FoodItem {
   name: string;
-  quantity: string;
-  estimated_servings?: number;
+  servings: number;
 }
 
 interface MealCreateRequest {
@@ -82,6 +81,7 @@ serve(async (req) => {
       
       // Extract basic ingredient from complex preparations
       if (searchTerm.includes('pollo')) searchTerm = 'pollo';
+      else if (searchTerm.includes('papa') && (searchTerm.includes('hervida') || searchTerm.includes('hervido'))) searchTerm = 'papa hervida';
       else if (searchTerm.includes('puré') && searchTerm.includes('papa')) searchTerm = 'puré papas';
       else if (searchTerm.includes('arroz')) searchTerm = 'arroz';
       else if (searchTerm.includes('pescado')) searchTerm = 'pescado';
@@ -120,8 +120,8 @@ serve(async (req) => {
       const selectedFood = searchData.foods[0];
       console.log(`Found food:`, selectedFood);
 
-      // Determine servings - use estimated_servings or default to 1
-      const servings = food.estimated_servings || 1;
+      // Use the servings calculated by OpenAI
+      const servings = food.servings;
 
       // Create meal entry
       const { data: mealEntry, error: mealError } = await supabase
