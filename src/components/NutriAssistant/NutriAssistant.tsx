@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Mic, MicOff, Send, X, Sparkles } from 'lucide-react';
+import { MessageCircle, Mic, MicOff, Send, X, Sparkles, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { useChatPersistence } from '@/hooks/useChatPersistence';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
+  id?: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
@@ -26,28 +28,109 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
+  const { clearAllConversations } = useChatPersistence();
 
+  // Load conversation history on component mount
   useEffect(() => {
-    // Add welcome message
-    const welcomeMessage: Message = {
-      role: 'assistant',
-      content: '¡Hola! Soy NutriAI, tu asistente nutricional. Puedo ayudarte con consejos sobre alimentación, analizar tus comidas y responder preguntas sobre nutrición. ¿En qué puedo ayudarte hoy?',
-      timestamp: new Date()
-    };
+    loadConversationHistory();
+  }, []);
 
-    setMessages([welcomeMessage]);
+  const loadConversationHistory = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // If no user, show welcome message
+        const welcomeMessage: Message = {
+          role: 'assistant',
+          content: '¡Hola! Soy NutriAI, tu asistente nutricional. Puedo ayudarte con consejos sobre alimentación, analizar tus comidas y responder preguntas sobre nutrición. ¿En qué puedo ayudarte hoy?',
+          timestamp: new Date()
+        };
+        setMessages([welcomeMessage]);
+        return;
+      }
 
-    // If there's initial context (from photo analysis), add it
-    if (initialContext) {
-      const contextMessage: Message = {
-        role: 'user',
-        content: `Acabo de analizar una foto de comida: ${initialContext}`,
+      const { data: conversations, error } = await supabase
+        .from('chat_conversations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('timestamp', { ascending: true })
+        .limit(50); // Limit to last 50 messages
+
+      if (error) {
+        console.error('Error loading conversation history:', error);
+        // Show welcome message even if there's an error
+        const welcomeMessage: Message = {
+          role: 'assistant',
+          content: '¡Hola! Soy NutriAI, tu asistente nutricional. Puedo ayudarte con consejos sobre alimentación, analizar tus comidas y responder preguntas sobre nutrición. ¿En qué puedo ayudarte hoy?',
+          timestamp: new Date()
+        };
+        setMessages([welcomeMessage]);
+        return;
+      }
+
+      let loadedMessages: Message[] = [];
+
+      if (conversations && conversations.length > 0) {
+        loadedMessages = conversations.map(conv => ({
+          id: conv.id,
+          content: conv.message_content,
+          role: conv.message_role as 'user' | 'assistant',
+          timestamp: new Date(conv.timestamp)
+        }));
+      } else {
+        // If no conversation history, add welcome message
+        const welcomeMessage: Message = {
+          role: 'assistant',
+          content: '¡Hola! Soy NutriAI, tu asistente nutricional. Puedo ayudarte con consejos sobre alimentación, analizar tus comidas y responder preguntas sobre nutrición. ¿En qué puedo ayudarte hoy?',
+          timestamp: new Date()
+        };
+        loadedMessages = [welcomeMessage];
+        // Save welcome message to database
+        await saveMessageToDb(welcomeMessage.content, 'assistant');
+      }
+
+      setMessages(loadedMessages);
+
+      // If there's initial context (from photo analysis), add it
+      if (initialContext) {
+        const contextMessage: Message = {
+          role: 'user',
+          content: `Acabo de analizar una foto de comida: ${initialContext}`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, contextMessage]);
+        handleSendMessage(`Acabo de analizar una foto de comida: ${initialContext}`, false);
+      }
+    } catch (error) {
+      console.error('Error loading conversation history:', error);
+      // Fallback to welcome message
+      const welcomeMessage: Message = {
+        role: 'assistant',
+        content: '¡Hola! Soy NutriAI, tu asistente nutricional. Puedo ayudarte con consejos sobre alimentación, analizar tus comidas y responder preguntas sobre nutrición. ¿En qué puedo ayudarte hoy?',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, contextMessage]);
-      handleSendMessage(`Acabo de analizar una foto de comida: ${initialContext}`, false);
+      setMessages([welcomeMessage]);
     }
+  };
 
+  const saveMessageToDb = async (content: string, role: 'user' | 'assistant') => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase
+        .from('chat_conversations')
+        .insert({
+          user_id: user.id,
+          message_content: content,
+          message_role: role
+        });
+    } catch (error) {
+      console.error('Error saving message:', error);
+    }
+  };
+
+  useEffect(() => {
     // Initialize speech recognition
     if ('webkitSpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
@@ -75,7 +158,7 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
         setIsListening(false);
       };
     }
-  }, [initialContext]);
+  }, []);
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
@@ -230,6 +313,9 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
     setInputText('');
     setIsLoading(true);
 
+    // Save user message to database
+    await saveMessageToDb(messageText, 'user');
+
     try {
       const conversationHistory = messages.map(msg => ({
         role: msg.role,
@@ -295,6 +381,9 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
         timestamp: new Date()
       };
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Save assistant message to database
+      await saveMessageToDb(assistantMessage.content, 'assistant');
     } finally {
       setIsLoading(false);
     }
@@ -338,6 +427,32 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
     return names[mealType] || mealType;
   };
 
+  const clearConversation = async () => {
+    const success = await clearAllConversations();
+    if (success) {
+      setMessages([]);
+      // Add welcome message after clearing
+      const welcomeMessage: Message = {
+        role: 'assistant',
+        content: '¡Hola! Soy NutriAI, tu asistente nutricional. Puedo ayudarte con consejos sobre alimentación, analizar tus comidas y responder preguntas sobre nutrición. ¿En qué puedo ayudarte hoy?',
+        timestamp: new Date()
+      };
+      setMessages([welcomeMessage]);
+      await saveMessageToDb(welcomeMessage.content, 'assistant');
+      
+      toast({
+        title: "Conversación limpiada",
+        description: "Se ha borrado todo el historial de conversación.",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "No se pudo limpiar la conversación.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl h-[80vh] bg-background flex flex-col">
@@ -352,9 +467,14 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
               <p className="text-xs text-muted-foreground">Tu asistente nutricional</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={clearConversation} title="Limpiar conversación">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Messages */}
@@ -410,7 +530,7 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Escribe tu pregunta sobre nutrición..."
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                disabled={isLoading}
+              disabled={isLoading}
                 className="flex-1"
               />
               
