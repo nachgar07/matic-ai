@@ -50,7 +50,7 @@ export const Archivos = () => {
         if (session?.user) {
           console.log('User found from session:', session.user.id);
           setUser(session.user);
-          await fetchGastos();
+          await fetchGastos(session.user);
           return;
         }
 
@@ -61,7 +61,7 @@ export const Archivos = () => {
         if (user) {
           console.log('User found:', user.id);
           setUser(user);
-          await fetchGastos();
+          await fetchGastos(user);
         } else {
           console.log('No authenticated user found');
           setLoading(false);
@@ -90,7 +90,7 @@ export const Archivos = () => {
         console.log('Auth state changed:', event, session?.user?.id);
         if (session?.user) {
           setUser(session.user);
-          await fetchGastos();
+          await fetchGastos(session.user);
         } else {
           setUser(null);
           setGastos([]);
@@ -103,15 +103,15 @@ export const Archivos = () => {
   }, []);
 
 
-  const fetchGastos = async () => {
-    if (!user) {
-      console.log('No user found, skipping fetch');
+  const fetchGastos = async (currentUser = user) => {
+    if (!currentUser) {
+      console.log('No user provided, skipping fetch');
       setLoading(false);
       return;
     }
     
     try {
-      console.log('Starting fetchGastos for user:', user.id);
+      console.log('Starting fetchGastos for user:', currentUser.id);
       setLoading(true);
       
       // Usar directamente las tablas de Supabase con RLS
@@ -166,6 +166,7 @@ export const Archivos = () => {
     console.log('Análisis del ticket:', analysis);
     
     if (!user) {
+      console.log('No user found for ticket analysis');
       toast({
         title: "Error",
         description: "Usuario no autenticado",
@@ -221,7 +222,7 @@ export const Archivos = () => {
       });
 
       // Refrescar la lista
-      fetchGastos();
+      await fetchGastos();
       setShowPhotoCapture(false);
     } catch (error) {
       console.error('Error saving expense:', error);
@@ -309,7 +310,7 @@ export const Archivos = () => {
       });
 
       setShowEditModal(false);
-      fetchGastos();
+      await fetchGastos();
     } catch (error) {
       console.error('Error updating expense:', error);
       toast({
