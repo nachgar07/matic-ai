@@ -405,46 +405,16 @@ export const Archivos = () => {
       />
       
       <div className="p-4 space-y-4">
-        {/* Photo Capture Section */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="p-4">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Camera className="text-primary" size={24} />
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-medium">Escanear Recibo</div>
-                <div className="text-xs text-muted-foreground">Capturar gasto</div>
-              </div>
-              <Button 
-                size="sm" 
-                className="w-full"
-                onClick={() => setShowPhotoCapture(true)}
-              >
-                Capturar
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="p-4">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                <Mic className="text-accent" size={24} />
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-medium">Registro por Voz</div>
-                <div className="text-xs text-muted-foreground">Dictar gastos</div>
-              </div>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="w-full"
-                onClick={() => setIsRecording(!isRecording)}
-              >
-                {isRecording ? "Detener" : "Hablar"}
-              </Button>
-            </div>
-          </Card>
+        {/* Scan Button */}
+        <div className="mb-6">
+          <Button 
+            size="lg" 
+            className="w-full py-6"
+            onClick={() => setShowPhotoCapture(true)}
+          >
+            <Camera className="mr-2" size={20} />
+            Escanear Recibo
+          </Button>
         </div>
 
         {/* Gastos List */}
