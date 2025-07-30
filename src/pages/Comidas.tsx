@@ -36,7 +36,16 @@ export const Comidas = () => {
     setShowFoodSearch(false);
   };
 
-  const handleMealSuccess = () => {
+  const handleMealSuccess = (newPlateImages?: Record<string, string>) => {
+    // If new plate images are provided, merge them with existing ones
+    if (newPlateImages) {
+      setPlateImages(prev => {
+        const updated = { ...prev, ...newPlateImages };
+        console.log("🎯 Final plateImages after success:", updated);
+        return updated;
+      });
+    }
+    
     setSelectedFood(null);
     setAnalysisResults(null);
     queryClient.invalidateQueries({ queryKey: ['user-meals'] });

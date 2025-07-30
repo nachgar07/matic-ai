@@ -33,7 +33,7 @@ interface FoodAnalysisResultsProps {
     originalImage: string;
   };
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (plateImages?: Record<string, string>) => void;
 }
 
 export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalysisResultsProps) => {
@@ -125,9 +125,14 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
     }
 
     try {
+      // Collect the plate images for the meal types being added
+      const plateImages: Record<string, string> = {};
+      
       for (let i = 0; i < editedFoods.length; i++) {
         if (selectedMealTypes[i]) {
           await addFoodToMeal(editedFoods[i], i);
+          // Associate the original image with this meal type
+          plateImages[selectedMealTypes[i]] = analysis.originalImage;
         }
       }
 
@@ -136,7 +141,8 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
         description: `Se agregaron ${foodsWithMealType.length} alimentos a tu registro.`
       });
 
-      onSuccess();
+      // Pass the plate images back to the parent
+      onSuccess(plateImages);
     } catch (error) {
       console.error('Error adding all foods:', error);
       toast({
@@ -295,7 +301,14 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
                     </Button>
                     
                     <Button
-                      onClick={() => addFoodToMeal(food, index)}
+                      onClick={async () => {
+                        await addFoodToMeal(food, index);
+                        // Also pass the individual plate image
+                        const individualPlateImage = {
+                          [selectedMealTypes[index]]: analysis.originalImage
+                        };
+                        onSuccess(individualPlateImage);
+                      }}
                       disabled={!selectedMealTypes[index]}
                       size="sm"
                     >
