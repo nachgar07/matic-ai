@@ -405,17 +405,6 @@ export const Archivos = () => {
       />
       
       <div className="p-4 space-y-4">
-        {/* Scan Button */}
-        <div className="mb-6">
-          <Button 
-            size="lg" 
-            className="w-full py-6"
-            onClick={() => setShowPhotoCapture(true)}
-          >
-            <Camera className="mr-2" size={20} />
-            Escanear Recibo
-          </Button>
-        </div>
 
         {/* Gastos List */}
         <div>
