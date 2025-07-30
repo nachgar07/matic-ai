@@ -9,7 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mic, FileText, Plus, MoreVertical, Camera, Receipt, Trash2, Edit, Eye } from "lucide-react";
+import { Mic, FileText, Plus, MoreVertical, Camera, Receipt, Trash2, Edit, Eye, Calendar as CalendarIcon, Filter } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Gasto {
   id: string;
@@ -35,6 +40,8 @@ export const Archivos = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Gasto>>({});
+  const [filterDate, setFilterDate] = useState<Date>(new Date()); // Por defecto hoy
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const { toast } = useToast();
 
   // Persistencia local como backup
@@ -79,7 +86,7 @@ export const Archivos = () => {
           // Cargar gastos solo si no se han cargado ya
           if (!hasLoadedExpenses) {
             hasLoadedExpenses = true;
-            await loadExpenses(session.user.id);
+            await loadExpenses(session.user.id, filterDate);
           }
           
           // Configurar realtime para escuchar cambios en expenses
@@ -98,7 +105,7 @@ export const Archivos = () => {
                 // Recargar gastos cuando hay cambios (solo si no es una carga inicial)
                 if (isMounted && session.user && hasLoadedExpenses) {
                   console.log('🔄 Reloading expenses due to realtime change');
-                  loadExpenses(session.user.id);
+                  loadExpenses(session.user.id, filterDate);
                 }
               }
             )
@@ -152,21 +159,29 @@ export const Archivos = () => {
     };
   }, []);
 
-  const loadExpenses = async (userId: string) => {
+  const loadExpenses = async (userId: string, dateFilter?: Date) => {
     if (!userId) return;
     
     try {
       console.log('📊 Loading expenses for user:', userId);
       setLoading(true);
 
-      const { data: expenses, error } = await supabase
+      let query = supabase
         .from('expenses')
         .select(`
           *,
           expense_items (*)
         `)
-        .eq('user_id', userId)
-        .order('expense_date', { ascending: false });
+        .eq('user_id', userId);
+
+      // Aplicar filtro de fecha si se proporciona
+      if (dateFilter) {
+        const selectedDate = format(dateFilter, 'yyyy-MM-dd');
+        query = query.eq('expense_date', selectedDate);
+        console.log('📅 Filtering by date:', selectedDate);
+      }
+
+      const { data: expenses, error } = await query.order('expense_date', { ascending: false });
 
       console.log('📈 Query result - Error:', error, 'Count:', expenses?.length || 0);
 
@@ -222,8 +237,23 @@ export const Archivos = () => {
       console.log('⚠️ No user available for fetch');
       return;
     }
-    await loadExpenses(user.id);
+    await loadExpenses(user.id, filterDate);
   };
+
+  // Función para manejar cambio de filtro de fecha
+  const handleDateFilterChange = async (date: Date | undefined) => {
+    if (date && user) {
+      setFilterDate(date);
+      await loadExpenses(user.id, date);
+    }
+  };
+
+  // useEffect para recargar cuando cambie el filtro de fecha
+  useEffect(() => {
+    if (user && filterDate) {
+      loadExpenses(user.id, filterDate);
+    }
+  }, [filterDate]);
 
   const handleTicketAnalysis = async (analysis: any) => {
     console.log('🎯 Ticket analysis received:', analysis);
@@ -294,7 +324,7 @@ export const Archivos = () => {
 
       // Refrescar la lista inmediatamente
       console.log('🔄 Refreshing expenses list...');
-      await loadExpenses(user.id);
+      await loadExpenses(user.id, filterDate);
       setShowPhotoCapture(false);
     } catch (error) {
       console.error('💥 Error saving expense:', error);
@@ -406,9 +436,49 @@ export const Archivos = () => {
       
       <div className="p-4 space-y-4">
 
+        {/* Filtro de Fecha */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold">Gastos Recientes</h3>
+          
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !filterDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {filterDate ? format(filterDate, "d 'de' MMM", { locale: es }) : "Seleccionar fecha"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={filterDate}
+                  onSelect={handleDateFilterChange}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDateFilterChange(new Date())}
+              className="text-xs"
+            >
+              Hoy
+            </Button>
+          </div>
+        </div>
+
         {/* Gastos List */}
         <div>
-          <h3 className="font-semibold mb-4">Gastos Recientes</h3>
           
           {loading ? (
             <div className="bg-card rounded-lg p-6 text-center">
