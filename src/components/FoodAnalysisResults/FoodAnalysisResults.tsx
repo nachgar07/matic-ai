@@ -41,6 +41,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
   const [editedFoods, setEditedFoods] = useState(analysis.foods);
   const [selectedMealTypes, setSelectedMealTypes] = useState<Record<number, string>>({});
   const [servings, setServings] = useState<Record<number, number>>({});
+  const [globalMealType, setGlobalMealType] = useState<string>("");
   const { toast } = useToast();
   const addMealMutation = useAddMeal();
   const queryClient = useQueryClient();
@@ -158,6 +159,21 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
     return labels[type as keyof typeof labels] || type;
   };
 
+  const applyGlobalMealType = () => {
+    if (!globalMealType) return;
+    
+    const newSelectedMealTypes = {...selectedMealTypes};
+    editedFoods.forEach((_, index) => {
+      newSelectedMealTypes[index] = globalMealType;
+    });
+    setSelectedMealTypes(newSelectedMealTypes);
+    
+    toast({
+      title: "Tipo de comida aplicado",
+      description: `Todos los alimentos se configuraron como ${getMealTypeLabel(globalMealType)}.`
+    });
+  };
+
   const totalCalories = editedFoods.reduce((sum, food) => {
     const serving = servings[editedFoods.indexOf(food)] || 1;
     return sum + (food.estimated_calories * serving);
@@ -185,6 +201,41 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
               className="w-full max-h-32 object-contain rounded-lg bg-muted"
             />
           </div>
+
+          {/* Global meal type selector */}
+          <Card className="p-4 mb-6 bg-primary/5 border-primary/20">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Asignar todos los alimentos como:
+                </label>
+                <Select
+                  value={globalMealType}
+                  onValueChange={setGlobalMealType}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Seleccionar tipo de comida..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="breakfast">Desayuno</SelectItem>
+                    <SelectItem value="lunch">Almuerzo</SelectItem>
+                    <SelectItem value="dinner">Cena</SelectItem>
+                    <SelectItem value="snack">Snack</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                onClick={applyGlobalMealType}
+                disabled={!globalMealType}
+                variant="outline"
+              >
+                Aplicar a Todos
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              O configura cada alimento individualmente abajo (personalizado)
+            </p>
+          </Card>
 
           {/* Foods list */}
           <div className="space-y-4 mb-6">
@@ -235,7 +286,9 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
 
                       {/* Meal type */}
                       <div>
-                        <label className="text-sm text-muted-foreground">Tipo de comida</label>
+                        <label className="text-sm text-muted-foreground">
+                          Tipo de comida {selectedMealTypes[index] && globalMealType !== selectedMealTypes[index] && "(personalizado)"}
+                        </label>
                         <Select
                           value={selectedMealTypes[index] || ""}
                           onValueChange={(value) => setSelectedMealTypes({...selectedMealTypes, [index]: value})}
@@ -243,7 +296,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
                           <SelectTrigger className="mt-1">
                             <SelectValue placeholder="Seleccionar..." />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-background z-50">
                             <SelectItem value="breakfast">Desayuno</SelectItem>
                             <SelectItem value="lunch">Almuerzo</SelectItem>
                             <SelectItem value="dinner">Cena</SelectItem>
