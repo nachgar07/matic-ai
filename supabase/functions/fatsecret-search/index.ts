@@ -246,39 +246,68 @@ serve(async (req) => {
           
           // Sort foods by relevance - prioritize simple, basic foods
           const sortedFoods = foods.sort((a, b) => {
-            // Heavily penalize complex branded items
-            const complexBrands = ['Papa John\'s', 'Taco Bell', 'McDonald\'s', 'KFC', 'Burger King', 'Trader Joe\'s'];
-            const aIsComplex = complexBrands.some(brand => a.brand_name?.includes(brand));
-            const bIsComplex = complexBrands.some(brand => b.brand_name?.includes(brand));
+            const aName = a.food_name.toLowerCase();
+            const bName = b.food_name.toLowerCase();
+            const searchLower = searchTerm.toLowerCase();
+            
+            // Heavily penalize foods with specific brand names (especially fast food/processed)
+            const problematicBrands = [
+              'Papa John\'s', 'Taco Bell', 'McDonald\'s', 'KFC', 'Burger King', 'Trader Joe\'s',
+              'Wendy\'s', 'Subway', 'Pizza Hut', 'Domino\'s', 'Puerto Rican', 'Mexican', 'Chinese'
+            ];
+            const aHasBadBrand = problematicBrands.some(brand => 
+              (a.brand_name && a.brand_name.includes(brand)) || aName.includes(brand.toLowerCase())
+            );
+            const bHasBadBrand = problematicBrands.some(brand => 
+              (b.brand_name && b.brand_name.includes(brand)) || bName.includes(brand.toLowerCase())
+            );
+            
+            if (aHasBadBrand && !bHasBadBrand) return 1;
+            if (!aHasBadBrand && bHasBadBrand) return -1;
+            
+            // Heavily penalize foods with complex preparations or styles
+            const complexIndicators = [
+              'style', 'seasoned', 'recipe', 'fritters', 'frituras', 'fried', 'frito', 'frita',
+              'stuffed', 'rellena', 'battered', 'breaded', 'tempura', 'crispy', 'crunchy',
+              'sauce', 'salsa', 'gravy', 'creamy', 'cheesy', 'spicy', 'hot', 'buffalo',
+              'barbecue', 'teriyaki', 'honey', 'glazed', 'marinated', 'grilled', 'roasted'
+            ];
+            
+            const aIsComplex = complexIndicators.some(indicator => aName.includes(indicator));
+            const bIsComplex = complexIndicators.some(indicator => bName.includes(indicator));
             
             if (aIsComplex && !bIsComplex) return 1;
             if (!aIsComplex && bIsComplex) return -1;
             
-            // Prioritize foods without brands or with basic database entries
-            const aIsBasic = !a.brand_name || a.brand_name === 'Base de datos común';
-            const bIsBasic = !b.brand_name || b.brand_name === 'Base de datos común';
+            // Heavily prioritize exact or very close matches
+            if (aName === searchLower && bName !== searchLower) return -1;
+            if (bName === searchLower && aName !== searchLower) return 1;
+            
+            // For "papa hervida" specifically, prioritize "boiled" over anything else
+            if (searchLower.includes('hervida')) {
+              const aHasBoiled = aName.includes('boiled') || aName.includes('hervida');
+              const bHasBoiled = bName.includes('boiled') || bName.includes('hervida');
+              
+              if (aHasBoiled && !bHasBoiled) return -1;
+              if (!aHasBoiled && bHasBoiled) return 1;
+            }
+            
+            // Prioritize foods without brand names or with basic database entries
+            const aIsBasic = !a.brand_name || a.brand_name === 'Base de datos común' || a.brand_name === 'USDA';
+            const bIsBasic = !b.brand_name || b.brand_name === 'Base de datos común' || b.brand_name === 'USDA';
             
             if (aIsBasic && !bIsBasic) return -1;
             if (!aIsBasic && bIsBasic) return 1;
             
-            // Penalize foods with complex descriptions
-            const aComplex = (a.food_name.split(' ').length > 3) ? 1 : 0;
-            const bComplex = (b.food_name.split(' ').length > 3) ? 1 : 0;
+            // Prioritize shorter, simpler names (usually more basic)
+            const aLength = aName.length;
+            const bLength = bName.length;
+            if (Math.abs(aLength - bLength) > 20) {
+              return aLength - bLength;
+            }
             
-            // Penalize foods with style indicators or complex preparations
-            const aHasComplexPrep = a.food_name.includes('(') || a.food_name.includes('Style') || 
-                                   a.food_name.includes('Seasoned') || a.food_name.includes('Recipe');
-            const bHasComplexPrep = b.food_name.includes('(') || b.food_name.includes('Style') || 
-                                   b.food_name.includes('Seasoned') || b.food_name.includes('Recipe');
-            
-            if (aHasComplexPrep && !bHasComplexPrep) return 1;
-            if (!aHasComplexPrep && bHasComplexPrep) return -1;
-            
-            // Calculate final penalty score (lower is better)
-            const aPenalty = aComplex;
-            const bPenalty = bComplex;
-            
-            return aPenalty - bPenalty;
+            // Final tiebreaker: alphabetical
+            return aName.localeCompare(bName);
           });
           
           // Process foods and filter duplicates
