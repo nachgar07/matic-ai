@@ -254,12 +254,12 @@ serve(async (req) => {
             seenFoodNames.add(food.food_name.toLowerCase());
             
             try {
-            // Check if food exists in our database
-            const { data: existingFood } = await supabase
-              .from('foods')
-              .select('*')
-              .eq('food_id', food.food_id)
-              .single();
+              // Check if food exists in our database
+              const { data: existingFood } = await supabase
+                .from('foods')
+                .select('*')
+                .eq('food_id', food.food_id)
+                .maybeSingle();
 
             if (existingFood) {
               allProcessedFoods.push(existingFood);
