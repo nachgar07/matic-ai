@@ -108,8 +108,8 @@ export const FoodPhotoCapture = ({ onAnalysisComplete, onClose }: FoodPhotoCaptu
       
       const { data, error } = await supabase.functions.invoke('openai-food-assistant', {
         body: {
-          imageBase64: base64Image,
-          message: "Analiza esta imagen de comida e identifica todos los ingredientes y alimentos que puedas ver. Para cada alimento, proporciona el nombre, la porción estimada y los valores nutricionales aproximados."
+          action: 'analyze-food',
+          imageBase64: base64Image
         }
       });
 
