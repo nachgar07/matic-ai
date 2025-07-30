@@ -368,6 +368,8 @@ COMIDAS DE HOY:`;
     // Check if OpenAI wants to call a function
     if (message.tool_calls && message.tool_calls.length > 0) {
       const toolCall = message.tool_calls[0];
+      console.log('OpenAI wants to call tool:', toolCall.function.name);
+      console.log('Tool arguments:', toolCall.function.arguments);
       
       if (toolCall.function.name === 'create_meal') {
         console.log('OpenAI requested meal creation:', toolCall.function.arguments);

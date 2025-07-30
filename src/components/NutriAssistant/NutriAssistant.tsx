@@ -260,12 +260,15 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // If a meal was created, show success toast
+      // If a meal was created, show success toast and refresh data
       if (data.meal_created && data.meal_data?.success) {
         toast({
           title: "¡Comida registrada!",
           description: `Se agregó tu ${getMealTypeName(data.meal_data.meal_type)} con ${data.meal_data.totals.calories} kcal`,
         });
+        
+        // Force refresh the page data to show the new meal
+        window.location.reload();
       }
 
     } catch (error) {
