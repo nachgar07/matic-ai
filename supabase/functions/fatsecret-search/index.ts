@@ -46,6 +46,90 @@ async function generateOAuthSignature(
   return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
 
+// Translation dictionary for Spanish to English food terms
+function translateFoodTerm(term: string): string[] {
+  const translations: Record<string, string[]> = {
+    // Vegetables
+    'remolacha': ['beetroot', 'beet'],
+    'berenjena': ['eggplant', 'aubergine'],
+    'calabacín': ['zucchini', 'courgette'],
+    'calabaza': ['pumpkin', 'squash'],
+    'apio': ['celery'],
+    'alcachofa': ['artichoke'],
+    'coliflor': ['cauliflower'],
+    'repollo': ['cabbage'],
+    'col': ['cabbage'],
+    'espinaca': ['spinach'],
+    'lechuga': ['lettuce'],
+    'tomate': ['tomato'],
+    'pepino': ['cucumber'],
+    'pimiento': ['pepper', 'bell pepper'],
+    'cebolla': ['onion'],
+    'ajo': ['garlic'],
+    'zanahoria': ['carrot'],
+    'papa': ['potato'],
+    'patata': ['potato'],
+    
+    // Fruits
+    'manzana': ['apple'],
+    'pera': ['pear'],
+    'plátano': ['banana'],
+    'naranja': ['orange'],
+    'limón': ['lemon'],
+    'fresa': ['strawberry'],
+    'uva': ['grape'],
+    'piña': ['pineapple'],
+    'mango': ['mango'],
+    'aguacate': ['avocado'],
+    'melón': ['melon'],
+    'sandía': ['watermelon'],
+    
+    // Proteins
+    'pollo': ['chicken'],
+    'res': ['beef'],
+    'cerdo': ['pork'],
+    'pescado': ['fish'],
+    'salmón': ['salmon'],
+    'atún': ['tuna'],
+    'huevo': ['egg'],
+    'jamón': ['ham'],
+    'tocino': ['bacon'],
+    
+    // Grains & Carbs
+    'arroz': ['rice'],
+    'pasta': ['pasta'],
+    'pan': ['bread'],
+    'avena': ['oats', 'oatmeal'],
+    'quinoa': ['quinoa'],
+    'trigo': ['wheat'],
+    'cebada': ['barley'],
+    
+    // Dairy
+    'leche': ['milk'],
+    'queso': ['cheese'],
+    'yogur': ['yogurt'],
+    'mantequilla': ['butter'],
+    'crema': ['cream'],
+    
+    // Legumes
+    'frijol': ['bean', 'beans'],
+    'frijoles': ['beans'],
+    'lenteja': ['lentil'],
+    'lentejas': ['lentils'],
+    'garbanzo': ['chickpea'],
+    'garbanzos': ['chickpeas'],
+    
+    // Nuts
+    'almendra': ['almond'],
+    'nuez': ['walnut', 'nut'],
+    'maní': ['peanut'],
+    'cacahuate': ['peanut'],
+  };
+  
+  const lowerTerm = term.toLowerCase();
+  return translations[lowerTerm] || [term];
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -79,166 +163,169 @@ serve(async (req) => {
 
     console.log('Searching FatSecret API for:', searchQuery);
 
+    // Translate search terms if needed
+    const searchTerms = searchQuery.split(' ');
+    const translatedTerms = searchTerms.flatMap(term => translateFoodTerm(term));
+    const allSearchTerms = [...new Set([searchQuery, ...translatedTerms])];
+    
+    console.log('Search terms to try:', allSearchTerms);
+
     // FatSecret API endpoint
     const apiUrl = 'https://platform.fatsecret.com/rest/server.api';
     
-    // Generate OAuth parameters
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    let allProcessedFoods = [];
     
-    const oauthParams = {
-      oauth_consumer_key: clientId,
-      oauth_nonce: nonce,
-      oauth_signature_method: 'HMAC-SHA1',
-      oauth_timestamp: timestamp,
-      oauth_version: '1.0',
-      method: 'foods.search',
-      search_expression: searchQuery,
-      format: 'json',
-      max_results: '50'
-    };
-
-    // Generate signature
-    const signature = await generateOAuthSignature('GET', apiUrl, oauthParams, clientSecret);
-    
-    // Build request URL
-    const allParams = { ...oauthParams, oauth_signature: signature };
-    const queryString = Object.keys(allParams)
-      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(allParams[key])}`)
-      .join('&');
-
-    const fullUrl = `${apiUrl}?${queryString}`;
-    console.log('Making FatSecret API request to:', apiUrl);
-
-    // Make API request
-    const response = await fetch(fullUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('FatSecret API response status:', response.status);
-
-    if (data.error) {
-      console.error('FatSecret API error:', data.error);
-      throw new Error(`FatSecret API error: ${data.error.message}`);
-    }
-
-    // Process search results
-    const foods = data.foods?.food || [];
-    console.log('Found foods from FatSecret:', foods.length);
-    
-    const processedFoods = [];
-
-    for (const food of foods.slice(0, 20)) {
+    // Try searching with each term
+    for (const searchTerm of allSearchTerms.slice(0, 3)) { // Limit to 3 searches max
       try {
-        // Check if food exists in our database
-        const { data: existingFood } = await supabase
-          .from('foods')
-          .select('*')
-          .eq('food_id', food.food_id)
-          .single();
+        console.log('Trying search term:', searchTerm);
+        
+        // Generate OAuth parameters
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        
+        const oauthParams = {
+          oauth_consumer_key: clientId,
+          oauth_nonce: nonce,
+          oauth_signature_method: 'HMAC-SHA1',
+          oauth_timestamp: timestamp,
+          oauth_version: '1.0',
+          method: 'foods.search',
+          search_expression: searchTerm,
+          format: 'json',
+          max_results: '20'
+        };
 
-        if (existingFood) {
-          processedFoods.push(existingFood);
+        // Generate signature
+        const signature = await generateOAuthSignature('GET', apiUrl, oauthParams, clientSecret);
+        
+        // Build request URL
+        const allParams = { ...oauthParams, oauth_signature: signature };
+        const queryString = Object.keys(allParams)
+          .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(allParams[key])}`)
+          .join('&');
+
+        const fullUrl = `${apiUrl}?${queryString}`;
+        console.log('Making FatSecret API request for term:', searchTerm);
+
+        // Make API request
+        const response = await fetch(fullUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (!response.ok) {
+          console.log(`Search failed for "${searchTerm}" with status ${response.status}`);
           continue;
         }
 
-        // Get detailed nutrition info for new foods
-        const detailParams = {
-          oauth_consumer_key: clientId,
-          oauth_nonce: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-          oauth_signature_method: 'HMAC-SHA1',
-          oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
-          oauth_version: '1.0',
-          method: 'food.get',
-          food_id: food.food_id,
-          format: 'json'
-        };
+        const data = await response.json();
 
-        const detailSignature = await generateOAuthSignature('GET', apiUrl, detailParams, clientSecret);
-        const detailAllParams = { ...detailParams, oauth_signature: detailSignature };
-        const detailQueryString = Object.keys(detailAllParams)
-          .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(detailAllParams[key])}`)
-          .join('&');
-
-        const detailUrl = `${apiUrl}?${detailQueryString}`;
-        const detailResponse = await fetch(detailUrl);
-        
-        if (detailResponse.ok) {
-          const detailData = await detailResponse.json();
-
-          let calories = 0, protein = 0, carbs = 0, fat = 0, servingDesc = '1 porción';
-
-          if (detailData.food && !detailData.error) {
-            const serving = detailData.food.servings?.serving;
-            if (serving) {
-              const firstServing = Array.isArray(serving) ? serving[0] : serving;
-              calories = parseFloat(firstServing.calories || '0');
-              protein = parseFloat(firstServing.protein || '0');
-              carbs = parseFloat(firstServing.carbohydrate || '0');
-              fat = parseFloat(firstServing.fat || '0');
-              servingDesc = firstServing.serving_description || '1 porción';
-            }
-          }
-
-          // Insert food with nutrition data
-          const { data: newFood, error } = await supabase
-            .from('foods')
-            .insert({
-              food_id: food.food_id,
-              food_name: food.food_name,
-              brand_name: food.brand_name || null,
-              serving_description: servingDesc,
-              calories_per_serving: calories,
-              protein_per_serving: protein,
-              carbs_per_serving: carbs,
-              fat_per_serving: fat
-            })
-            .select()
-            .single();
-
-          if (!error && newFood) {
-            processedFoods.push(newFood);
-          }
-        } else {
-          // If we can't get details, add basic info
-          const { data: basicFood, error } = await supabase
-            .from('foods')
-            .insert({
-              food_id: food.food_id,
-              food_name: food.food_name,
-              brand_name: food.brand_name || null,
-              serving_description: food.food_description || '1 porción',
-              calories_per_serving: 0,
-              protein_per_serving: 0,
-              carbs_per_serving: 0,
-              fat_per_serving: 0
-            })
-            .select()
-            .single();
-
-          if (!error && basicFood) {
-            processedFoods.push(basicFood);
-          }
+        if (data.error) {
+          console.log(`FatSecret API error for "${searchTerm}":`, data.error);
+          continue;
         }
 
+        // Process search results
+        const foods = data.foods?.food || [];
+        console.log(`Found ${foods.length} foods for "${searchTerm}"`);
+        
+        for (const food of foods.slice(0, 10)) {
+          try {
+            // Check if food exists in our database
+            const { data: existingFood } = await supabase
+              .from('foods')
+              .select('*')
+              .eq('food_id', food.food_id)
+              .single();
+
+            if (existingFood) {
+              allProcessedFoods.push(existingFood);
+              continue;
+            }
+
+            // Get detailed nutrition info for new foods
+            const detailParams = {
+              oauth_consumer_key: clientId,
+              oauth_nonce: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+              oauth_signature_method: 'HMAC-SHA1',
+              oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+              oauth_version: '1.0',
+              method: 'food.get',
+              food_id: food.food_id,
+              format: 'json'
+            };
+
+            const detailSignature = await generateOAuthSignature('GET', apiUrl, detailParams, clientSecret);
+            const detailAllParams = { ...detailParams, oauth_signature: detailSignature };
+            const detailQueryString = Object.keys(detailAllParams)
+              .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(detailAllParams[key])}`)
+              .join('&');
+
+            const detailUrl = `${apiUrl}?${detailQueryString}`;
+            const detailResponse = await fetch(detailUrl);
+            
+            if (detailResponse.ok) {
+              const detailData = await detailResponse.json();
+
+              let calories = 0, protein = 0, carbs = 0, fat = 0, servingDesc = '1 porción';
+
+              if (detailData.food && !detailData.error) {
+                const serving = detailData.food.servings?.serving;
+                if (serving) {
+                  const firstServing = Array.isArray(serving) ? serving[0] : serving;
+                  calories = parseFloat(firstServing.calories || '0');
+                  protein = parseFloat(firstServing.protein || '0');
+                  carbs = parseFloat(firstServing.carbohydrate || '0');
+                  fat = parseFloat(firstServing.fat || '0');
+                  servingDesc = firstServing.serving_description || '1 porción';
+                }
+              }
+
+              // Insert food with nutrition data
+              const { data: newFood, error } = await supabase
+                .from('foods')
+                .insert({
+                  food_id: food.food_id,
+                  food_name: food.food_name,
+                  brand_name: food.brand_name || null,
+                  serving_description: servingDesc,
+                  calories_per_serving: calories,
+                  protein_per_serving: protein,
+                  carbs_per_serving: carbs,
+                  fat_per_serving: fat
+                })
+                .select()
+                .single();
+
+              if (!error && newFood) {
+                allProcessedFoods.push(newFood);
+              }
+            }
+
+          } catch (error) {
+            console.error('Error processing food:', food.food_id, error);
+            continue;
+          }
+        }
+        
+        // If we have enough results, break
+        if (allProcessedFoods.length >= 15) {
+          break;
+        }
+        
       } catch (error) {
-        console.error('Error processing food:', food.food_id, error);
+        console.error(`Error searching for "${searchTerm}":`, error);
         continue;
       }
     }
 
-    console.log('Processed foods count:', processedFoods.length);
+    console.log('Total processed foods count:', allProcessedFoods.length);
 
     return new Response(
-      JSON.stringify({ foods: processedFoods }),
+      JSON.stringify({ foods: allProcessedFoods }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
