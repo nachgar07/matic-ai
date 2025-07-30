@@ -270,18 +270,28 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
 
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Try to provide a more helpful error message
+      let errorMessage = "Disculpa, tengo problemas de conexión en este momento. Por favor intenta de nuevo.";
+      let toastMessage = "No se pudo enviar el mensaje. Verifica tu conexión e intenta de nuevo.";
+      
+      if (error.message?.includes('non-2xx')) {
+        errorMessage = "El servicio de IA está temporalmente sobrecargado. Mientras tanto, puedes usar el botón 'Buscar comida' para agregar alimentos manualmente. ¿Hay algo específico sobre nutrición en lo que pueda ayudarte?";
+        toastMessage = "Servicio temporalmente sobrecargado. Intenta de nuevo en unos segundos.";
+      }
+
       toast({
-        title: "Error de conexión",
-        description: "No se pudo enviar el mensaje. Verifica tu conexión e intenta de nuevo.",
+        title: "Problema temporal",
+        description: toastMessage,
         variant: "destructive"
       });
 
-      const errorMessage: Message = {
+      const assistantMessage: Message = {
         role: 'assistant',
-        content: 'Disculpa, tengo problemas de conexión en este momento. Por favor intenta de nuevo.',
+        content: errorMessage,
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, assistantMessage]);
     } finally {
       setIsLoading(false);
     }
