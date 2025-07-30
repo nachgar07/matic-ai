@@ -40,27 +40,73 @@ export const Archivos = () => {
   // Verificar autenticación
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      try {
+        console.log('Checking authentication...');
+        
+        // Primero intentar obtener la sesión actual
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log('Session check:', session?.user?.id || 'No session', sessionError);
+        
+        if (session?.user) {
+          console.log('User found from session:', session.user.id);
+          setUser(session.user);
+          await fetchGastos();
+          return;
+        }
+
+        // Si no hay sesión, intentar obtener el usuario directamente
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        console.log('User check:', user?.id || 'No user', userError);
+        
+        if (user) {
+          console.log('User found:', user.id);
+          setUser(user);
+          await fetchGastos();
+        } else {
+          console.log('No authenticated user found');
+          setLoading(false);
+          toast({
+            title: "No autenticado",
+            description: "Por favor inicia sesión para ver tus gastos",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setLoading(false);
         toast({
           title: "Error de autenticación",
-          description: "Por favor inicia sesión para continuar",
+          description: "Problema al verificar la autenticación",
           variant: "destructive"
         });
-        // Redirigir a login si es necesario
-        return;
       }
-      setUser(user);
-      fetchGastos();
     };
     
     checkAuth();
+
+    // Escuchar cambios de autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        if (session?.user) {
+          setUser(session.user);
+          await fetchGastos();
+        } else {
+          setUser(null);
+          setGastos([]);
+          setLoading(false);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
 
   const fetchGastos = async () => {
     if (!user) {
       console.log('No user found, skipping fetch');
+      setLoading(false);
       return;
     }
     
