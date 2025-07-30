@@ -96,12 +96,27 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
         .eq('id', user.id)
         .single();
 
-      // Get nutrition goals
-      const { data: goals } = await supabase
-        .from('nutrition_goals')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Try to get nutrition goals, but don't fail if they don't exist
+      let goals = {
+        daily_calories: 2000,
+        daily_protein: 150,
+        daily_carbs: 250,
+        daily_fat: 67
+      };
+
+      try {
+        const { data: userGoals } = await supabase
+          .from('nutrition_goals')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (userGoals) {
+          goals = userGoals;
+        }
+      } catch (error) {
+        console.log('No nutrition goals found, using defaults');
+      }
 
       // Get today's meals
       const today = new Date().toISOString().split('T')[0];
@@ -182,12 +197,7 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
           email: user.email,
           display_name: profile?.display_name || 'Usuario'
         },
-        goals: goals || {
-          daily_calories: 2000,
-          daily_protein: 150,
-          daily_carbs: 250,
-          daily_fat: 67
-        },
+        goals,
         today: {
           consumed: todayTotals,
           meals: mealsByType,

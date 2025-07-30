@@ -309,7 +309,16 @@ COMIDAS DE HOY:`;
       throw new Error(`Gemini API error: ${response.status}`);
     } catch (error) {
       if (i === retries - 1) {
-        throw error;
+        // If all retries failed, return a fallback response
+        console.error('All retries failed, returning fallback response');
+        return new Response(
+          JSON.stringify({ 
+            response: 'Lo siento, el servicio de IA está temporalmente sobrecargado. Mientras tanto, puedes usar el botón "Buscar comida" para agregar alimentos manualmente a tu diario. ¿Hay algo específico sobre nutrición en lo que pueda ayudarte?',
+            timestamp: new Date().toISOString(),
+            fallback: true
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       console.log(`Network error, retrying in ${(i + 1) * 2} seconds...`);
       await new Promise(resolve => setTimeout(resolve, (i + 1) * 2000));
