@@ -48,10 +48,10 @@ export const Archivos = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header 
-        title="Mis Gastos"
+        title="Gastos y Recibos"
         rightAction={
           <Button size="sm" className="rounded-full" onClick={() => setShowPhotoCapture(true)}>
-            <Camera size={16} />
+            <Receipt size={16} />
           </Button>
         }
       />
@@ -65,8 +65,8 @@ export const Archivos = () => {
                 <Camera className="text-primary" size={24} />
               </div>
               <div className="text-center">
-                <div className="text-sm font-medium">Tomar Foto</div>
-                <div className="text-xs text-muted-foreground">Del ticket</div>
+                <div className="text-sm font-medium">Escanear Recibo</div>
+                <div className="text-xs text-muted-foreground">Capturar gasto</div>
               </div>
               <Button 
                 size="sm" 
@@ -84,7 +84,7 @@ export const Archivos = () => {
                 <Mic className="text-accent" size={24} />
               </div>
               <div className="text-center">
-                <div className="text-sm font-medium">Por Voz</div>
+                <div className="text-sm font-medium">Registro por Voz</div>
                 <div className="text-xs text-muted-foreground">Dictar gastos</div>
               </div>
               <Button 
@@ -167,13 +167,13 @@ export const Archivos = () => {
         </div>
 
         {/* Quick Create Button */}
-        <Button 
+          <Button 
           size="lg"
           className="w-full h-16 bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={() => setShowPhotoCapture(true)}
         >
-          <Camera className="mr-3" size={24} />
-          Escanear Nuevo Ticket
+          <Receipt className="mr-3" size={24} />
+          Escanear Nuevo Recibo
         </Button>
       </div>
 

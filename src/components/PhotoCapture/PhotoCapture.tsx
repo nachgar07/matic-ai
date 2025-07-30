@@ -212,7 +212,7 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
           <Card className="w-full max-w-lg bg-background">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Analizar Comida</h3>
+                <h3 className="text-lg font-semibold">Escanear Recibo</h3>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -249,7 +249,7 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
                       disabled={isAnalyzing}
                     >
                       <Upload className="h-4 w-4 mr-2" />
-                      Subir Foto
+                      Subir Recibo
                     </Button>
                   </div>
 
@@ -296,7 +296,7 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
                       ) : (
                         <>
                           <Camera className="h-4 w-4 mr-2" />
-                          Analizar Comida
+                          Analizar Recibo
                         </>
                       )}
                     </Button>
@@ -306,7 +306,7 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
 
               {isAnalyzing && (
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                  Identificando alimentos y calculando información nutricional...
+                  Analizando recibo y extrayendo información de gastos...
                 </div>
               )}
             </div>
