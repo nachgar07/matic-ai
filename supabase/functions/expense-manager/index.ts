@@ -30,6 +30,12 @@ serve(async (req) => {
 
     const { action, expenseData, expenseId, updateData } = await req.json();
 
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('User not authenticated');
+    }
+
     switch (action) {
       case 'create': {
         console.log('Creating expense with data:', expenseData);
@@ -38,6 +44,7 @@ serve(async (req) => {
         const { data: expense, error: expenseError } = await supabase
           .from('expenses')
           .insert({
+            user_id: user.id,
             store_name: expenseData.store_name,
             expense_date: expenseData.date,
             total_amount: expenseData.total_amount,
