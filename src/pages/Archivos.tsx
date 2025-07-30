@@ -6,6 +6,9 @@ import { Card } from "@/components/ui/card";
 import { PhotoCapture } from "@/components/PhotoCapture/PhotoCapture";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Mic, FileText, Plus, MoreVertical, Camera, Receipt, Trash2, Edit, Eye } from "lucide-react";
 
 interface Gasto {
@@ -28,6 +31,10 @@ export const Archivos = () => {
   const [showPhotoCapture, setShowPhotoCapture] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [selectedGasto, setSelectedGasto] = useState<Gasto | null>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Gasto>>({});
   const { toast } = useToast();
 
   // Verificar autenticación
@@ -203,6 +210,54 @@ export const Archivos = () => {
     }
   };
 
+  const handleViewGasto = (gasto: Gasto) => {
+    setSelectedGasto(gasto);
+    setShowViewModal(true);
+  };
+
+  const handleEditGasto = (gasto: Gasto) => {
+    setSelectedGasto(gasto);
+    setEditForm({
+      nombre: gasto.nombre,
+      total: gasto.total
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedGasto || !user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .update({
+          store_name: editForm.nombre,
+          total_amount: editForm.total
+        })
+        .eq('id', selectedGasto.id);
+
+      if (error) {
+        console.error('Error updating expense:', error);
+        throw error;
+      }
+
+      toast({
+        title: "Gasto actualizado",
+        description: "Los cambios se guardaron correctamente"
+      });
+
+      setShowEditModal(false);
+      fetchGastos();
+    } catch (error) {
+      console.error('Error updating expense:', error);
+      toast({
+        title: "Error",
+        description: `No se pudo actualizar el gasto: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header 
@@ -320,11 +375,21 @@ export const Archivos = () => {
 
                   {/* Actions */}
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleViewGasto(gasto)}
+                    >
                       <Eye size={14} className="mr-1" />
                       Ver
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleEditGasto(gasto)}
+                    >
                       <Edit size={14} className="mr-1" />
                       Editar
                     </Button>
@@ -352,6 +417,112 @@ export const Archivos = () => {
           onClose={() => setShowPhotoCapture(false)}
         />
       )}
+
+      {/* Modal para Ver Gasto */}
+      <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detalle del Gasto</DialogTitle>
+          </DialogHeader>
+          {selectedGasto && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Establecimiento</Label>
+                <p className="text-lg">{selectedGasto.nombre}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Fecha</Label>
+                <p>{new Date(selectedGasto.fechaCreacion).toLocaleDateString()}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Total</Label>
+                <p className="text-2xl font-bold text-primary">${selectedGasto.total.toFixed(2)}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Productos ({selectedGasto.items.length})</Label>
+                <div className="bg-muted rounded-lg p-3 mt-2 max-h-48 overflow-y-auto">
+                  {selectedGasto.items.map((item, index) => (
+                    <div key={index} className="flex justify-between py-2 border-b border-border last:border-0">
+                      <div>
+                        <div className="font-medium">{item.producto}</div>
+                        <div className="text-sm text-muted-foreground">{item.cantidad}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium">${item.precio.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {selectedGasto.imagenTicket && (
+                <div>
+                  <Label className="text-sm font-medium">Imagen del Ticket</Label>
+                  <div className="mt-2">
+                    <img 
+                      src={selectedGasto.imagenTicket} 
+                      alt="Ticket" 
+                      className="w-full rounded-lg border"
+                      style={{ maxHeight: '200px', objectFit: 'contain' }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para Editar Gasto */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Gasto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="nombre">Establecimiento</Label>
+              <Input
+                id="nombre"
+                value={editForm.nombre || ''}
+                onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
+                placeholder="Nombre del establecimiento"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="total">Total</Label>
+              <Input
+                id="total"
+                type="number"
+                step="0.01"
+                value={editForm.total || ''}
+                onChange={(e) => setEditForm({ ...editForm, total: parseFloat(e.target.value) })}
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div className="flex space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowEditModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={handleSaveEdit}
+              >
+                Guardar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNavigation />
     </div>
