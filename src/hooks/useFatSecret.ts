@@ -53,9 +53,9 @@ export interface NutritionGoals {
 // Search foods using FatSecret API
 export const useSearchFoods = () => {
   return useMutation({
-    mutationFn: async (searchQuery: string) => {
+    mutationFn: async ({ searchQuery, page = 0 }: { searchQuery: string; page?: number }) => {
       const { data, error } = await supabase.functions.invoke('fatsecret-search', {
-        body: { searchQuery }
+        body: { searchQuery, page, limit: 8 }
       });
 
       if (error) throw error;

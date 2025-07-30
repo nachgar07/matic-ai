@@ -136,7 +136,7 @@ serve(async (req) => {
   }
 
   try {
-    const { searchQuery } = await req.json();
+    const { searchQuery, page = 0, limit = 8 } = await req.json();
     
     if (!searchQuery) {
       return new Response(
@@ -161,11 +161,28 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('Searching FatSecret API for:', searchQuery);
+    console.log('Searching FatSecret API for:', searchQuery, 'page:', page);
 
-    // Translate search terms if needed
-    const searchTerms = searchQuery.split(' ');
-    const translatedTerms = searchTerms.flatMap(term => translateFoodTerm(term));
+    // First check if we have existing foods in our database
+    const { data: existingFoods } = await supabase
+      .from('foods')
+      .select('*')
+      .ilike('food_name', `%${searchQuery}%`)
+      .limit(limit)
+      .offset(page * limit);
+
+    // If we have enough existing foods, return them first for speed
+    if (existingFoods && existingFoods.length >= limit && page === 0) {
+      console.log('Returning existing foods from database:', existingFoods.length);
+      return new Response(
+        JSON.stringify({ foods: existingFoods, hasMore: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Translate search terms if needed (only for first page)
+    const searchTerms = page === 0 ? searchQuery.split(' ') : [searchQuery];
+    const translatedTerms = page === 0 ? searchTerms.flatMap(term => translateFoodTerm(term)) : [];
     const allSearchTerms = [...new Set([searchQuery, ...translatedTerms])];
     
     console.log('Search terms to try:', allSearchTerms);
@@ -173,67 +190,68 @@ serve(async (req) => {
     // FatSecret API endpoint
     const apiUrl = 'https://platform.fatsecret.com/rest/server.api';
     
-    let allProcessedFoods = [];
+    let allProcessedFoods = existingFoods || [];
+    const seenFoodNames = new Set(allProcessedFoods.map(f => f.food_name.toLowerCase()));
     
-    // Try searching with each term - optimized for speed
-    for (const searchTerm of allSearchTerms.slice(0, 2)) { // Limit to 2 searches max
-      try {
-        console.log('Trying search term:', searchTerm);
-        
-        // Generate OAuth parameters
-        const timestamp = Math.floor(Date.now() / 1000).toString();
-        const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        
-        const oauthParams = {
-          oauth_consumer_key: clientId,
-          oauth_nonce: nonce,
-          oauth_signature_method: 'HMAC-SHA1',
-          oauth_timestamp: timestamp,
-          oauth_version: '1.0',
-          method: 'foods.search',
-          search_expression: searchTerm,
-          format: 'json',
-          max_results: '10' // Reduced from 20 to 10 for faster results
-        };
+    // Try searching with the main term only for speed
+    const searchTerm = allSearchTerms[0];
+    
+    try {
+      console.log('Trying search term:', searchTerm);
+      
+      // Generate OAuth parameters
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      const oauthParams = {
+        oauth_consumer_key: clientId,
+        oauth_nonce: nonce,
+        oauth_signature_method: 'HMAC-SHA1',
+        oauth_timestamp: timestamp,
+        oauth_version: '1.0',
+        method: 'foods.search',
+        search_expression: searchTerm,
+        format: 'json',
+        max_results: (limit * 2).toString() // Get double to account for filtering
+      };
 
-        // Generate signature
-        const signature = await generateOAuthSignature('GET', apiUrl, oauthParams, clientSecret);
-        
-        // Build request URL
-        const allParams = { ...oauthParams, oauth_signature: signature };
-        const queryString = Object.keys(allParams)
-          .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(allParams[key])}`)
-          .join('&');
+      // Generate signature
+      const signature = await generateOAuthSignature('GET', apiUrl, oauthParams, clientSecret);
+      
+      // Build request URL
+      const allParams = { ...oauthParams, oauth_signature: signature };
+      const queryString = Object.keys(allParams)
+        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(allParams[key])}`)
+        .join('&');
 
-        const fullUrl = `${apiUrl}?${queryString}`;
-        console.log('Making FatSecret API request for term:', searchTerm);
+      const fullUrl = `${apiUrl}?${queryString}`;
+      console.log('Making FatSecret API request for term:', searchTerm);
 
-        // Make API request
-        const response = await fetch(fullUrl, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (!response.ok) {
-          console.log(`Search failed for "${searchTerm}" with status ${response.status}`);
-          continue;
+      // Make API request
+      const response = await fetch(fullUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         }
+      });
 
+      if (!response.ok) {
+        console.log(`Search failed for "${searchTerm}" with status ${response.status}`);
+      } else {
         const data = await response.json();
 
-        if (data.error) {
-          console.log(`FatSecret API error for "${searchTerm}":`, data.error);
-          continue;
-        }
-
-        // Process search results - optimized batch processing
-        const foods = data.foods?.food || [];
-        console.log(`Found ${foods.length} foods for "${searchTerm}"`);
-        
-        // Process first 5 foods only for speed
-        for (const food of foods.slice(0, 5)) {
+        if (!data.error) {
+          // Process search results - optimized batch processing
+          const foods = data.foods?.food || [];
+          console.log(`Found ${foods.length} foods for "${searchTerm}"`);
+          
+          // Process foods and filter duplicates
+          for (const food of foods) {
+            if (allProcessedFoods.length >= limit) break;
+            
+            // Skip if we already have this food name
+            if (seenFoodNames.has(food.food_name.toLowerCase())) continue;
+            seenFoodNames.add(food.food_name.toLowerCase());
           try {
             // Check if food exists in our database
             const { data: existingFood } = await supabase
@@ -247,7 +265,7 @@ serve(async (req) => {
               continue;
             }
 
-            // Get detailed nutrition info for new foods
+            // Get detailed nutrition info for new foods (simplified for speed)
             const detailParams = {
               oauth_consumer_key: clientId,
               oauth_nonce: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
@@ -311,22 +329,23 @@ serve(async (req) => {
             continue;
           }
         }
-        
-        // If we have enough results, break early for speed
-        if (allProcessedFoods.length >= 8) {
-          break;
-        }
-        
-      } catch (error) {
-        console.error(`Error searching for "${searchTerm}":`, error);
-        continue;
       }
+        
+    } catch (error) {
+      console.error(`Error searching for "${searchTerm}":`, error);
     }
 
     console.log('Total processed foods count:', allProcessedFoods.length);
 
+    // Determine if there are more results available
+    const hasMore = allProcessedFoods.length >= limit;
+
     return new Response(
-      JSON.stringify({ foods: allProcessedFoods }),
+      JSON.stringify({ 
+        foods: allProcessedFoods.slice(0, limit),
+        hasMore: hasMore,
+        total: allProcessedFoods.length
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

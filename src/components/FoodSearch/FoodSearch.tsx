@@ -18,6 +18,9 @@ export const FoodSearch = ({ onFoodSelect, onClose }: FoodSearchProps) => {
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Food[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const { mutateAsync: searchFoods } = useSearchFoods();
   const { mutateAsync: addFavorite } = useAddFavorite();
@@ -25,13 +28,28 @@ export const FoodSearch = ({ onFoodSelect, onClose }: FoodSearchProps) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const handleSearch = async () => {
+  const handleSearch = async (page = 0, append = false) => {
     if (!query.trim()) return;
     
-    setLoading(true);
+    if (page === 0) {
+      setLoading(true);
+      setCurrentPage(0);
+    } else {
+      setLoadingMore(true);
+    }
+    
     try {
-      const results = await searchFoods(query);
-      setSearchResults(results.foods || []);
+      const results = await searchFoods({ searchQuery: query, page });
+      const newFoods = results.foods || [];
+      
+      if (append && page > 0) {
+        setSearchResults(prev => [...prev, ...newFoods]);
+      } else {
+        setSearchResults(newFoods);
+      }
+      
+      setHasMore(results.hasMore || false);
+      setCurrentPage(page);
     } catch (error) {
       toast({
         title: "Error",
@@ -40,7 +58,12 @@ export const FoodSearch = ({ onFoodSelect, onClose }: FoodSearchProps) => {
       });
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const handleLoadMore = () => {
+    handleSearch(currentPage + 1, true);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -102,7 +125,7 @@ export const FoodSearch = ({ onFoodSelect, onClose }: FoodSearchProps) => {
             autoFocus
           />
         </div>
-        <Button onClick={handleSearch} disabled={loading}>
+        <Button onClick={() => handleSearch()} disabled={loading}>
           {loading ? "..." : <Search size={20} />}
         </Button>
         <Button 
@@ -182,6 +205,19 @@ export const FoodSearch = ({ onFoodSelect, onClose }: FoodSearchProps) => {
             </div>
           </Card>
         ))}
+        
+        {hasMore && searchResults.length > 0 && (
+          <div className="text-center pt-4">
+            <Button 
+              variant="outline" 
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="w-full"
+            >
+              {loadingMore ? "Cargando más..." : "Cargar más resultados"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
