@@ -106,7 +106,7 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
       // Convert image to base64 without the data URL prefix
       const base64Image = capturedImage.split(',')[1];
       
-      const { data, error } = await supabase.functions.invoke('gemini-food-assistant', {
+      const { data, error } = await supabase.functions.invoke('openai-food-assistant', {
         body: {
           action: 'analyze-food',
           imageBase64: base64Image

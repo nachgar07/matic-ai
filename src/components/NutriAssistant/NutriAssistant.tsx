@@ -239,7 +239,7 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
       // Get user context from frontend
       const userContext = await getUserNutritionContext();
 
-      const { data, error } = await supabase.functions.invoke('gemini-food-assistant', {
+      const { data, error } = await supabase.functions.invoke('openai-food-assistant', {
         body: {
           action: 'chat',
           text: messageText,
