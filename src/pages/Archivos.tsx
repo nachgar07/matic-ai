@@ -56,6 +56,7 @@ export const Archivos = () => {
   useEffect(() => {
     let isMounted = true;
     let realtimeChannel = null;
+    let hasLoadedExpenses = false; // Bandera para evitar múltiples cargas iniciales
 
     const initializeApp = async () => {
       try {
@@ -75,8 +76,11 @@ export const Archivos = () => {
           console.log('✅ User authenticated:', session.user.id);
           setUser(session.user);
           
-          // Cargar gastos inmediatamente con el usuario autenticado
-          await loadExpenses(session.user.id);
+          // Cargar gastos solo si no se han cargado ya
+          if (!hasLoadedExpenses) {
+            hasLoadedExpenses = true;
+            await loadExpenses(session.user.id);
+          }
           
           // Configurar realtime para escuchar cambios en expenses
           realtimeChannel = supabase
@@ -91,8 +95,9 @@ export const Archivos = () => {
               },
               (payload) => {
                 console.log('🔄 Realtime expense change:', payload);
-                // Recargar gastos cuando hay cambios
-                if (isMounted && session.user) {
+                // Recargar gastos cuando hay cambios (solo si no es una carga inicial)
+                if (isMounted && session.user && hasLoadedExpenses) {
+                  console.log('🔄 Reloading expenses due to realtime change');
                   loadExpenses(session.user.id);
                 }
               }
@@ -126,14 +131,12 @@ export const Archivos = () => {
         
         if (session?.user && isMounted) {
           setUser(session.user);
-          // Solo cargar si no es la sesión inicial (para evitar llamadas duplicadas)
-          if (event !== 'INITIAL_SESSION') {
-            await loadExpenses(session.user.id);
-          }
+          // No cargar gastos aquí para evitar duplicados
         } else if (isMounted) {
           setUser(null);
           setGastos([]);
           setLoading(false);
+          hasLoadedExpenses = false; // Reset para próxima sesión
         }
       }
     );
@@ -151,12 +154,6 @@ export const Archivos = () => {
 
   const loadExpenses = async (userId: string) => {
     if (!userId) return;
-    
-    // Evitar múltiples llamadas simultáneas
-    if (loading) {
-      console.log('📊 Already loading expenses, skipping...');
-      return;
-    }
     
     try {
       console.log('📊 Loading expenses for user:', userId);
