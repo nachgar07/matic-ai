@@ -36,16 +36,7 @@ export const Comidas = () => {
     setShowFoodSearch(false);
   };
 
-  const handleMealSuccess = (newPlateImages?: Record<string, string>) => {
-    // If new plate images are provided, merge them with existing ones
-    if (newPlateImages) {
-      setPlateImages(prev => {
-        const updated = { ...prev, ...newPlateImages };
-        console.log("🎯 Final plateImages after success:", updated);
-        return updated;
-      });
-    }
-    
+  const handleMealSuccess = () => {
     setSelectedFood(null);
     setAnalysisResults(null);
     queryClient.invalidateQueries({ queryKey: ['user-meals'] });
@@ -55,39 +46,6 @@ export const Comidas = () => {
     console.log("🔍 Analysis received:", analysis);
     console.log("🖼️ Original image exists:", !!analysis.originalImage);
     console.log("🍽️ Foods detected:", analysis.foods?.length || 0);
-    
-    // Guardar la imagen original para el tipo de comida detectado
-    if (analysis.originalImage && analysis.foods && analysis.foods.length > 0) {
-      // Obtener la hora actual para determinar el tipo de comida más probable
-      const now = new Date();
-      const hour = now.getHours();
-      
-      let mealType = "almuerzo"; // default
-      if (hour >= 6 && hour < 11) {
-        mealType = "desayuno";
-      } else if (hour >= 11 && hour < 16) {
-        mealType = "almuerzo";
-      } else if (hour >= 16 && hour < 20) {
-        mealType = "merienda";
-      } else {
-        mealType = "cena";
-      }
-      
-      console.log("⏰ Detected meal type:", mealType);
-      console.log("🖼️ Setting image for meal type:", mealType);
-      
-      // Actualizar las imágenes de platos con la imagen capturada
-      setPlateImages(prev => {
-        const newPlateImages = {
-          ...prev,
-          [mealType]: analysis.originalImage
-        };
-        console.log("🗂️ Updated plateImages:", newPlateImages);
-        return newPlateImages;
-      });
-    } else {
-      console.log("❌ No image or foods to save");
-    }
     
     setAnalysisResults(analysis);
     setShowCamera(false);

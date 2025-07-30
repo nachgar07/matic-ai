@@ -20,6 +20,7 @@ export interface MealEntry {
   servings: number;
   meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   consumed_at: string;
+  plate_image?: string;
   foods: Food;
 }
 
@@ -66,13 +67,14 @@ export const useSearchFoods = () => {
 // Add meal entry
 export const useAddMeal = () => {
   return useMutation({
-    mutationFn: async ({ foodId, servings, mealType }: {
+    mutationFn: async ({ foodId, servings, mealType, plateImage }: {
       foodId: string;
       servings: number;
       mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+      plateImage?: string;
     }) => {
       const { data, error } = await supabase.functions.invoke('add-meal', {
-        body: { foodId, servings, mealType }
+        body: { foodId, servings, mealType, plateImage }
       });
 
       if (error) throw error;

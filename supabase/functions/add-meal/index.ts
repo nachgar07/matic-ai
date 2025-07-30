@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { foodId, servings, mealType } = await req.json();
+    const { foodId, servings, mealType, plateImage } = await req.json();
     
     if (!foodId || !servings || !mealType) {
       return new Response(
@@ -60,7 +60,8 @@ serve(async (req) => {
         user_id: user.id,
         food_id: foodId,
         servings: parseFloat(servings),
-        meal_type: mealType
+        meal_type: mealType,
+        plate_image: plateImage || null
       })
       .select(`
         *,

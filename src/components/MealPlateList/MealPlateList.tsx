@@ -121,7 +121,11 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
       {/* Meal Plates */}
       <div className="space-y-3">
         {Object.entries(groupedMeals).map(([mealType, mealList]) => {
-          console.log(`🍽️ Rendering MealPlate for ${mealType}, image:`, plateImages[mealType] ? "exists" : "missing");
+          // Use the plate_image from the first meal entry in this meal type, or fallback to plateImages prop
+          const plateImageFromDB = mealList.find(meal => meal.plate_image)?.plate_image;
+          const finalPlateImage = plateImageFromDB || plateImages[mealType];
+          
+          console.log(`🍽️ Rendering MealPlate for ${mealType}, DB image:`, !!plateImageFromDB, "Prop image:", !!plateImages[mealType]);
           return (
             <MealPlate
               key={mealType}
@@ -132,7 +136,7 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
               onPlateNameChange={handlePlateNameChange}
               plateName={plateNames[mealType]}
               onDeleteMeal={onDeleteMeal}
-              plateImage={plateImages[mealType]}
+              plateImage={finalPlateImage}
             />
           );
         })}

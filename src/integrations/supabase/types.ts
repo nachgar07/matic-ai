@@ -89,6 +89,7 @@ export type Database = {
           food_id: string | null
           id: string
           meal_type: string
+          plate_image: string | null
           servings: number
           updated_at: string
           user_id: string
@@ -99,6 +100,7 @@ export type Database = {
           food_id?: string | null
           id?: string
           meal_type: string
+          plate_image?: string | null
           servings?: number
           updated_at?: string
           user_id: string
@@ -109,6 +111,7 @@ export type Database = {
           food_id?: string | null
           id?: string
           meal_type?: string
+          plate_image?: string | null
           servings?: number
           updated_at?: string
           user_id?: string
