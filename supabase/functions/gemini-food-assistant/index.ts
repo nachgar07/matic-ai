@@ -193,6 +193,20 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
   console.log('Handling conversation with Gemini...');
   console.log('User context received:', userContext ? 'yes' : 'no');
   
+  // Check if user wants to log food
+  const mealCreationResult = await detectAndCreateMeal(text, userContext);
+  if (mealCreationResult) {
+    return new Response(
+      JSON.stringify({ 
+        response: mealCreationResult.response,
+        meal_created: true,
+        meal_data: mealCreationResult.meal_data,
+        timestamp: new Date().toISOString()
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
   // Build dynamic system prompt with user context
   let systemPrompt = `Eres un asistente nutricional inteligente y amigable llamado NutriAI. Tu trabajo es:
 
@@ -201,6 +215,7 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 3. Dar consejos personalizados y motivación
 4. Responder preguntas sobre nutrición de manera clara y útil
 5. Mantener un tono conversacional, amigable y motivador
+6. REGISTRAR COMIDAS cuando el usuario las mencione
 
 Características importantes:
 - Responde en español
@@ -209,7 +224,20 @@ Características importantes:
 - Pregunta por detalles cuando sea necesario
 - Celebra los logros del usuario
 - Ofrece alternativas saludables
-- No reemplazas el consejo médico profesional`;
+- No reemplazas el consejo médico profesional
+
+FUNCIONALIDAD ESPECIAL - REGISTRO DE COMIDAS:
+Cuando el usuario mencione que quiere registrar, agregar, anotar o consumir alimentos, detecta los alimentos y el tipo de comida (desayuno, almuerzo, cena, snack) y usa la función create_meal para registrarlos automáticamente.
+
+Ejemplos de frases que indican registro de comidas:
+- "Quiero agregar mi desayuno"
+- "Registra mi almuerzo"
+- "Añade un snack"
+- "Comí/tomé/desayuné..."
+- "Mi cena fue..."
+- "Para el desayuno tuve..."
+
+IMPORTANTE: Cuando uses la función create_meal, NO menciones que estás usando una función. Solo di que estás registrando la comida y luego proporciona el resumen.`;
 
   // Add user context if available
   if (userContext) {
@@ -268,6 +296,47 @@ COMIDAS DE HOY:`;
     { role: 'user', parts: [{ text: text }] }
   ];
 
+  // Define tools for Gemini
+  const tools = [{
+    function_declarations: [{
+      name: "create_meal",
+      description: "Crea entradas de comida basadas en alimentos mencionados por el usuario. Usa esta función cuando el usuario quiera registrar, agregar o anotar alimentos que consumió o va a consumir.",
+      parameters: {
+        type: "object",
+        properties: {
+          foods: {
+            type: "array",
+            description: "Lista de alimentos mencionados por el usuario",
+            items: {
+              type: "object",
+              properties: {
+                name: {
+                  type: "string",
+                  description: "Nombre del alimento en español"
+                },
+                quantity: {
+                  type: "string", 
+                  description: "Cantidad o porción mencionada (ej: '2 huevos', '1 taza', '150g')"
+                },
+                estimated_servings: {
+                  type: "number",
+                  description: "Número estimado de porciones basado en la cantidad mencionada"
+                }
+              },
+              required: ["name", "quantity"]
+            }
+          },
+          meal_type: {
+            type: "string",
+            enum: ["breakfast", "lunch", "dinner", "snack"],
+            description: "Tipo de comida: breakfast=desayuno, lunch=almuerzo, dinner=cena, snack=merienda/tentempié"
+          }
+        },
+        required: ["foods", "meal_type"]
+      }
+    }]
+  }];
+
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: {
@@ -275,6 +344,7 @@ COMIDAS DE HOY:`;
     },
     body: JSON.stringify({
       contents: messages,
+      tools: tools,
       generationConfig: {
         temperature: 0.7,
         topK: 40,
@@ -291,12 +361,31 @@ COMIDAS DE HOY:`;
   }
 
   const result = await response.json();
+  console.log('Gemini response:', JSON.stringify(result, null, 2));
   
   if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
     throw new Error('Invalid response from Gemini API');
   }
 
-  const responseText = result.candidates[0].content.parts[0].text;
+  const candidate = result.candidates[0];
+  
+  // Check if Gemini wants to call a function
+  if (candidate.content.parts.some((part: any) => part.functionCall)) {
+    const functionCall = candidate.content.parts.find((part: any) => part.functionCall)?.functionCall;
+    
+    if (functionCall?.name === 'create_meal') {
+      console.log('Function call detected:', functionCall);
+      const mealResult = await executeCreateMeal(functionCall.args, userContext);
+      return new Response(
+        JSON.stringify(mealResult),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+  }
+
+  // Regular text response
+  const responseText = candidate.content.parts.find((part: any) => part.text)?.text || 
+                      'Lo siento, no pude procesar tu mensaje.';
 
   return new Response(
     JSON.stringify({ 
@@ -310,4 +399,116 @@ COMIDAS DE HOY:`;
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
+}
+
+async function detectAndCreateMeal(text: string, userContext: any): Promise<{ response: string, meal_data: any } | null> {
+  // Simple keyword detection for meal logging intent
+  const mealKeywords = [
+    'quiero registrar', 'registra mi', 'agregar mi', 'añadir mi', 'anotar mi',
+    'comí', 'desayuné', 'almorcé', 'cené', 'tomé',
+    'mi desayuno', 'mi almuerzo', 'mi cena', 'mi snack',
+    'para el desayuno', 'para el almuerzo', 'para la cena'
+  ];
+  
+  const lowerText = text.toLowerCase();
+  const hasMealIntent = mealKeywords.some(keyword => lowerText.includes(keyword));
+  
+  if (!hasMealIntent) {
+    return null;
+  }
+
+  // This is a fallback - the main logic should use Gemini's function calling
+  console.log('Meal intent detected but no function call - this is a fallback');
+  return null;
+}
+
+async function executeCreateMeal(args: any, userContext: any) {
+  console.log('Executing create_meal function with args:', args);
+  
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get user ID from context
+    if (!userContext?.user?.id) {
+      throw new Error('User context not available');
+    }
+
+    const { data, error } = await supabase.functions.invoke('create-meal-from-chat', {
+      body: {
+        foods: args.foods || [],
+        meal_type: args.meal_type || 'snack'
+      },
+      headers: {
+        Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+      }
+    });
+
+    if (error) {
+      console.error('Error calling create-meal-from-chat:', error);
+      throw error;
+    }
+
+    console.log('Meal creation result:', data);
+
+    // Generate response based on results
+    let response = '';
+    const mealTypeNames = {
+      breakfast: 'desayuno',
+      lunch: 'almuerzo', 
+      dinner: 'cena',
+      snack: 'snack'
+    };
+
+    if (data.success && data.foods_saved > 0) {
+      response = `¡Perfecto! He registrado tu ${mealTypeNames[args.meal_type] || 'comida'}:\n\n`;
+      
+      data.results.filter((r: any) => r.saved).forEach((food: any) => {
+        response += `• ${food.food_data.food_name} (${food.servings} porción${food.servings === 1 ? '' : 'es'}) - ${food.total_calories} kcal\n`;
+      });
+      
+      response += `\n📊 **Totales:** ${data.totals.calories} kcal, ${data.totals.protein}g proteína, ${data.totals.carbs}g carbohidratos, ${data.totals.fat}g grasa`;
+      
+      if (userContext?.goals) {
+        const newCalories = userContext.today.consumed.calories + data.totals.calories;
+        const remaining = userContext.goals.daily_calories - newCalories;
+        response += `\n\n🎯 Llevas ${Math.round(newCalories)} de tus ${userContext.goals.daily_calories} calorías diarias. ${remaining > 0 ? `Te quedan ${Math.round(remaining)} kcal.` : '¡Objetivo alcanzado!'}`;
+      }
+    } else {
+      response = `He intentado registrar tu comida, pero `;
+      if (data.foods_found === 0) {
+        response += 'no pude encontrar los alimentos en la base de datos. ¿Podrías ser más específico con los nombres?';
+      } else {
+        response += `solo pude encontrar ${data.foods_found} de ${data.foods_processed} alimentos. Los que no encontré podrías agregarlos manualmente.`;
+      }
+    }
+
+    if (data.results.some((r: any) => !r.found)) {
+      response += '\n\n❓ **No encontré:** ';
+      response += data.results.filter((r: any) => !r.found).map((r: any) => r.food_name).join(', ');
+    }
+
+    return {
+      response,
+      meal_created: true,
+      meal_data: data,
+      timestamp: new Date().toISOString(),
+      user_context: userContext ? {
+        calories_remaining: userContext.goals.daily_calories - (userContext.today.consumed.calories + (data.totals?.calories || 0)),
+        protein_remaining: userContext.goals.daily_protein - (userContext.today.consumed.protein + (data.totals?.protein || 0)),
+        progress_percentage: Math.round(((userContext.today.consumed.calories + (data.totals?.calories || 0)) / userContext.goals.daily_calories) * 100)
+      } : null
+    };
+
+  } catch (error) {
+    console.error('Error in executeCreateMeal:', error);
+    return {
+      response: `Lo siento, hubo un error al registrar tu comida: ${error.message}. Puedes intentar agregarla manualmente.`,
+      meal_created: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    };
+  }
 }

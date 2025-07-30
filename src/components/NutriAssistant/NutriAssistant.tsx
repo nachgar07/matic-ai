@@ -250,6 +250,14 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
 
       setMessages(prev => [...prev, assistantMessage]);
 
+      // If a meal was created, show success toast
+      if (data.meal_created && data.meal_data?.success) {
+        toast({
+          title: "¡Comida registrada!",
+          description: `Se agregó tu ${getMealTypeName(data.meal_data.meal_type)} con ${data.meal_data.totals.calories} kcal`,
+        });
+      }
+
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -295,6 +303,16 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
       hour: '2-digit', 
       minute: '2-digit' 
     });
+  };
+
+  const getMealTypeName = (mealType: string) => {
+    const names: { [key: string]: string } = {
+      breakfast: 'desayuno',
+      lunch: 'almuerzo',
+      dinner: 'cena',
+      snack: 'snack'
+    };
+    return names[mealType] || mealType;
   };
 
   return (
