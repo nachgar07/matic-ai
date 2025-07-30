@@ -87,7 +87,10 @@ export const Archivos = () => {
         
         if (session?.user && isMounted) {
           setUser(session.user);
-          await loadExpenses(session.user.id);
+          // Solo cargar si no es la sesión inicial (para evitar llamadas duplicadas)
+          if (event !== 'INITIAL_SESSION') {
+            await loadExpenses(session.user.id);
+          }
         } else if (isMounted) {
           setUser(null);
           setGastos([]);
@@ -106,6 +109,12 @@ export const Archivos = () => {
 
   const loadExpenses = async (userId: string) => {
     if (!userId) return;
+    
+    // Evitar múltiples llamadas simultáneas
+    if (loading) {
+      console.log('📊 Already loading expenses, skipping...');
+      return;
+    }
     
     try {
       console.log('📊 Loading expenses for user:', userId);
