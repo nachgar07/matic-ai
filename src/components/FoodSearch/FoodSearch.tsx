@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, Heart, Plus } from "lucide-react";
+import { Search, Filter, Heart, Plus, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useSearchFoods, Food, useAddFavorite, useFavoriteFoods } from "@/hooks/useFatSecret";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { ManualFoodEntry } from "@/components/ManualFoodEntry/ManualFoodEntry";
 
 interface FoodSearchProps {
   onFoodSelect: (food: Food) => void;
@@ -17,6 +18,7 @@ export const FoodSearch = ({ onFoodSelect, onClose }: FoodSearchProps) => {
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Food[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
   const { mutateAsync: searchFoods } = useSearchFoods();
   const { mutateAsync: addFavorite } = useAddFavorite();
   const { data: favorites } = useFavoriteFoods();
@@ -68,6 +70,20 @@ export const FoodSearch = ({ onFoodSelect, onClose }: FoodSearchProps) => {
     return favorites?.some(fav => fav.food_id === foodId) || false;
   };
 
+  const handleManualFoodAdded = (food: Food) => {
+    onFoodSelect(food);
+    setShowManualEntry(false);
+  };
+
+  if (showManualEntry) {
+    return (
+      <ManualFoodEntry
+        onFoodAdded={handleManualFoodAdded}
+        onClose={() => setShowManualEntry(false)}
+      />
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col">
       {/* Header */}
@@ -89,6 +105,14 @@ export const FoodSearch = ({ onFoodSelect, onClose }: FoodSearchProps) => {
         <Button onClick={handleSearch} disabled={loading}>
           {loading ? "..." : <Search size={20} />}
         </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setShowManualEntry(true)}
+          className="ml-2"
+        >
+          <PlusCircle size={16} />
+        </Button>
       </div>
 
       {/* Filters */}
@@ -104,9 +128,15 @@ export const FoodSearch = ({ onFoodSelect, onClose }: FoodSearchProps) => {
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {loading && (
+          <div className="text-center text-muted-foreground py-8">
+            Buscando alimentos...
+          </div>
+        )}
+        
         {searchResults.length === 0 && !loading && (
           <div className="text-center text-muted-foreground py-8">
-            {query ? "No se encontraron resultados" : "Busca un alimento para comenzar"}
+            {query ? "No se encontraron resultados. Prueba con otro término o agrega un alimento manual." : "Busca un alimento o agrega uno manualmente"}
           </div>
         )}
 

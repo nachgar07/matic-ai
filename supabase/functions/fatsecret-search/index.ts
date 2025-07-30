@@ -1,22 +1,21 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
-// FatSecret OAuth 1.0 signature generation
-function generateOAuthSignature(
+// Generate OAuth 1.0 signature for FatSecret API
+async function generateOAuthSignature(
   method: string,
   url: string,
   params: Record<string, string>,
   clientSecret: string,
   tokenSecret = ''
-): string {
-  // Normalize parameters
-  const normalizedParams = Object.keys(params)
+): Promise<string> {
+  // Sort and encode parameters
+  const sortedParams = Object.keys(params)
     .sort()
     .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
     .join('&');
@@ -25,7 +24,7 @@ function generateOAuthSignature(
   const signatureBaseString = [
     method.toUpperCase(),
     encodeURIComponent(url),
-    encodeURIComponent(normalizedParams)
+    encodeURIComponent(sortedParams)
   ].join('&');
 
   // Create signing key
@@ -33,25 +32,22 @@ function generateOAuthSignature(
 
   // Generate HMAC-SHA1 signature
   const encoder = new TextEncoder();
-  const keyBuffer = encoder.encode(signingKey);
-  const dataBuffer = encoder.encode(signatureBaseString);
+  const keyData = encoder.encode(signingKey);
+  const messageData = encoder.encode(signatureBaseString);
 
-  return crypto.subtle.importKey(
+  const cryptoKey = await crypto.subtle.importKey(
     'raw',
-    keyBuffer,
+    keyData,
     { name: 'HMAC', hash: 'SHA-1' },
     false,
     ['sign']
-  ).then(key => 
-    crypto.subtle.sign('HMAC', key, dataBuffer)
-  ).then(signature => {
-    const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)));
-    return base64Signature;
-  });
+  );
+
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+  return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -70,19 +66,25 @@ serve(async (req) => {
     const clientSecret = Deno.env.get('FATSECRET_CLIENT_SECRET');
 
     if (!clientId || !clientSecret) {
+      console.error('FatSecret credentials missing');
       return new Response(
         JSON.stringify({ error: 'FatSecret credentials not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // FatSecret API endpoint
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     const apiUrl = 'https://platform.fatsecret.com/rest/server.api';
     
-    // OAuth 1.0 parameters
+    // Generate OAuth parameters
     const oauthParams = {
       oauth_consumer_key: clientId,
-      oauth_nonce: Math.random().toString(36).substring(2, 15),
+      oauth_nonce: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
       oauth_signature_method: 'HMAC-SHA1',
       oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
       oauth_version: '1.0',
@@ -91,20 +93,19 @@ serve(async (req) => {
       format: 'json'
     };
 
-    // Generate OAuth signature
+    // Generate signature
     const signature = await generateOAuthSignature('GET', apiUrl, oauthParams, clientSecret);
-    oauthParams['oauth_signature'] = signature;
-
-    // Build query string
-    const queryString = Object.keys(oauthParams)
-      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(oauthParams[key])}`)
+    
+    // Build request URL
+    const allParams = { ...oauthParams, oauth_signature: signature };
+    const queryString = Object.keys(allParams)
+      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(allParams[key])}`)
       .join('&');
 
     const fullUrl = `${apiUrl}?${queryString}`;
+    console.log('Making FatSecret API request...');
 
-    console.log('Making request to FatSecret API:', fullUrl);
-
-    // Make request to FatSecret API
+    // Make API request
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
@@ -112,76 +113,105 @@ serve(async (req) => {
       }
     });
 
-    if (!response.ok) {
-      console.error('FatSecret API error:', response.status, await response.text());
+    const data = await response.json();
+    console.log('FatSecret API response received');
+
+    if (data.error) {
+      console.error('FatSecret API error:', data.error);
       return new Response(
-        JSON.stringify({ error: 'Failed to search foods' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'API search failed' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const data = await response.json();
-    console.log('FatSecret API response:', data);
-
-    // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Process and store food data
+    // Process search results
     const foods = data.foods?.food || [];
     const processedFoods = [];
 
-    for (const food of foods.slice(0, 10)) { // Limit to first 10 results
+    for (const food of foods.slice(0, 15)) {
       try {
-        // Check if food already exists
+        // Check if food exists
         const { data: existingFood } = await supabase
           .from('foods')
           .select('*')
           .eq('food_id', food.food_id)
           .single();
 
-        if (!existingFood) {
-          // Insert new food
-          const { data: insertedFood, error } = await supabase
-            .from('foods')
-            .insert({
-              food_id: food.food_id,
-              food_name: food.food_name,
-              brand_name: food.brand_name || null,
-              serving_description: food.food_description || null,
-              calories_per_serving: null, // Will be fetched in detail later
-              carbs_per_serving: null,
-              protein_per_serving: null,
-              fat_per_serving: null
-            })
-            .select()
-            .single();
-
-          if (!error && insertedFood) {
-            processedFoods.push(insertedFood);
-          }
-        } else {
+        if (existingFood) {
           processedFoods.push(existingFood);
+          continue;
         }
+
+        // Get detailed nutrition info for new foods
+        const detailParams = {
+          oauth_consumer_key: clientId,
+          oauth_nonce: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+          oauth_signature_method: 'HMAC-SHA1',
+          oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+          oauth_version: '1.0',
+          method: 'food.get',
+          food_id: food.food_id,
+          format: 'json'
+        };
+
+        const detailSignature = await generateOAuthSignature('GET', apiUrl, detailParams, clientSecret);
+        const detailAllParams = { ...detailParams, oauth_signature: detailSignature };
+        const detailQueryString = Object.keys(detailAllParams)
+          .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(detailAllParams[key])}`)
+          .join('&');
+
+        const detailUrl = `${apiUrl}?${detailQueryString}`;
+        const detailResponse = await fetch(detailUrl);
+        const detailData = await detailResponse.json();
+
+        let calories = 0, protein = 0, carbs = 0, fat = 0, servingDesc = '1 porción';
+
+        if (detailData.food && !detailData.error) {
+          const serving = detailData.food.servings?.serving;
+          if (serving) {
+            const firstServing = Array.isArray(serving) ? serving[0] : serving;
+            calories = parseFloat(firstServing.calories || '0');
+            protein = parseFloat(firstServing.protein || '0');
+            carbs = parseFloat(firstServing.carbohydrate || '0');
+            fat = parseFloat(firstServing.fat || '0');
+            servingDesc = firstServing.serving_description || '1 porción';
+          }
+        }
+
+        // Insert food with nutrition data
+        const { data: newFood, error } = await supabase
+          .from('foods')
+          .insert({
+            food_id: food.food_id,
+            food_name: food.food_name,
+            brand_name: food.brand_name || null,
+            serving_description: servingDesc,
+            calories_per_serving: calories,
+            protein_per_serving: protein,
+            carbs_per_serving: carbs,
+            fat_per_serving: fat
+          })
+          .select()
+          .single();
+
+        if (!error && newFood) {
+          processedFoods.push(newFood);
+        }
+
       } catch (error) {
         console.error('Error processing food:', error);
       }
     }
 
     return new Response(
-      JSON.stringify({ 
-        foods: processedFoods,
-        raw_data: data // Include raw data for debugging
-      }),
+      JSON.stringify({ foods: processedFoods }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in fatsecret-search function:', error);
+    console.error('Function error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
