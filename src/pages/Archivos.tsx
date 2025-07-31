@@ -505,6 +505,18 @@ export const Archivos = () => {
               size="sm"
               onClick={() => {
                 setFilterDate(null);
+                if (user) loadExpenses(user.id, null, false);
+              }}
+              className="text-xs"
+            >
+              Todos
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFilterDate(null);
                 if (user) loadExpenses(user.id, null, true);
               }}
               className="text-xs"
