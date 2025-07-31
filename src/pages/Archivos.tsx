@@ -462,22 +462,24 @@ export const Archivos = () => {
       <div className="p-4 space-y-4">
 
         {/* Filtro de Fecha */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
           <h3 className="font-semibold">Gastos Recientes</h3>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
                   className={cn(
-                    "justify-start text-left font-normal",
+                    "justify-start text-left font-normal w-full sm:w-auto",
                     !filterDate && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filterDate ? format(filterDate, "d 'de' MMM", { locale: es }) : "Seleccionar fecha"}
+                  <span className="truncate">
+                    {filterDate ? format(filterDate, "d 'de' MMM", { locale: es }) : "Seleccionar fecha"}
+                  </span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
@@ -491,38 +493,40 @@ export const Archivos = () => {
               </PopoverContent>
             </Popover>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDateFilterChange(new Date())}
-              className="text-xs"
-            >
-              Hoy
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setFilterDate(null);
-                if (user) loadExpenses(user.id, null, false);
-              }}
-              className="text-xs"
-            >
-              Todos
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setFilterDate(null);
-                if (user) loadExpenses(user.id, null, true);
-              }}
-              className="text-xs"
-            >
-              Recientes
-            </Button>
+            <div className="flex gap-1 sm:gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDateFilterChange(new Date())}
+                className="text-xs flex-1 sm:flex-initial"
+              >
+                Hoy
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFilterDate(null);
+                  if (user) loadExpenses(user.id, null, false);
+                }}
+                className="text-xs flex-1 sm:flex-initial"
+              >
+                Todos
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFilterDate(null);
+                  if (user) loadExpenses(user.id, null, true);
+                }}
+                className="text-xs flex-1 sm:flex-initial"
+              >
+                Recientes
+              </Button>
+            </div>
           </div>
         </div>
 
