@@ -31,6 +31,7 @@ interface Gasto {
     precio: number;
   }>;
   imagenTicket?: string;
+  categoryId?: string;
 }
 
 export const Archivos = () => {
@@ -46,6 +47,7 @@ export const Archivos = () => {
   const [filterDate, setFilterDate] = useState<Date>(new Date()); // Por defecto hoy
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [chartPeriod, setChartPeriod] = useState<'day' | 'week' | 'month'>('month'); // Período para el gráfico
   const { toast } = useToast();
   
   // Hook para manejar categorías
@@ -282,6 +284,65 @@ export const Archivos = () => {
     }
   };
 
+  // Nueva función para cargar gastos por período (para el gráfico)
+  const loadExpensesForChart = async (userId: string, period: 'day' | 'week' | 'month') => {
+    if (!userId) return [];
+    
+    try {
+      const now = new Date();
+      let startDate: Date;
+      
+      switch (period) {
+        case 'day':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          const weekStart = new Date(now);
+          weekStart.setDate(now.getDate() - now.getDay());
+          startDate = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate());
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        default:
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+      
+      const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      
+      const { data: expenses, error } = await supabase
+        .from('expenses')
+        .select(`
+          *,
+          expense_items (*)
+        `)
+        .eq('user_id', userId)
+        .gte('expense_date', startDate.toISOString().split('T')[0])
+        .lte('expense_date', endDate.toISOString().split('T')[0])
+        .order('expense_date', { ascending: false });
+
+      if (error) throw error;
+
+      return expenses?.map(expense => ({
+        id: expense.id,
+        nombre: expense.store_name || 'Establecimiento desconocido',
+        fechaCreacion: expense.created_at,
+        tipo: 'ticket' as const,
+        total: parseFloat(expense.total_amount.toString()),
+        items: expense.expense_items?.map(item => ({
+          producto: item.product_name,
+          cantidad: item.quantity,
+          precio: parseFloat(item.total_price.toString())
+        })) || [],
+        imagenTicket: expense.receipt_image,
+        categoryId: expense.category_id
+      })) || [];
+    } catch (error) {
+      console.error('Error loading expenses for chart:', error);
+      return [];
+    }
+  };
+
 
   const fetchGastos = async () => {
     if (!user) {
@@ -474,15 +535,25 @@ export const Archivos = () => {
     }
   };
 
+  // Estado para datos del gráfico
+  const [chartExpenses, setChartExpenses] = useState<Gasto[]>([]);
+
+  // Cargar datos del gráfico según el período seleccionado
+  useEffect(() => {
+    if (user) {
+      loadExpensesForChart(user.id, chartPeriod).then(setChartExpenses);
+    }
+  }, [user, chartPeriod]);
+
   // Procesar datos para el gráfico de categorías
   const getChartData = () => {
-    if (!gastos.length || !categories.length) return { chartData: [], totalAmount: 0 };
+    if (!chartExpenses.length || !categories.length) return { chartData: [], totalAmount: 0 };
 
     // Mapear gastos con sus categorías
     const categoryTotals = new Map();
     let totalAmount = 0;
 
-    gastos.forEach(gasto => {
+    chartExpenses.forEach(gasto => {
       totalAmount += gasto.total;
       // Por ahora usar 'General' ya que no tenemos category_id en los gastos existentes
       const categoryName = 'General';
@@ -505,6 +576,16 @@ export const Archivos = () => {
 
   const { chartData, totalAmount } = getChartData();
 
+  // Función para obtener el título del período
+  const getPeriodTitle = () => {
+    switch (chartPeriod) {
+      case 'day': return 'Hoy';
+      case 'week': return 'Esta Semana';
+      case 'month': return 'Este Mes';
+      default: return 'Este Mes';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header 
@@ -520,7 +601,41 @@ export const Archivos = () => {
         
         {/* Gráfico de distribución de gastos */}
         {!loading && categories.length > 0 && (
-          <ExpenseChart data={chartData} totalAmount={totalAmount} />
+          <div className="space-y-4">
+            {/* Controles del período del gráfico */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Distribución de Gastos - {getPeriodTitle()}</h3>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant={chartPeriod === 'day' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setChartPeriod('day')}
+                  className="flex-1"
+                >
+                  Hoy
+                </Button>
+                <Button
+                  variant={chartPeriod === 'week' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setChartPeriod('week')}
+                  className="flex-1"
+                >
+                  Semana
+                </Button>
+                <Button
+                  variant={chartPeriod === 'month' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setChartPeriod('month')}
+                  className="flex-1"
+                >
+                  Mes
+                </Button>
+              </div>
+            </div>
+            <ExpenseChart data={chartData} totalAmount={totalAmount} />
+          </div>
         )}
 
         {/* Gestor de Categorías */}
