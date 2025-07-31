@@ -604,15 +604,15 @@ export const Archivos = () => {
           <div className="space-y-4">
             {/* Título y controles del período del gráfico */}
             <div className="space-y-3">
-              <h3 className="font-semibold">Gastos - {getPeriodTitle()}</h3>
-              <div className="flex gap-2">
+              <h3 className="font-semibold">Distribución de Gastos</h3>
+              <div className="flex gap-2 justify-center">
                 <Button
-                  variant={chartPeriod === 'day' ? 'default' : 'outline'}
+                  variant={chartPeriod === 'month' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setChartPeriod('day')}
+                  onClick={() => setChartPeriod('month')}
                   className="px-2 py-1 text-xs h-7"
                 >
-                  Hoy
+                  Mes
                 </Button>
                 <Button
                   variant={chartPeriod === 'week' ? 'default' : 'outline'}
@@ -623,12 +623,12 @@ export const Archivos = () => {
                   Semana
                 </Button>
                 <Button
-                  variant={chartPeriod === 'month' ? 'default' : 'outline'}
+                  variant={chartPeriod === 'day' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setChartPeriod('month')}
+                  onClick={() => setChartPeriod('day')}
                   className="px-2 py-1 text-xs h-7"
                 >
-                  Mes
+                  Hoy
                 </Button>
               </div>
             </div>
