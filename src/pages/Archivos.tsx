@@ -6,12 +6,14 @@ import { Card } from "@/components/ui/card";
 import { PhotoCapture } from "@/components/PhotoCapture/PhotoCapture";
 import { ExpenseChart } from "@/components/ExpenseChart/ExpenseChart";
 import { CategoryManager } from "@/components/CategoryManager/CategoryManager";
+import { ExpenseReviewModal } from "@/components/ExpenseReviewModal/ExpenseReviewModal";
 import { useExpenseCategories } from "@/hooks/useExpenseCategories";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mic, FileText, Plus, MoreVertical, Camera, Receipt, Trash2, Edit, Eye, Calendar as CalendarIcon, Filter } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -48,6 +50,8 @@ export const Archivos = () => {
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<'day' | 'week' | 'month'>('month'); // Período para el gráfico
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [pendingAnalysis, setPendingAnalysis] = useState<any>(null);
   const { toast } = useToast();
   
   // Hook para manejar categorías
@@ -254,7 +258,8 @@ export const Archivos = () => {
           cantidad: item.quantity,
           precio: parseFloat(item.total_price.toString())
         })) || [],
-        imagenTicket: expense.receipt_image
+        imagenTicket: expense.receipt_image,
+        categoryId: expense.category_id
       })) || [];
 
       console.log('✅ Transformed expenses:', gastosTransformados.length);
@@ -380,20 +385,37 @@ export const Archivos = () => {
       return;
     }
     
+    // Mostrar modal de revisión en lugar de guardar directamente
+    setPendingAnalysis(analysis);
+    setShowReviewModal(true);
+    setShowPhotoCapture(false);
+  };
+
+  const handleReviewConfirm = async (data: any) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Usuario no autenticado",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
-      console.log('💾 Saving expense to database...');
+      console.log('💾 Saving reviewed expense to database...');
       
-      // Crear el gasto principal directamente en Supabase
+      // Crear el gasto principal en Supabase
       const { data: expense, error: expenseError } = await supabase
         .from('expenses')
         .insert({
           user_id: user.id,
-          store_name: analysis.store_name || 'Establecimiento desconocido',
-          expense_date: analysis.date || analysis.dateDetected || new Date().toISOString().split('T')[0],
-          total_amount: parseFloat(analysis.total_amount) || 0,
-          payment_method: analysis.payment_method || 'efectivo',
-          receipt_image: analysis.originalImage,
-          confidence: parseFloat(analysis.confidence) || 0.5
+          store_name: data.store_name || 'Establecimiento desconocido',
+          expense_date: data.date || data.dateDetected || new Date().toISOString().split('T')[0],
+          total_amount: parseFloat(data.total_amount) || 0,
+          payment_method: data.payment_method || 'efectivo',
+          receipt_image: data.originalImage,
+          confidence: parseFloat(data.confidence) || 0.5,
+          category_id: data.categoryId || null
         })
         .select()
         .single();
@@ -406,9 +428,9 @@ export const Archivos = () => {
       }
 
       // Crear los items del gasto
-      if (analysis.items && analysis.items.length > 0) {
-        console.log('📝 Creating expense items:', analysis.items.length);
-        const items = analysis.items.map((item: any) => ({
+      if (data.items && data.items.length > 0) {
+        console.log('📝 Creating expense items:', data.items.length);
+        const items = data.items.map((item: any) => ({
           expense_id: expense.id,
           product_name: item.product_name || 'Producto desconocido',
           quantity: item.quantity || '1x',
@@ -431,13 +453,14 @@ export const Archivos = () => {
       console.log('✅ Expense saved successfully!');
       toast({
         title: "¡Gasto registrado!",
-        description: `Se registró el gasto de ${analysis.store_name || 'Establecimiento'} por $${analysis.total_amount}`
+        description: `Se registró el gasto de ${data.store_name || 'Establecimiento'} por $${data.total_amount}`
       });
 
       // Refrescar la lista inmediatamente
       console.log('🔄 Refreshing expenses list...');
       await loadExpenses(user.id, filterDate);
-      setShowPhotoCapture(false);
+      setShowReviewModal(false);
+      setPendingAnalysis(null);
     } catch (error) {
       console.error('💥 Error saving expense:', error);
       toast({
@@ -496,7 +519,8 @@ export const Archivos = () => {
     setSelectedGasto(gasto);
     setEditForm({
       nombre: gasto.nombre,
-      total: gasto.total
+      total: gasto.total,
+      categoryId: gasto.categoryId
     });
     setShowEditModal(true);
   };
@@ -509,7 +533,8 @@ export const Archivos = () => {
         .from('expenses')
         .update({
           store_name: editForm.nombre,
-          total_amount: editForm.total
+          total_amount: editForm.total,
+          category_id: editForm.categoryId || null
         })
         .eq('id', selectedGasto.id);
 
@@ -547,7 +572,7 @@ export const Archivos = () => {
 
   // Procesar datos para el gráfico de categorías
   const getChartData = () => {
-    if (!chartExpenses.length || !categories.length) return { chartData: [], totalAmount: 0 };
+    if (!chartExpenses.length) return { chartData: [], totalAmount: 0 };
 
     // Mapear gastos con sus categorías
     const categoryTotals = new Map();
@@ -555,21 +580,35 @@ export const Archivos = () => {
 
     chartExpenses.forEach(gasto => {
       totalAmount += gasto.total;
-      // Por ahora usar 'General' ya que no tenemos category_id en los gastos existentes
-      const categoryName = 'General';
-      const current = categoryTotals.get(categoryName) || 0;
-      categoryTotals.set(categoryName, current + gasto.total);
+      
+      // Buscar la categoría del gasto
+      let categoryName = 'Sin Categoría';
+      let categoryColor = '#6366f1';
+      let categoryIcon = '💰';
+      
+      if (gasto.categoryId && categories.length > 0) {
+        const category = categories.find(c => c.id === gasto.categoryId);
+        if (category) {
+          categoryName = category.name;
+          categoryColor = category.color;
+          categoryIcon = category.icon;
+        }
+      }
+      
+      const current = categoryTotals.get(categoryName) || { amount: 0, color: categoryColor, icon: categoryIcon };
+      categoryTotals.set(categoryName, {
+        amount: current.amount + gasto.total,
+        color: categoryColor,
+        icon: categoryIcon
+      });
     });
 
-    const chartData = Array.from(categoryTotals.entries()).map(([categoryName, amount]) => {
-      const category = categories.find(c => c.name === categoryName) || categories[0];
-      return {
-        name: categoryName,
-        value: amount,
-        color: category?.color || '#6366f1',
-        icon: category?.icon || '💰'
-      };
-    });
+    const chartData = Array.from(categoryTotals.entries()).map(([categoryName, data]) => ({
+      name: categoryName,
+      value: data.amount,
+      color: data.color,
+      icon: data.icon
+    }));
 
     return { chartData, totalAmount };
   };
@@ -719,68 +758,88 @@ export const Archivos = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {gastos.map((gasto) => (
-                <Card key={gasto.id} className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{gasto.nombre}</h4>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(gasto.fechaCreacion).toLocaleDateString()}
+              {gastos.map((gasto) => {
+                // Buscar la categoría del gasto
+                const category = categories.find(c => c.id === gasto.categoryId);
+                
+                return (
+                  <Card key={gasto.id} className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium">{gasto.nombre}</h4>
+                          {category && (
+                            <span 
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+                              style={{ 
+                                backgroundColor: `${category.color}20`,
+                                color: category.color,
+                                border: `1px solid ${category.color}40`
+                              }}
+                            >
+                              <span>{category.icon}</span>
+                              <span>{category.name}</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(gasto.fechaCreacion).toLocaleDateString()}
+                        </div>
+                        <div className="text-lg font-semibold text-primary mt-1">
+                          ${gasto.total.toFixed(2)}
+                        </div>
                       </div>
-                      <div className="text-lg font-semibold text-primary mt-1">
-                        ${gasto.total.toFixed(2)}
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteGasto(gasto.id)}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-1">
+
+                    {/* Preview */}
+                    <div className="bg-muted rounded-lg p-3 mb-3">
+                      <div className="text-xs text-muted-foreground mb-2">Productos:</div>
+                      {gasto.items.slice(0, 2).map((item, index) => (
+                        <div key={index} className="text-sm flex justify-between">
+                          <span>{item.producto} ({item.cantidad})</span>
+                          <span>${item.precio.toFixed(2)}</span>
+                        </div>
+                      ))}
+                      {gasto.items.length > 2 && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          +{gasto.items.length - 2} productos más
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex space-x-2">
                       <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDeleteGasto(gasto.id)}
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleViewGasto(gasto)}
                       >
-                        <Trash2 size={16} />
+                        <Eye size={14} className="mr-1" />
+                        Ver
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleEditGasto(gasto)}
+                      >
+                        <Edit size={14} className="mr-1" />
+                        Editar
                       </Button>
                     </div>
-                  </div>
-
-                  {/* Preview */}
-                  <div className="bg-muted rounded-lg p-3 mb-3">
-                    <div className="text-xs text-muted-foreground mb-2">Productos:</div>
-                    {gasto.items.slice(0, 2).map((item, index) => (
-                      <div key={index} className="text-sm flex justify-between">
-                        <span>{item.producto} ({item.cantidad})</span>
-                        <span>${item.precio.toFixed(2)}</span>
-                      </div>
-                    ))}
-                    {gasto.items.length > 2 && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        +{gasto.items.length - 2} productos más
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleViewGasto(gasto)}
-                    >
-                      <Eye size={14} className="mr-1" />
-                      Ver
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleEditGasto(gasto)}
-                    >
-                      <Edit size={14} className="mr-1" />
-                      Editar
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
@@ -889,6 +948,28 @@ export const Archivos = () => {
                 placeholder="0.00"
               />
             </div>
+
+            <div>
+              <Label htmlFor="category">Categoría</Label>
+              <Select 
+                value={editForm.categoryId || ""} 
+                onValueChange={(value) => setEditForm({ ...editForm, categoryId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{category.icon}</span>
+                        <span>{category.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             <div className="flex space-x-2 pt-4">
               <Button 
@@ -908,6 +989,20 @@ export const Archivos = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Revisión de Gastos */}
+      {showReviewModal && pendingAnalysis && (
+        <ExpenseReviewModal
+          isOpen={showReviewModal}
+          onClose={() => {
+            setShowReviewModal(false);
+            setPendingAnalysis(null);
+          }}
+          onConfirm={handleReviewConfirm}
+          analysisData={pendingAnalysis}
+          categories={categories}
+        />
+      )}
 
       <BottomNavigation />
     </div>
