@@ -25,11 +25,7 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
   // Use native camera if available, otherwise fallback to web camera
   const takePhotoWithNativeCamera = async () => {
     try {
-      if (!Capacitor.isNativePlatform()) {
-        // If not on native platform, use web camera
-        return startCamera();
-      }
-
+      // Always try native camera first, regardless of platform
       const image = await CapacitorCamera.getPhoto({
         quality: 100,
         allowEditing: false,
