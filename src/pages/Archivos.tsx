@@ -4,6 +4,9 @@ import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PhotoCapture } from "@/components/PhotoCapture/PhotoCapture";
+import { ExpenseChart } from "@/components/ExpenseChart/ExpenseChart";
+import { CategoryManager } from "@/components/CategoryManager/CategoryManager";
+import { useExpenseCategories } from "@/hooks/useExpenseCategories";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -42,7 +45,30 @@ export const Archivos = () => {
   const [editForm, setEditForm] = useState<Partial<Gasto>>({});
   const [filterDate, setFilterDate] = useState<Date>(new Date()); // Por defecto hoy
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
   const { toast } = useToast();
+  
+  // Hook para manejar categorías
+  const { 
+    categories, 
+    loading: categoriesLoading, 
+    addCategory: addCategoryHook, 
+    updateCategory: updateCategoryHook, 
+    deleteCategory: deleteCategoryHook 
+  } = useExpenseCategories();
+
+  // Wrappers para hacer compatibles las funciones con CategoryManager
+  const handleAddCategory = async (categoryData: { name: string; color: string; icon: string }) => {
+    await addCategoryHook(categoryData);
+  };
+
+  const handleUpdateCategory = async (id: string, categoryData: { name: string; color: string; icon: string }) => {
+    await updateCategoryHook(id, categoryData);
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    await deleteCategoryHook(id);
+  };
 
   // Persistencia local como backup - limitada para evitar quota exceeded
   const saveToLocalStorage = (gastos: Gasto[]) => {
@@ -448,6 +474,37 @@ export const Archivos = () => {
     }
   };
 
+  // Procesar datos para el gráfico de categorías
+  const getChartData = () => {
+    if (!gastos.length || !categories.length) return { chartData: [], totalAmount: 0 };
+
+    // Mapear gastos con sus categorías
+    const categoryTotals = new Map();
+    let totalAmount = 0;
+
+    gastos.forEach(gasto => {
+      totalAmount += gasto.total;
+      // Por ahora usar 'General' ya que no tenemos category_id en los gastos existentes
+      const categoryName = 'General';
+      const current = categoryTotals.get(categoryName) || 0;
+      categoryTotals.set(categoryName, current + gasto.total);
+    });
+
+    const chartData = Array.from(categoryTotals.entries()).map(([categoryName, amount]) => {
+      const category = categories.find(c => c.name === categoryName) || categories[0];
+      return {
+        name: categoryName,
+        value: amount,
+        color: category?.color || '#6366f1',
+        icon: category?.icon || '💰'
+      };
+    });
+
+    return { chartData, totalAmount };
+  };
+
+  const { chartData, totalAmount } = getChartData();
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header 
@@ -460,6 +517,31 @@ export const Archivos = () => {
       />
       
       <div className="p-4 space-y-4">
+        
+        {/* Gráfico de distribución de gastos */}
+        {!loading && categories.length > 0 && (
+          <ExpenseChart data={chartData} totalAmount={totalAmount} />
+        )}
+
+        {/* Gestor de Categorías */}
+        <div className="space-y-4">
+          <Button
+            variant="outline"
+            onClick={() => setShowCategoryManager(!showCategoryManager)}
+            className="w-full"
+          >
+            {showCategoryManager ? 'Ocultar' : 'Gestionar'} Categorías
+          </Button>
+          
+          {showCategoryManager && (
+            <CategoryManager
+              categories={categories}
+              onAddCategory={handleAddCategory}
+              onUpdateCategory={handleUpdateCategory}
+              onDeleteCategory={handleDeleteCategory}
+            />
+          )}
+        </div>
 
         {/* Filtro de Fecha */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">

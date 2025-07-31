@@ -41,6 +41,36 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_categories: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       expense_items: {
         Row: {
           created_at: string
@@ -81,6 +111,7 @@ export type Database = {
       }
       expenses: {
         Row: {
+          category_id: string | null
           confidence: number | null
           created_at: string
           expense_date: string
@@ -93,6 +124,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category_id?: string | null
           confidence?: number | null
           created_at?: string
           expense_date: string
@@ -105,6 +137,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category_id?: string | null
           confidence?: number | null
           created_at?: string
           expense_date?: string
@@ -116,7 +149,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       favorite_foods: {
         Row: {
