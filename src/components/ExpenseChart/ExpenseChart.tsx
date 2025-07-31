@@ -19,9 +19,9 @@ export const ExpenseChart = ({ data, totalAmount, chartPeriod, onPeriodChange }:
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-center">Distribución de Gastos</CardTitle>
+          <CardTitle className="text-center mb-4">Gastos</CardTitle>
           {/* Botones de período */}
-          <div className="flex gap-2 justify-center mt-3">
+          <div className="flex gap-3 justify-center mt-3">
             <Button
               variant={chartPeriod === 'month' ? 'default' : 'outline'}
               size="sm"
@@ -99,9 +99,9 @@ export const ExpenseChart = ({ data, totalAmount, chartPeriod, onPeriodChange }:
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-center">Distribución de Gastos</CardTitle>
+        <CardTitle className="text-center mb-4">Gastos</CardTitle>
         {/* Botones de período */}
-        <div className="flex gap-2 justify-center mt-3">
+        <div className="flex gap-3 justify-center mt-3">
           <Button
             variant={chartPeriod === 'month' ? 'default' : 'outline'}
             size="sm"
