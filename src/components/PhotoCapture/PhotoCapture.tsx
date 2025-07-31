@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 interface PhotoCaptureProps {
   onAnalysisComplete: (analysis: any) => void;
@@ -19,6 +21,42 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const { toast } = useToast();
+
+  // Use native camera if available, otherwise fallback to web camera
+  const takePhotoWithNativeCamera = async () => {
+    try {
+      if (!Capacitor.isNativePlatform()) {
+        // If not on native platform, use web camera
+        return startCamera();
+      }
+
+      const image = await CapacitorCamera.getPhoto({
+        quality: 100,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+        saveToGallery: false,
+        correctOrientation: true
+      });
+
+      if (image.dataUrl) {
+        setCapturedImage(image.dataUrl);
+        toast({
+          title: "Foto capturada",
+          description: "Imagen capturada con éxito usando la cámara nativa."
+        });
+      }
+    } catch (error) {
+      console.error('Error with native camera:', error);
+      toast({
+        title: "Error de cámara",
+        description: "No se pudo acceder a la cámara nativa. Usando cámara web como alternativa.",
+        variant: "destructive"
+      });
+      // Fallback to web camera
+      startCamera();
+    }
+  };
 
   const startCamera = async () => {
     try {
@@ -257,13 +295,13 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
                   {/* Controls */}
                   <div className="flex gap-2">
                     <Button
-                      onClick={startCamera}
+                      onClick={takePhotoWithNativeCamera}
                       variant="outline"
                       className="flex-1"
                       disabled={isAnalyzing}
                     >
                       <Camera className="h-4 w-4 mr-2" />
-                      Abrir Cámara
+                      Cámara Nativa
                     </Button>
                     
                     <Button
