@@ -602,17 +602,15 @@ export const Archivos = () => {
         {/* Gráfico de distribución de gastos */}
         {!loading && categories.length > 0 && (
           <div className="space-y-4">
-            {/* Controles del período del gráfico */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Distribución de Gastos - {getPeriodTitle()}</h3>
-              </div>
+            {/* Título y controles del período del gráfico */}
+            <div className="space-y-3">
+              <h3 className="font-semibold">Gastos - {getPeriodTitle()}</h3>
               <div className="flex gap-2">
                 <Button
                   variant={chartPeriod === 'day' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setChartPeriod('day')}
-                  className="flex-1"
+                  className="px-2 py-1 text-xs h-7"
                 >
                   Hoy
                 </Button>
@@ -620,7 +618,7 @@ export const Archivos = () => {
                   variant={chartPeriod === 'week' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setChartPeriod('week')}
-                  className="flex-1"
+                  className="px-2 py-1 text-xs h-7"
                 >
                   Semana
                 </Button>
@@ -628,7 +626,7 @@ export const Archivos = () => {
                   variant={chartPeriod === 'month' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setChartPeriod('month')}
-                  className="flex-1"
+                  className="px-2 py-1 text-xs h-7"
                 >
                   Mes
                 </Button>
