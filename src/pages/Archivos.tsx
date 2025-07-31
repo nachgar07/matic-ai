@@ -302,7 +302,7 @@ export const Archivos = () => {
         .insert({
           user_id: user.id,
           store_name: analysis.store_name || 'Establecimiento desconocido',
-          expense_date: analysis.date || new Date().toISOString().split('T')[0],
+          expense_date: analysis.date || analysis.dateDetected || new Date().toISOString().split('T')[0],
           total_amount: parseFloat(analysis.total_amount) || 0,
           payment_method: analysis.payment_method || 'efectivo',
           receipt_image: analysis.originalImage,
@@ -637,7 +637,7 @@ export const Archivos = () => {
 
       {/* Modal para Ver Gasto */}
       <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md mx-4">
           <DialogHeader>
             <DialogTitle>Detalle del Gasto</DialogTitle>
           </DialogHeader>
@@ -695,7 +695,7 @@ export const Archivos = () => {
 
       {/* Modal para Editar Gasto */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md mx-4">
           <DialogHeader>
             <DialogTitle>Editar Gasto</DialogTitle>
           </DialogHeader>
