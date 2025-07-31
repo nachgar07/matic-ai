@@ -24,8 +24,8 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
           facingMode: 'environment' // Use back camera on mobile
         }
       });
@@ -67,11 +67,21 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
     
     if (!ctx) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
+    // Use higher resolution for better text recognition
+    const targetWidth = Math.max(video.videoWidth, 1920);
+    const targetHeight = Math.max(video.videoHeight, 1080);
     
-    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    
+    // Enable image smoothing for better quality
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+    
+    // Use higher quality JPEG compression
+    const imageData = canvas.toDataURL('image/jpeg', 0.95);
     setCapturedImage(imageData);
     stopCamera();
   };
