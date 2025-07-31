@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface ExpenseChartProps {
   data: Array<{
@@ -9,14 +10,43 @@ interface ExpenseChartProps {
     icon: string;
   }>;
   totalAmount: number;
+  chartPeriod: 'day' | 'week' | 'month';
+  onPeriodChange: (period: 'day' | 'week' | 'month') => void;
 }
 
-export const ExpenseChart = ({ data, totalAmount }: ExpenseChartProps) => {
+export const ExpenseChart = ({ data, totalAmount, chartPeriod, onPeriodChange }: ExpenseChartProps) => {
   if (data.length === 0) {
     return (
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-center">Distribución de Gastos</CardTitle>
+          {/* Botones de período */}
+          <div className="flex gap-2 justify-center mt-3">
+            <Button
+              variant={chartPeriod === 'month' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onPeriodChange('month')}
+              className="px-2 py-1 text-xs h-7"
+            >
+              Mes
+            </Button>
+            <Button
+              variant={chartPeriod === 'week' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onPeriodChange('week')}
+              className="px-2 py-1 text-xs h-7"
+            >
+              Semana
+            </Button>
+            <Button
+              variant={chartPeriod === 'day' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onPeriodChange('day')}
+              className="px-2 py-1 text-xs h-7"
+            >
+              Hoy
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="text-center text-muted-foreground py-8">
@@ -70,6 +100,33 @@ export const ExpenseChart = ({ data, totalAmount }: ExpenseChartProps) => {
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-center">Distribución de Gastos</CardTitle>
+        {/* Botones de período */}
+        <div className="flex gap-2 justify-center mt-3">
+          <Button
+            variant={chartPeriod === 'month' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => onPeriodChange('month')}
+            className="px-2 py-1 text-xs h-7"
+          >
+            Mes
+          </Button>
+          <Button
+            variant={chartPeriod === 'week' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => onPeriodChange('week')}
+            className="px-2 py-1 text-xs h-7"
+          >
+            Semana
+          </Button>
+          <Button
+            variant={chartPeriod === 'day' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => onPeriodChange('day')}
+            className="px-2 py-1 text-xs h-7"
+          >
+            Hoy
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="relative h-80">
