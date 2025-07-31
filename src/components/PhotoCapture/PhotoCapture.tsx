@@ -22,13 +22,28 @@ export const PhotoCapture = ({ onAnalysisComplete, onClose }: PhotoCaptureProps)
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          width: { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 },
-          facingMode: 'environment' // Use back camera on mobile
-        }
-      });
+      // Try high-quality constraints first
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 },
+            facingMode: 'environment', // Use back camera on mobile
+            frameRate: { ideal: 30, min: 15 }
+          }
+        });
+      } catch (firstError) {
+        console.log('High-quality constraints failed, trying fallback');
+        // Fall back to simpler constraints
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280, min: 720 },
+            height: { ideal: 720, min: 480 },
+            facingMode: 'environment'
+          }
+        });
+      }
       
       streamRef.current = stream;
       setIsCameraOpen(true);
