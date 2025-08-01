@@ -11,8 +11,16 @@ export const useGoogleCalendar = () => {
     try {
       setIsLoading(true);
       
-      // Google OAuth 2.0 flow
-      const clientId = '574833807942-i74k1r1kl8h4oatvh5l2jdpfr5q8v7pk.apps.googleusercontent.com'; // This should be your actual client ID
+      // Get client ID from Supabase edge function (same as Google Drive)
+      const { data: configData, error: configError } = await supabase.functions.invoke('google-drive-sync', {
+        body: { action: 'get-config' }
+      });
+
+      if (configError || !configData?.clientId) {
+        throw new Error('Failed to get Google client configuration');
+      }
+      
+      const clientId = configData.clientId;
       const redirectUri = window.location.origin;
       const scope = 'https://www.googleapis.com/auth/calendar';
       
