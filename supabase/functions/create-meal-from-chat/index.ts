@@ -76,17 +76,60 @@ serve(async (req) => {
     for (const food of foods) {
       console.log(`Searching for food: ${food.name}`);
       
-      // Simplify search term - remove preparation details
+      // Simplify search term - remove preparation details and map Spanish to English
       let searchTerm = food.name.toLowerCase();
       
-      // Extract basic ingredient from complex preparations and use better search terms
-      if (searchTerm.includes('pollo')) searchTerm = 'chicken';
-      else if (searchTerm.includes('papa') && (searchTerm.includes('hervida') || searchTerm.includes('hervido'))) searchTerm = 'potato boiled';
-      else if (searchTerm.includes('papa')) searchTerm = 'potato';
-      else if (searchTerm.includes('puré') && searchTerm.includes('papa')) searchTerm = 'mashed potato';
-      else if (searchTerm.includes('arroz')) searchTerm = 'rice';
-      else if (searchTerm.includes('pescado')) searchTerm = 'fish';
-      else if (searchTerm.includes('carne')) searchTerm = 'beef';
+      // Spanish to English food mapping for better FatSecret results
+      const foodMapping: { [key: string]: string } = {
+        'palta': 'avocado',
+        'aguacate': 'avocado', 
+        'pollo': 'chicken',
+        'huevo': 'egg',
+        'huevos': 'eggs',
+        'pan': 'bread',
+        'arroz': 'rice',
+        'papa': 'potato',
+        'tomate': 'tomato',
+        'carne': 'beef',
+        'pescado': 'fish',
+        'leche': 'milk',
+        'queso': 'cheese',
+        'mantequilla': 'butter',
+        'aceite': 'oil',
+        'sal': 'salt',
+        'azúcar': 'sugar'
+      };
+
+      // Extract basic ingredient from complex preparations
+      if (searchTerm.includes('huevos fritos') || searchTerm.includes('huevo frito')) {
+        searchTerm = 'fried eggs';
+      } else if (searchTerm.includes('pan tostado')) {
+        searchTerm = 'toast bread';
+      } else if (searchTerm.includes('palta') || searchTerm.includes('aguacate')) {
+        searchTerm = 'avocado';
+      } else if (searchTerm.includes('pollo')) {
+        searchTerm = 'chicken';
+      } else if (searchTerm.includes('papa') && (searchTerm.includes('hervida') || searchTerm.includes('hervido'))) {
+        searchTerm = 'potato boiled';
+      } else if (searchTerm.includes('papa')) {
+        searchTerm = 'potato';
+      } else if (searchTerm.includes('puré') && searchTerm.includes('papa')) {
+        searchTerm = 'mashed potato';
+      } else if (searchTerm.includes('arroz')) {
+        searchTerm = 'rice';
+      } else if (searchTerm.includes('pescado')) {
+        searchTerm = 'fish';
+      } else if (searchTerm.includes('carne')) {
+        searchTerm = 'beef';
+      } else {
+        // Check if we have a direct mapping
+        for (const [spanish, english] of Object.entries(foodMapping)) {
+          if (searchTerm.includes(spanish)) {
+            searchTerm = english;
+            break;
+          }
+        }
+      }
       
       console.log(`Simplified search term: ${searchTerm}`);
       
@@ -117,8 +160,42 @@ serve(async (req) => {
         continue;
       }
 
-      // Take the first result (best match)
-      const selectedFood = searchData.foods[0];
+      // Smarter food selection - prefer closer matches
+      let selectedFood = searchData.foods[0];
+      
+      // For avocado/palta, specifically look for avocado in results
+      if ((food.name.toLowerCase().includes('palta') || food.name.toLowerCase().includes('aguacate')) && searchData.foods.length > 1) {
+        const avocadoMatch = searchData.foods.find((f: any) => 
+          f.food_name.toLowerCase().includes('avocado') || 
+          f.food_name.toLowerCase().includes('avocados')
+        );
+        if (avocadoMatch) {
+          selectedFood = avocadoMatch;
+        }
+      }
+      
+      // For eggs, look for egg-related foods
+      if (food.name.toLowerCase().includes('huevo') && searchData.foods.length > 1) {
+        const eggMatch = searchData.foods.find((f: any) => 
+          f.food_name.toLowerCase().includes('egg') && 
+          !f.food_name.toLowerCase().includes('eggplant')
+        );
+        if (eggMatch) {
+          selectedFood = eggMatch;
+        }
+      }
+      
+      // For bread/toast, look for bread-related foods
+      if (food.name.toLowerCase().includes('pan') && searchData.foods.length > 1) {
+        const breadMatch = searchData.foods.find((f: any) => 
+          f.food_name.toLowerCase().includes('bread') || 
+          f.food_name.toLowerCase().includes('toast')
+        );
+        if (breadMatch) {
+          selectedFood = breadMatch;
+        }
+      }
+      
       console.log(`Selected food for "${food.name}":`, { name: selectedFood.food_name, brand: selectedFood.brand_name });
 
       // Use the servings calculated by OpenAI
