@@ -44,14 +44,14 @@ serve(async (req) => {
 
     const { action, expenses, sheetId, accessToken } = await req.json()
 
-    if (!accessToken) {
-      return new Response(
-        JSON.stringify({ error: 'Access token is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
     switch (action) {
+      case 'get-config':
+        return new Response(
+          JSON.stringify({ 
+            clientId: Deno.env.get('GOOGLE_CLIENT_ID')
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       case 'create-sheet':
         return await createExpenseSheet(expenses, accessToken)
       case 'sync-expenses':
@@ -63,6 +63,16 @@ serve(async (req) => {
           JSON.stringify({ error: 'Invalid action' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
+    }
+
+    // For actions that require access token, validate it
+    if (action !== 'get-config') {
+      if (!accessToken) {
+        return new Response(
+          JSON.stringify({ error: 'Access token is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
     }
 
   } catch (error) {

@@ -12,8 +12,16 @@ export const useGoogleDrive = () => {
     try {
       setIsLoading(true);
       
-      // Google OAuth 2.0 flow with Drive and Sheets permissions
-      const clientId = '574833807942-i74k1r1kl8h4oatvh5l2jdpfr5q8v7pk.apps.googleusercontent.com';
+      // Get Google Client ID from environment via edge function
+      const { data: configData } = await supabase.functions.invoke('google-drive-sync', {
+        body: { action: 'get-config' }
+      });
+      
+      if (!configData?.clientId) {
+        throw new Error('Google Client ID not configured');
+      }
+      
+      const clientId = configData.clientId;
       const redirectUri = window.location.origin;
       const scope = [
         'https://www.googleapis.com/auth/drive.file',
