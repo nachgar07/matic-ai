@@ -873,38 +873,38 @@ export const Archivos = () => {
 
       {/* Modal para Ver Gasto */}
       <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md mx-4">
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalle del Gasto</DialogTitle>
           </DialogHeader>
           {selectedGasto && (
-            <div className="space-y-4">
+            <div className="space-y-4 pb-4">
               <div>
                 <Label className="text-sm font-medium">Establecimiento</Label>
-                <p className="text-lg">{selectedGasto.nombre}</p>
+                <p className="text-base sm:text-lg break-words">{selectedGasto.nombre}</p>
               </div>
               
               <div>
                 <Label className="text-sm font-medium">Fecha</Label>
-                <p>{new Date(selectedGasto.fechaCreacion).toLocaleDateString()}</p>
+                <p className="text-base">{selectedGasto.fecha.split('-').reverse().join('/')}</p>
               </div>
               
               <div>
                 <Label className="text-sm font-medium">Total</Label>
-                <p className="text-2xl font-bold text-primary">${selectedGasto.total.toFixed(2)}</p>
+                <p className="text-xl sm:text-2xl font-bold text-primary">${selectedGasto.total.toFixed(2)}</p>
               </div>
               
               <div>
                 <Label className="text-sm font-medium">Productos ({selectedGasto.items.length})</Label>
-                <div className="bg-muted rounded-lg p-3 mt-2 max-h-48 overflow-y-auto">
+                <div className="bg-muted rounded-lg p-2 sm:p-3 mt-2 max-h-40 sm:max-h-48 overflow-y-auto">
                   {selectedGasto.items.map((item, index) => (
-                    <div key={index} className="flex justify-between py-2 border-b border-border last:border-0">
-                      <div>
-                        <div className="font-medium">{item.producto}</div>
-                        <div className="text-sm text-muted-foreground">{item.cantidad}</div>
+                    <div key={index} className="flex justify-between items-start gap-2 py-2 border-b border-border last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm sm:text-base break-words">{item.producto}</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground">{item.cantidad}</div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium">${item.precio.toFixed(2)}</div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="font-medium text-sm sm:text-base">${item.precio.toFixed(2)}</div>
                       </div>
                     </div>
                   ))}
@@ -918,8 +918,7 @@ export const Archivos = () => {
                     <img 
                       src={selectedGasto.imagenTicket} 
                       alt="Ticket" 
-                      className="w-full rounded-lg border"
-                      style={{ maxHeight: '200px', objectFit: 'contain' }}
+                      className="w-full rounded-lg border max-h-[40vh] sm:max-h-[50vh] object-contain"
                     />
                   </div>
                 </div>
