@@ -319,10 +319,16 @@ COMIDAS DE HOY (NO REPITAS ESTOS ALIMENTOS - CREA COMIDAS NUEVAS Y DIFERENTES):`
 - Carbohidratos restantes: ${Math.max(0, userContext.goals.daily_carbs - userContext.today.consumed.carbs)}g
 - Grasas restantes: ${Math.max(0, userContext.goals.daily_fat - userContext.today.consumed.fat)}g
 
+⚠️ INSTRUCCIONES CRÍTICAS PARA CÁLCULOS:
+1. USA EXACTAMENTE los valores de "Calorías restantes", "Proteína restante", etc. que aparecen arriba
+2. NO hagas tus propios cálculos - USA LOS VALORES YA CALCULADOS
+3. Si el usuario pregunta "cuánto me falta", responde DIRECTAMENTE con estos valores
+4. NO inventes números diferentes - confía en los cálculos del sistema
+
 USA ESTA INFORMACIÓN para:
 1. Dar consejos personalizados y celebrar el progreso
 2. Identificar patrones y sugerir mejoras específicas
-3. CALCULAR EXACTAMENTE cuánto puede comer el usuario sin exceder sus límites
+3. USAR EXACTAMENTE los valores restantes calculados sin modificarlos
 4. Sugerir comidas específicas que encajen en las calorías y macros restantes
 5. Mantener un tono motivador y personalizar respuestas según el progreso actual
 
