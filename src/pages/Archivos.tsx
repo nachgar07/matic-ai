@@ -792,7 +792,7 @@ export const Archivos = () => {
                           )}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {new Date(gasto.fecha).toLocaleDateString()}
+                          {gasto.fecha.split('-').reverse().join('/')}
                         </div>
                         <div className="text-lg font-semibold text-primary mt-1">
                           ${gasto.total.toFixed(2)}
