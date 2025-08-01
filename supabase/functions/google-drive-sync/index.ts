@@ -44,6 +44,14 @@ serve(async (req) => {
 
     const { action, expenses, sheetId, accessToken } = await req.json()
 
+    // For actions that require access token, validate it
+    if (action !== 'get-config' && !accessToken) {
+      return new Response(
+        JSON.stringify({ error: 'Access token is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     switch (action) {
       case 'get-config':
         return new Response(
@@ -63,16 +71,6 @@ serve(async (req) => {
           JSON.stringify({ error: 'Invalid action' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
-    }
-
-    // For actions that require access token, validate it
-    if (action !== 'get-config') {
-      if (!accessToken) {
-        return new Response(
-          JSON.stringify({ error: 'Access token is required' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
     }
 
   } catch (error) {
