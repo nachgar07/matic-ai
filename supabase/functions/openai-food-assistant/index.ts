@@ -271,20 +271,34 @@ PROGRESO DE HOY:
 
 COMIDAS DE HOY (NO REPITAS ESTOS ALIMENTOS - CREA COMIDAS NUEVAS Y DIFERENTES):`;
 
-    // Add today's meals breakdown
-    Object.entries(userContext.today.meals).forEach(([mealType, foods]: [string, any]) => {
-      const mealTypeNames: { [key: string]: string } = {
-        breakfast: 'Desayuno',
-        lunch: 'Almuerzo', 
-        dinner: 'Cena',
-        snack: 'Snack'
-      };
+    // Add today's meals breakdown with clear structure
+    if (userContext.today.meals && Object.keys(userContext.today.meals).length > 0) {
+      systemPrompt += `\n\nCOMIDAS REGISTRADAS HOY (LEE ESTO CUIDADOSAMENTE):`;
       
-      systemPrompt += `\n${mealTypeNames[mealType] || mealType}:`;
-      foods.forEach((food: any) => {
-        systemPrompt += `\n  - ${food.food_name} (${food.servings} porción${food.servings === 1 ? '' : 'es'}) - ${Math.round(food.calories)} kcal`;
+      Object.entries(userContext.today.meals).forEach(([mealType, foods]: [string, any]) => {
+        const mealTypeNames: { [key: string]: string } = {
+          breakfast: 'DESAYUNO',
+          lunch: 'ALMUERZO', 
+          dinner: 'CENA',
+          snack: 'SNACK'
+        };
+        
+        const mealTypeName = mealTypeNames[mealType] || mealType.toUpperCase();
+        systemPrompt += `\n\n${mealTypeName}:`;
+        
+        if (foods && foods.length > 0) {
+          foods.forEach((food: any, index: number) => {
+            systemPrompt += `\n  ${index + 1}. ${food.food_name} - ${food.servings} porción${food.servings === 1 ? '' : 'es'} - ${Math.round(food.calories)} kcal`;
+          });
+        } else {
+          systemPrompt += `\n  (Sin comidas registradas)`;
+        }
       });
-    });
+      
+      systemPrompt += `\n\nIMPORTANTE: Estas son las ÚNICAS comidas que el usuario ha registrado hoy. NO inventes comidas diferentes.`;
+    } else {
+      systemPrompt += `\n\nCOMIDAS REGISTRADAS HOY: Ninguna comida registrada aún.`;
+    }
 
     if (userContext.recent_patterns.frequent_foods.length > 0) {
       systemPrompt += `\n\nALIMENTOS MÁS FRECUENTES (últimos 7 días):`;
