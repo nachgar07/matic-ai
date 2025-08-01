@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 interface Gasto {
   id: string;
   nombre: string;
+  fecha: string;
   fechaCreacion: string;
   tipo: "ticket" | "excel_voz";
   total: number;
@@ -250,6 +251,7 @@ export const Archivos = () => {
       const gastosTransformados = expenses?.map(expense => ({
         id: expense.id,
         nombre: expense.store_name || 'Establecimiento desconocido',
+        fecha: expense.expense_date,
         fechaCreacion: expense.created_at,
         tipo: 'ticket' as const,
         total: parseFloat(expense.total_amount.toString()),
@@ -336,6 +338,7 @@ export const Archivos = () => {
       return expenses?.map(expense => ({
         id: expense.id,
         nombre: expense.store_name || 'Establecimiento desconocido',
+        fecha: expense.expense_date,
         fechaCreacion: expense.created_at,
         tipo: 'ticket' as const,
         total: parseFloat(expense.total_amount.toString()),
@@ -789,7 +792,7 @@ export const Archivos = () => {
                           )}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {new Date(gasto.fechaCreacion).toLocaleDateString()}
+                          {new Date(gasto.fecha).toLocaleDateString()}
                         </div>
                         <div className="text-lg font-semibold text-primary mt-1">
                           ${gasto.total.toFixed(2)}
