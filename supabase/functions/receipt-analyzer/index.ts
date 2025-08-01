@@ -70,6 +70,8 @@ async function analyzeReceiptImage(imageBase64: string, apiKey: string) {
 
 Instrucciones importantes:
 - Extrae TODOS los productos visibles en el recibo
+- Para la fecha: busca la fecha EXACTA del ticket/recibo (no la fecha de vencimiento). Usa el formato YYYY-MM-DD considerando zona horaria Argentina (GMT-3)
+- Si encuentras una fecha como "27/7/2025" o "27/07/2025", conviértela exactamente a "2025-07-27" 
 - Si el texto no es completamente claro, haz tu mejor estimación
 - Para cantidades, usa el formato más claro posible
 - Convierte todos los precios a números sin símbolos de moneda
