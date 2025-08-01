@@ -26,8 +26,8 @@ export const Auth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Redirect authenticated users to main page
-        if (session?.user) {
+        // Only redirect if we have a complete session and it's not during OAuth flow
+        if (session?.user && event === 'SIGNED_IN') {
           setTimeout(() => {
             window.location.href = `${window.location.origin}/`;
           }, 100);
@@ -153,9 +153,6 @@ export const Auth = () => {
     setLoading(true);
     
     try {
-      // Clean up existing state
-      cleanupAuthState();
-      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -170,7 +167,6 @@ export const Auth = () => {
         description: error.message || "Ha ocurrido un error inesperado.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
