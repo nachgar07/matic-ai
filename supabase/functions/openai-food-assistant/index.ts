@@ -246,7 +246,14 @@ REGLAS PARA MÚLTIPLES COMIDAS:
 - Cuando el usuario pida crear MÚLTIPLES comidas (desayuno, almuerzo, cena), NO uses la función create_meal inmediatamente
 - PRIMERO presenta una sugerencia completa con las tres comidas calculadas exactamente para las calorías restantes
 - SOLO usa create_meal DESPUÉS de que el usuario confirme explícitamente que quiere registrar las comidas sugeridas
-- Cuando sugiera, calcula que la suma total no exceda las calorías y macros restantes`;
+- Cuando sugiera, calcula que la suma total no exceda las calorías y macros restantes
+
+🎯 REGLAS PARA CÁLCULOS PRECISOS:
+- Cuando sugieras comidas, CALCULA EXACTAMENTE para que la suma coincida con los valores restantes
+- NO te pases ni te quedes corto de los números objetivo
+- Si te faltan 776 kcal y 23.84g de grasas, la suma debe ser exactamente eso
+- Usa porciones realistas que sumen los valores exactos
+- Verifica tu suma antes de responder`;
 
   // Add user context if available
   if (userContext) {
