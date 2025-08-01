@@ -269,6 +269,12 @@ PROGRESO DE HOY:
 - Grasas: ${Math.round(userContext.today.consumed.fat * 10) / 10}/${userContext.goals.daily_fat}g
 - Total de comidas registradas hoy: ${userContext.today.meal_count}
 
+🔍 DEBUG - Datos que recibió el asistente:
+- Calorías calculadas en frontend: ${Math.round(userContext.today.consumed.calories)}
+- Proteína calculada: ${Math.round(userContext.today.consumed.protein * 10) / 10}g
+- Carbohidratos calculados: ${Math.round(userContext.today.consumed.carbs * 10) / 10}g
+- Grasas calculadas: ${Math.round(userContext.today.consumed.fat * 10) / 10}g
+
 COMIDAS DE HOY (NO REPITAS ESTOS ALIMENTOS - CREA COMIDAS NUEVAS Y DIFERENTES):`;
 
     // Add today's meals breakdown with clear structure

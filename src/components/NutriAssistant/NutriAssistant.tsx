@@ -263,6 +263,16 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
         return acc;
       }, { calories: 0, protein: 0, carbs: 0, fat: 0 }) || { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
+      console.log('📊 Calculated today totals:', todayTotals);
+      console.log('📊 Each meal breakdown:', todayMeals?.map(m => ({
+        food: m.foods?.food_name,
+        servings: m.servings,
+        calories_per_serving: m.foods?.calories_per_serving,
+        total_calories: (m.foods?.calories_per_serving || 0) * m.servings,
+        meal_type: m.meal_type,
+        time: m.consumed_at
+      })));
+
       // Group today's meals by type
       const mealsByType = todayMeals?.reduce((acc: any, meal: any) => {
         if (!acc[meal.meal_type]) {
