@@ -206,6 +206,12 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
 
       // Get today's meals
       const today = new Date().toISOString().split('T')[0];
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      
+      console.log('Fetching meals for date:', today);
+      
       const { data: todayMeals } = await supabase
         .from('meal_entries')
         .select(`
@@ -214,8 +220,15 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
         `)
         .eq('user_id', user.id)
         .gte('consumed_at', `${today}T00:00:00`)
-        .lt('consumed_at', `${today}T23:59:59`)
+        .lt('consumed_at', `${tomorrowStr}T00:00:00`)
         .order('consumed_at', { ascending: false });
+
+      console.log('Found meals for today:', todayMeals?.length || 0);
+      console.log('Today meals:', todayMeals?.map(m => ({ 
+        food: m.foods?.food_name, 
+        type: m.meal_type, 
+        time: m.consumed_at 
+      })));
 
       // Get recent meals (last 7 days for pattern analysis)
       const sevenDaysAgo = new Date();
