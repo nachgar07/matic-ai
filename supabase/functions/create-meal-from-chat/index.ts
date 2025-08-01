@@ -337,34 +337,108 @@ serve(async (req) => {
       return acc;
     }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-    // Check if user_message contains target calories (from AI promise)
-    let targetCalories = null;
+    // Extract ALL target values from user message (calories, protein, carbs, fat)
+    let targetValues = null;
     if (user_message) {
       const calorieMatch = user_message.match(/(\d+)\s*kcal/);
-      if (calorieMatch) {
-        targetCalories = parseInt(calorieMatch[1]);
+      const proteinMatch = user_message.match(/(\d+(?:\.\d+)?)\s*g?\s*(?:de\s+)?prote[íi]na/i);
+      const carbsMatch = user_message.match(/(\d+(?:\.\d+)?)\s*g?\s*(?:de\s+)?carbohidratos/i);
+      const fatMatch = user_message.match(/(\d+(?:\.\d+)?)\s*g?\s*(?:de\s+)?grasas/i);
+      
+      if (calorieMatch || proteinMatch || carbsMatch || fatMatch) {
+        targetValues = {
+          calories: calorieMatch ? parseInt(calorieMatch[1]) : null,
+          protein: proteinMatch ? parseFloat(proteinMatch[1]) : null,
+          carbs: carbsMatch ? parseFloat(carbsMatch[1]) : null,
+          fat: fatMatch ? parseFloat(fatMatch[1]) : null
+        };
+        console.log('🎯 Target values extracted:', targetValues);
       }
     }
 
-    // If we have a target and we're off by more than 50 calories, adjust the largest food portion
-    if (targetCalories && Math.abs(initialTotals.calories - targetCalories) > 50) {
-      console.log(`🎯 Adjusting portions: Target ${targetCalories} kcal, Current ${Math.round(initialTotals.calories)} kcal`);
+    // Smart portion adjustment to match ALL macros, not just calories
+    if (targetValues && searchResults.filter(r => r.saved).length > 0) {
+      console.log('🔧 Starting smart portion adjustment...');
       
-      // Find the food with highest calories to adjust
-      const adjustableResults = searchResults.filter(r => r.saved && r.food_data && r.food_data.calories_per_serving > 50);
-      if (adjustableResults.length > 0) {
-        const largestFood = adjustableResults.reduce((max, current) => 
-          current.total_calories > max.total_calories ? current : max
-        );
+      // Try different scaling approaches to get closer to targets
+      let bestAdjustment = null;
+      let bestError = Infinity;
+      
+      // Test different scaling scenarios
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const testResults = JSON.parse(JSON.stringify(searchResults)); // Deep clone
         
-        const currentCalories = largestFood.food_data.calories_per_serving * largestFood.servings;
-        const otherCalories = initialTotals.calories - currentCalories;
-        const neededCalories = targetCalories - otherCalories;
-        const newServings = Math.max(0.1, neededCalories / largestFood.food_data.calories_per_serving);
+        if (attempt === 0) {
+          // Attempt 1: Scale all portions equally
+          const avgScale = targetValues.calories ? (targetValues.calories / initialTotals.calories) : 1;
+          testResults.forEach(r => {
+            if (r.saved) r.servings *= Math.max(0.1, Math.min(3, avgScale));
+          });
+        } else if (attempt === 1) {
+          // Attempt 2: Prioritize protein foods for protein, carb foods for carbs, etc.
+          testResults.forEach(r => {
+            if (!r.saved || !r.food_data) return;
+            const proteinRatio = r.food_data.protein_per_serving / (r.food_data.calories_per_serving || 1);
+            const carbRatio = r.food_data.carbs_per_serving / (r.food_data.calories_per_serving || 1);
+            const fatRatio = r.food_data.fat_per_serving / (r.food_data.calories_per_serving || 1);
+            
+            if (proteinRatio > 0.1 && targetValues.protein) {
+              // This is a protein-rich food
+              r.servings *= Math.max(0.2, Math.min(2, targetValues.protein / (initialTotals.protein || 1)));
+            } else if (carbRatio > 0.3 && targetValues.carbs) {
+              // This is a carb-rich food  
+              r.servings *= Math.max(0.2, Math.min(2, targetValues.carbs / (initialTotals.carbs || 1)));
+            } else if (fatRatio > 0.2 && targetValues.fat) {
+              // This is a fat-rich food
+              r.servings *= Math.max(0.1, Math.min(2, targetValues.fat / (initialTotals.fat || 1)));
+            }
+          });
+        } else {
+          // Attempts 3-5: Random variations
+          testResults.forEach(r => {
+            if (r.saved) r.servings *= (0.5 + Math.random());
+          });
+        }
         
-        console.log(`🔧 Adjusting ${largestFood.food_name} from ${largestFood.servings} to ${newServings.toFixed(2)} servings`);
-        largestFood.servings = parseFloat(newServings.toFixed(2));
-        largestFood.total_calories = Math.round(largestFood.food_data.calories_per_serving * largestFood.servings);
+        // Calculate totals for this test
+        const testTotals = testResults.reduce((acc, result) => {
+          if (result.saved && result.food_data) {
+            const calories = (result.food_data.calories_per_serving || 0) * result.servings;
+            const protein = (result.food_data.protein_per_serving || 0) * result.servings;
+            const carbs = (result.food_data.carbs_per_serving || 0) * result.servings;
+            const fat = (result.food_data.fat_per_serving || 0) * result.servings;
+            
+            return {
+              calories: acc.calories + calories,
+              protein: acc.protein + protein,
+              carbs: acc.carbs + carbs,
+              fat: acc.fat + fat
+            };
+          }
+          return acc;
+        }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+        
+        // Calculate error (how far we are from targets)
+        let error = 0;
+        if (targetValues.calories) error += Math.abs(testTotals.calories - targetValues.calories) / targetValues.calories;
+        if (targetValues.protein) error += Math.abs(testTotals.protein - targetValues.protein) / targetValues.protein;
+        if (targetValues.carbs) error += Math.abs(testTotals.carbs - targetValues.carbs) / targetValues.carbs;
+        if (targetValues.fat) error += Math.abs(testTotals.fat - targetValues.fat) / targetValues.fat;
+        
+        console.log(`📊 Attempt ${attempt + 1}: Error=${error.toFixed(3)}, Totals=${Math.round(testTotals.calories)}kcal, ${testTotals.protein.toFixed(1)}g protein, ${testTotals.carbs.toFixed(1)}g carbs, ${testTotals.fat.toFixed(1)}g fat`);
+        
+        if (error < bestError) {
+          bestError = error;
+          bestAdjustment = testResults;
+        }
+      }
+      
+      // Apply the best adjustment found
+      if (bestAdjustment && bestError < 2) { // Only apply if reasonably good
+        searchResults.splice(0, searchResults.length, ...bestAdjustment);
+        console.log('✅ Applied best adjustment with error:', bestError.toFixed(3));
+      } else {
+        console.log('❌ No good adjustment found, keeping original portions');
       }
     }
 

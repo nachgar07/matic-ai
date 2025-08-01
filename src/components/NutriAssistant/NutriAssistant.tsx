@@ -356,7 +356,10 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
           action: 'chat',
           text: messageText,
           conversationHistory,
-          userContext // Pass context directly from frontend
+          userContext: {
+            ...userContext,
+            originalUserMessage: messageText // Add original message for target extraction
+          }
         }
       });
 
