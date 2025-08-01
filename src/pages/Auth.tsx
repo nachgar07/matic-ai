@@ -53,14 +53,31 @@ export const Auth = () => {
     localStorage.removeItem('supabase.auth.token');
     // Remove all Supabase auth keys from localStorage
     Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-') || 
+          key.includes('sueosblancos') || key.includes('blanqueria') ||
+          key.includes('xn--')) {
         localStorage.removeItem(key);
+        console.log('🧹 Removed problematic localStorage key:', key);
       }
     });
     // Remove from sessionStorage if in use
     Object.keys(sessionStorage || {}).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-') ||
+          key.includes('sueosblancos') || key.includes('blanqueria') ||
+          key.includes('xn--')) {
         sessionStorage.removeItem(key);
+        console.log('🧹 Removed problematic sessionStorage key:', key);
+      }
+    });
+    
+    // Also clear any cookies that might contain the problematic URL
+    document.cookie.split(";").forEach(function(c) { 
+      const cookie = c.trim();
+      if (cookie.includes('sueosblancos') || cookie.includes('blanqueria') || cookie.includes('xn--')) {
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        console.log('🧹 Removed problematic cookie:', name);
       }
     });
   };

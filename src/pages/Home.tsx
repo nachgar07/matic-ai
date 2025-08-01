@@ -41,10 +41,34 @@ export const Home = () => {
 
   const handleSignOut = async () => {
     try {
-      // Clean up auth state
+      // Clean up auth state including problematic URLs
       Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-') ||
+            key.includes('sueosblancos') || key.includes('blanqueria') ||
+            key.includes('xn--')) {
           localStorage.removeItem(key);
+          console.log('🧹 Removed key during logout:', key);
+        }
+      });
+      
+      // Clean sessionStorage too
+      Object.keys(sessionStorage || {}).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-') ||
+            key.includes('sueosblancos') || key.includes('blanqueria') ||
+            key.includes('xn--')) {
+          sessionStorage.removeItem(key);
+          console.log('🧹 Removed sessionStorage key during logout:', key);
+        }
+      });
+      
+      // Clean problematic cookies
+      document.cookie.split(";").forEach(function(c) { 
+        const cookie = c.trim();
+        if (cookie.includes('sueosblancos') || cookie.includes('blanqueria') || cookie.includes('xn--')) {
+          const eqPos = cookie.indexOf("=");
+          const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+          document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+          console.log('🧹 Removed problematic cookie during logout:', name);
         }
       });
       
@@ -52,7 +76,7 @@ export const Home = () => {
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
-        // Ignore errors
+        console.error('Global sign out failed:', err);
       }
       
       // Force page reload for a clean state
