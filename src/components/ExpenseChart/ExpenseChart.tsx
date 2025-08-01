@@ -65,7 +65,7 @@ export const ExpenseChart = ({ data, totalAmount, chartPeriod, onPeriodChange, r
               onClick={() => onPeriodChange('day')}
               className="px-2 py-1 text-xs h-7"
             >
-              Hoy
+              Día
             </Button>
           </div>
           {/* Indicador del período */}
@@ -149,7 +149,7 @@ export const ExpenseChart = ({ data, totalAmount, chartPeriod, onPeriodChange, r
             onClick={() => onPeriodChange('day')}
             className="px-2 py-1 text-xs h-7"
           >
-            Hoy
+            Día
           </Button>
         </div>
         {/* Indicador del período */}
