@@ -53,6 +53,9 @@ export const Archivos = () => {
   const [chartPeriod, setChartPeriod] = useState<'day' | 'week' | 'month'>('month'); // Período para el gráfico
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [pendingAnalysis, setPendingAnalysis] = useState<any>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false); // Para controlar el popover del calendario
+  const [showImageModal, setShowImageModal] = useState(false); // Para el modal de imagen
+  const [selectedImage, setSelectedImage] = useState<string | null>(null); // URL de la imagen seleccionada
   const { toast } = useToast();
   
   // Hook para manejar categorías
@@ -370,7 +373,14 @@ export const Archivos = () => {
     if (date && user) {
       setFilterDate(date);
       await loadExpenses(user.id, date);
+      setIsCalendarOpen(false); // Cerrar el popover después de seleccionar fecha
     }
+  };
+
+  // Función para mostrar imagen en grande
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setShowImageModal(true);
   };
 
   // useEffect para recargar cuando cambie el filtro de fecha
@@ -682,7 +692,7 @@ export const Archivos = () => {
           <h3 className="font-semibold">Gastos Recientes</h3>
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <Popover>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -918,8 +928,10 @@ export const Archivos = () => {
                     <img 
                       src={selectedGasto.imagenTicket} 
                       alt="Ticket" 
-                      className="w-full rounded-lg border max-h-[40vh] sm:max-h-[50vh] object-contain"
+                      className="w-full rounded-lg border max-h-[40vh] sm:max-h-[50vh] object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => handleImageClick(selectedGasto.imagenTicket!)}
                     />
+                    <p className="text-xs text-muted-foreground mt-1 text-center">Haz clic para ver en grande</p>
                   </div>
                 </div>
               )}
@@ -1011,6 +1023,24 @@ export const Archivos = () => {
           categories={categories}
         />
       )}
+
+      {/* Modal para Ver Imagen en Grande */}
+      <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-2">
+          <DialogHeader className="pb-2">
+            <DialogTitle>Imagen del Ticket</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center">
+            {selectedImage && (
+              <img 
+                src={selectedImage} 
+                alt="Ticket completo" 
+                className="max-w-full max-h-[80vh] object-contain rounded-lg"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNavigation />
     </div>
