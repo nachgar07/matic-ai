@@ -423,6 +423,39 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
     });
   };
 
+  // Format assistant messages to remove markdown and add icons
+  const formatAssistantMessage = (content: string) => {
+    let formatted = content;
+    
+    // Remove markdown bold
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1');
+    
+    // Remove markdown headers
+    formatted = formatted.replace(/### (.*?)(\n|$)/g, '$1$2');
+    formatted = formatted.replace(/## (.*?)(\n|$)/g, '$1$2');
+    formatted = formatted.replace(/# (.*?)(\n|$)/g, '$1$2');
+    
+    // Add food emoji before meal names
+    formatted = formatted.replace(/^- (Huevos?|Huevo)/gmi, '🥚 $1');
+    formatted = formatted.replace(/^- (Pan|Tostada)/gmi, '🍞 $1');
+    formatted = formatted.replace(/^- (Palta|Aguacate)/gmi, '🥑 $1');
+    formatted = formatted.replace(/^- (Pollo|Pechuga)/gmi, '🍗 $1');
+    formatted = formatted.replace(/^- (Arroz)/gmi, '🍚 $1');
+    formatted = formatted.replace(/^- (Quinoa)/gmi, '🌾 $1');
+    formatted = formatted.replace(/^- (Ensalada|Lechuga)/gmi, '🥗 $1');
+    formatted = formatted.replace(/^- (Tomate)/gmi, '🍅 $1');
+    formatted = formatted.replace(/^- (Limón)/gmi, '🍋 $1');
+    
+    // Add nutrition emoji before totals
+    formatted = formatted.replace(/Totales del (desayuno|almuerzo|cena|snack):/gi, '📊 Totales del $1:');
+    formatted = formatted.replace(/Calorías:/gi, '🔥 Calorías:');
+    formatted = formatted.replace(/Proteína:/gi, '💪 Proteína:');
+    formatted = formatted.replace(/Carbohidratos:/gi, '🌾 Carbohidratos:');
+    formatted = formatted.replace(/Grasas:/gi, '🥑 Grasas:');
+    
+    return formatted;
+  };
+
   const getMealTypeName = (mealType: string) => {
     const names: { [key: string]: string } = {
       breakfast: 'desayuno',
@@ -499,7 +532,9 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
                         : 'bg-muted mr-4'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap">
+                      {message.role === 'assistant' ? formatAssistantMessage(message.content) : message.content}
+                    </p>
                   </div>
                   <p className={`text-xs text-muted-foreground ${
                     message.role === 'user' ? 'text-right' : 'text-left'
