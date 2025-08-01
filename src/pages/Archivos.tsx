@@ -7,6 +7,7 @@ import { PhotoCapture } from "@/components/PhotoCapture/PhotoCapture";
 import { ExpenseChart } from "@/components/ExpenseChart/ExpenseChart";
 import { CategoryManager } from "@/components/CategoryManager/CategoryManager";
 import { ExpenseReviewModal } from "@/components/ExpenseReviewModal/ExpenseReviewModal";
+import { ManualExpenseEntry } from "@/components/ManualExpenseEntry/ManualExpenseEntry";
 import { useExpenseCategories } from "@/hooks/useExpenseCategories";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,7 @@ export const Archivos = () => {
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [showPhotoCapture, setShowPhotoCapture] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [selectedGasto, setSelectedGasto] = useState<Gasto | null>(null);
@@ -381,6 +383,64 @@ export const Archivos = () => {
   const handleImageClick = (imageUrl: string) => {
     setSelectedImage(imageUrl);
     setShowImageModal(true);
+  };
+
+  // Función para manejar gasto manual agregado
+  const handleManualExpenseAdded = async (expenseData: any, categoryId: string | null) => {
+    if (!user) return;
+
+    try {
+      const gastoData = {
+        user_id: user.id,
+        store_name: expenseData.store_name,
+        total_amount: expenseData.total_amount,
+        expense_date: expenseData.expense_date,
+        payment_method: expenseData.payment_method,
+        confidence: expenseData.confidence,
+        category_id: categoryId
+      };
+
+      const { data: expense, error: expenseError } = await supabase
+        .from('expenses')
+        .insert(gastoData)
+        .select()
+        .single();
+
+      if (expenseError) throw expenseError;
+
+      // Si hay items, guardarlos también
+      if (expenseData.items && expenseData.items.length > 0) {
+        const itemsData = expenseData.items.map((item: any) => ({
+          expense_id: expense.id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('expense_items')
+          .insert(itemsData);
+
+        if (itemsError) throw itemsError;
+      }
+
+      // Recargar gastos
+      await fetchGastos();
+
+      toast({
+        title: "¡Gasto creado!",
+        description: "El gasto se ha guardado correctamente"
+      });
+
+    } catch (error) {
+      console.error('Error saving manual expense:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el gasto",
+        variant: "destructive"
+      });
+    }
   };
 
   // useEffect para recargar cuando cambie el filtro de fecha
@@ -863,21 +923,47 @@ export const Archivos = () => {
           )}
         </div>
 
-        {/* Quick Create Button */}
+        {/* Quick Create Buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Button 
-          size="lg"
-          className="w-full h-16 bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={() => setShowPhotoCapture(true)}
-        >
-          <Receipt className="mr-3" size={24} />
-          Escanear Nuevo Recibo
-        </Button>
+            size="lg"
+            className="h-16 bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => setShowPhotoCapture(true)}
+          >
+            <Receipt className="mr-3" size={24} />
+            <div className="flex flex-col items-start">
+              <span className="font-semibold">📷 Escanear Recibo</span>
+              <span className="text-xs opacity-90">Detectar gastos automáticamente</span>
+            </div>
+          </Button>
+          
+          <Button 
+            size="lg"
+            variant="outline"
+            className="h-16 border-2 hover:bg-accent"
+            onClick={() => setShowManualEntry(true)}
+          >
+            <div className="mr-3 text-2xl">✏️</div>
+            <div className="flex flex-col items-start">
+              <span className="font-semibold">Crear Gasto Manual</span>
+              <span className="text-xs opacity-70">Ingresar detalles manualmente</span>
+            </div>
+          </Button>
+        </div>
       </div>
 
       {showPhotoCapture && (
         <PhotoCapture
           onAnalysisComplete={handleTicketAnalysis}
           onClose={() => setShowPhotoCapture(false)}
+        />
+      )}
+
+      {showManualEntry && (
+        <ManualExpenseEntry
+          onExpenseAdded={handleManualExpenseAdded}
+          onClose={() => setShowManualEntry(false)}
+          categories={categories}
         />
       )}
 
