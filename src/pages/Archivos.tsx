@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mic, FileText, Plus, MoreVertical, Camera, Receipt, Trash2, Edit, Eye, Calendar as CalendarIcon, Filter } from "lucide-react";
+import { Mic, FileText, Plus, MoreVertical, Camera, Receipt, Trash2, Edit, Eye, Calendar as CalendarIcon, Filter, PenTool } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -58,6 +58,7 @@ export const Archivos = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false); // Para controlar el popover del calendario
   const [showImageModal, setShowImageModal] = useState(false); // Para el modal de imagen
   const [selectedImage, setSelectedImage] = useState<string | null>(null); // URL de la imagen seleccionada
+  const [showCreatePopup, setShowCreatePopup] = useState(false);
   const { toast } = useToast();
   
   // Hook para manejar categorías
@@ -748,17 +749,60 @@ export const Archivos = () => {
         </div>
 
         {/* Filtro de Fecha */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+        <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold">Gastos Recientes</h3>
           
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="flex items-center gap-2">
+            {/* Botón + para crear gastos */}
+            <Popover open={showCreatePopup} onOpenChange={setShowCreatePopup}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-full">
+                  <Plus size={16} />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3" align="end">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm mb-3">Crear Nuevo Gasto</h4>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start h-auto p-3 text-left"
+                    onClick={() => {
+                      setShowCreatePopup(false);
+                      setShowPhotoCapture(true);
+                    }}
+                  >
+                    <Camera className="mr-3 h-4 w-4 text-primary" />
+                    <div>
+                      <div className="font-medium">Escanear Recibo</div>
+                      <div className="text-xs text-muted-foreground">Detectar gastos automáticamente</div>
+                    </div>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start h-auto p-3 text-left"
+                    onClick={() => {
+                      setShowCreatePopup(false);
+                      setShowManualEntry(true);
+                    }}
+                  >
+                    <PenTool className="mr-3 h-4 w-4 text-secondary" />
+                    <div>
+                      <div className="font-medium">Crear Manual</div>
+                      <div className="text-xs text-muted-foreground">Ingresar detalles manualmente</div>
+                    </div>
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            {/* Filtro de calendario */}
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
                   className={cn(
-                    "justify-start text-left font-normal w-full sm:w-auto",
+                    "justify-start text-left font-normal",
                     !filterDate && "text-muted-foreground"
                   )}
                 >
@@ -921,34 +965,6 @@ export const Archivos = () => {
               })}
             </div>
           )}
-        </div>
-
-        {/* Quick Create Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Button 
-            size="lg"
-            className="h-16 bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => setShowPhotoCapture(true)}
-          >
-            <Receipt className="mr-3" size={24} />
-            <div className="flex flex-col items-start">
-              <span className="font-semibold">📷 Escanear Recibo</span>
-              <span className="text-xs opacity-90">Detectar gastos automáticamente</span>
-            </div>
-          </Button>
-          
-          <Button 
-            size="lg"
-            variant="outline"
-            className="h-16 border-2 hover:bg-accent"
-            onClick={() => setShowManualEntry(true)}
-          >
-            <div className="mr-3 text-2xl">✏️</div>
-            <div className="flex flex-col items-start">
-              <span className="font-semibold">Crear Gasto Manual</span>
-              <span className="text-xs opacity-70">Ingresar detalles manualmente</span>
-            </div>
-          </Button>
         </div>
       </div>
 
