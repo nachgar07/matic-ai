@@ -290,30 +290,35 @@ export const Archivos = () => {
   };
 
   // Nueva función para cargar gastos por período (para el gráfico)
-  const loadExpensesForChart = async (userId: string, period: 'day' | 'week' | 'month') => {
+  const loadExpensesForChart = async (userId: string, period: 'day' | 'week' | 'month', baseDate?: Date) => {
     if (!userId) return [];
     
     try {
-      const now = new Date();
+      const referenceDate = baseDate || new Date();
       let startDate: Date;
+      let endDate: Date;
       
       switch (period) {
         case 'day':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          startDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+          endDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), 23, 59, 59);
           break;
         case 'week':
-          const weekStart = new Date(now);
-          weekStart.setDate(now.getDate() - now.getDay());
+          const weekStart = new Date(referenceDate);
+          weekStart.setDate(referenceDate.getDate() - referenceDate.getDay());
           startDate = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          endDate = new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate(), 23, 59, 59);
           break;
         case 'month':
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          startDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+          endDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0, 23, 59, 59);
           break;
         default:
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          startDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+          endDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0, 23, 59, 59);
       }
-      
-      const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
       
       const { data: expenses, error } = await supabase
         .from('expenses')
@@ -563,12 +568,12 @@ export const Archivos = () => {
   // Estado para datos del gráfico
   const [chartExpenses, setChartExpenses] = useState<Gasto[]>([]);
 
-  // Cargar datos del gráfico según el período seleccionado
+  // Cargar datos del gráfico según el período seleccionado y fecha del filtro
   useEffect(() => {
     if (user) {
-      loadExpensesForChart(user.id, chartPeriod).then(setChartExpenses);
+      loadExpensesForChart(user.id, chartPeriod, filterDate).then(setChartExpenses);
     }
-  }, [user, chartPeriod]);
+  }, [user, chartPeriod, filterDate]);
 
   // Procesar datos para el gráfico de categorías
   const getChartData = () => {
@@ -645,6 +650,7 @@ export const Archivos = () => {
             totalAmount={totalAmount}
             chartPeriod={chartPeriod}
             onPeriodChange={setChartPeriod}
+            referenceDate={filterDate}
           />
         )}
 

@@ -1,6 +1,8 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface ExpenseChartProps {
   data: Array<{
@@ -12,9 +14,28 @@ interface ExpenseChartProps {
   totalAmount: number;
   chartPeriod: 'day' | 'week' | 'month';
   onPeriodChange: (period: 'day' | 'week' | 'month') => void;
+  referenceDate?: Date;
 }
 
-export const ExpenseChart = ({ data, totalAmount, chartPeriod, onPeriodChange }: ExpenseChartProps) => {
+export const ExpenseChart = ({ data, totalAmount, chartPeriod, onPeriodChange, referenceDate }: ExpenseChartProps) => {
+  const displayDate = referenceDate || new Date();
+  
+  const getPeriodLabel = () => {
+    switch (chartPeriod) {
+      case 'day':
+        return format(displayDate, "d 'de' MMMM", { locale: es });
+      case 'week':
+        const weekStart = new Date(displayDate);
+        weekStart.setDate(displayDate.getDate() - displayDate.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        return `${format(weekStart, "d MMM", { locale: es })} - ${format(weekEnd, "d MMM", { locale: es })}`;
+      case 'month':
+        return format(displayDate, "MMMM yyyy", { locale: es });
+      default:
+        return format(displayDate, "MMMM yyyy", { locale: es });
+    }
+  };
   if (data.length === 0) {
     return (
       <Card className="w-full">
@@ -46,6 +67,10 @@ export const ExpenseChart = ({ data, totalAmount, chartPeriod, onPeriodChange }:
             >
               Hoy
             </Button>
+          </div>
+          {/* Indicador del período */}
+          <div className="text-center text-sm text-muted-foreground mt-2">
+            {getPeriodLabel()}
           </div>
         </CardHeader>
         <CardContent>
@@ -126,6 +151,10 @@ export const ExpenseChart = ({ data, totalAmount, chartPeriod, onPeriodChange }:
           >
             Hoy
           </Button>
+        </div>
+        {/* Indicador del período */}
+        <div className="text-center text-sm text-muted-foreground mt-2">
+          {getPeriodLabel()}
         </div>
       </CardHeader>
       <CardContent>
