@@ -512,8 +512,8 @@ serve(async (req) => {
         servings: entry.servings,
         calories: Math.round((entry.foods?.calories_per_serving || 0) * entry.servings)
       })),
-      target_calories: targetCalories,
-      adjustment_made: targetCalories && Math.abs(initialTotals.calories - targetCalories) > 50
+      target_values: targetValues,
+      adjustment_made: targetValues && Object.keys(targetValues).length > 0
     };
 
     console.log('🎯 Final meal creation response:', response);
