@@ -307,37 +307,6 @@ serve(async (req) => {
 
       // Use the servings calculated by OpenAI
       const servings = food.servings;
-
-      // Create meal entry
-      const { data: mealEntry, error: mealError } = await supabase
-        .from('meal_entries')
-        .insert({
-          user_id: userId,
-          food_id: selectedFood.id,
-          servings: servings,
-          meal_type: meal_type,
-          consumed_at: new Date().toISOString()
-        })
-        .select(`
-          *,
-          foods (*)
-        `)
-        .single();
-
-      if (mealError) {
-        console.error(`Error creating meal entry for ${food.name}:`, mealError);
-        searchResults.push({
-          food_name: food.name,
-          query: food.quantity,
-          found: true,
-          saved: false,
-          error: mealError.message
-        });
-        continue;
-      }
-
-      console.log(`Meal entry created:`, mealEntry);
-      mealEntries.push(mealEntry);
       
       searchResults.push({
         food_name: food.name,
@@ -350,7 +319,89 @@ serve(async (req) => {
       });
     }
 
-    // Calculate totals
+    // Calculate initial totals to see if we need to adjust portions
+    const initialTotals = searchResults.reduce((acc, result) => {
+      if (result.saved && result.food_data) {
+        const calories = (result.food_data.calories_per_serving || 0) * result.servings;
+        const protein = (result.food_data.protein_per_serving || 0) * result.servings;
+        const carbs = (result.food_data.carbs_per_serving || 0) * result.servings;
+        const fat = (result.food_data.fat_per_serving || 0) * result.servings;
+        
+        return {
+          calories: acc.calories + calories,
+          protein: acc.protein + protein,
+          carbs: acc.carbs + carbs,
+          fat: acc.fat + fat
+        };
+      }
+      return acc;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    // Check if user_message contains target calories (from AI promise)
+    let targetCalories = null;
+    if (user_message) {
+      const calorieMatch = user_message.match(/(\d+)\s*kcal/);
+      if (calorieMatch) {
+        targetCalories = parseInt(calorieMatch[1]);
+      }
+    }
+
+    // If we have a target and we're off by more than 50 calories, adjust the largest food portion
+    if (targetCalories && Math.abs(initialTotals.calories - targetCalories) > 50) {
+      console.log(`🎯 Adjusting portions: Target ${targetCalories} kcal, Current ${Math.round(initialTotals.calories)} kcal`);
+      
+      // Find the food with highest calories to adjust
+      const adjustableResults = searchResults.filter(r => r.saved && r.food_data && r.food_data.calories_per_serving > 50);
+      if (adjustableResults.length > 0) {
+        const largestFood = adjustableResults.reduce((max, current) => 
+          current.total_calories > max.total_calories ? current : max
+        );
+        
+        const currentCalories = largestFood.food_data.calories_per_serving * largestFood.servings;
+        const otherCalories = initialTotals.calories - currentCalories;
+        const neededCalories = targetCalories - otherCalories;
+        const newServings = Math.max(0.1, neededCalories / largestFood.food_data.calories_per_serving);
+        
+        console.log(`🔧 Adjusting ${largestFood.food_name} from ${largestFood.servings} to ${newServings.toFixed(2)} servings`);
+        largestFood.servings = parseFloat(newServings.toFixed(2));
+        largestFood.total_calories = Math.round(largestFood.food_data.calories_per_serving * largestFood.servings);
+      }
+    }
+
+    // Now create the actual meal entries with adjusted portions
+    for (const result of searchResults) {
+      if (!result.saved || !result.food_data) continue;
+
+      console.log(`Creating meal entry for ${result.food_name} with ${result.servings} servings`);
+
+      // Create meal entry with adjusted servings
+      const { data: mealEntry, error: mealError } = await supabase
+        .from('meal_entries')
+        .insert({
+          user_id: userId,
+          food_id: result.food_data.id,
+          servings: result.servings,
+          meal_type: meal_type,
+          consumed_at: new Date().toISOString()
+        })
+        .select(`
+          *,
+          foods (*)
+        `)
+        .single();
+
+      if (mealError) {
+        console.error(`Error creating meal entry for ${result.food_name}:`, mealError);
+        result.saved = false;
+        result.error = mealError.message;
+        continue;
+      }
+
+      console.log(`✅ Meal entry created:`, mealEntry);
+      mealEntries.push(mealEntry);
+    }
+
+    // Calculate final totals
     const totals = mealEntries.reduce((acc, entry) => {
       if (entry.foods) {
         const calories = (entry.foods.calories_per_serving || 0) * entry.servings;
@@ -386,10 +437,12 @@ serve(async (req) => {
         food_name: entry.foods?.food_name,
         servings: entry.servings,
         calories: Math.round((entry.foods?.calories_per_serving || 0) * entry.servings)
-      }))
+      })),
+      target_calories: targetCalories,
+      adjustment_made: targetCalories && Math.abs(initialTotals.calories - targetCalories) > 50
     };
 
-    console.log('Meal creation response:', response);
+    console.log('🎯 Final meal creation response:', response);
 
     return new Response(
       JSON.stringify(response),
