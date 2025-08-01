@@ -197,7 +197,7 @@ serve(async (req) => {
         continue;
       }
 
-      // Enhanced food selection - prefer closer matches based on food type
+      // Enhanced food selection - prefer closer matches based on food type AND calories
       let selectedFood = searchData.foods[0];
       const originalName = food.name.toLowerCase();
       
@@ -205,14 +205,25 @@ serve(async (req) => {
       const scoredFoods = searchData.foods.map((f: any) => {
         let score = 0;
         const foodName = f.food_name.toLowerCase();
+        const caloriesPerServing = f.calories_per_serving || 0;
         
         // Higher score for exact matches
         if (foodName.includes(searchTerm)) score += 100;
         
+        // Bonus for higher calorie foods (more substantial foods)
+        if (caloriesPerServing > 100) score += 50;
+        if (caloriesPerServing > 200) score += 50;
+        if (caloriesPerServing > 300) score += 30;
+        
+        // Penalty for very low calorie foods that might be seasonings or tiny portions
+        if (caloriesPerServing < 50) score -= 100;
+        
         // Specific food type bonuses
         if (originalName.includes('salmón') || originalName.includes('salmon')) {
           if (foodName.includes('salmon')) score += 200;
-          if (foodName.includes('fillet')) score += 50;
+          if (foodName.includes('fillet') || foodName.includes('filet')) score += 50;
+          // Prefer higher calorie salmon preparations
+          if (caloriesPerServing > 150) score += 100;
           // Penalize non-salmon fish
           if (foodName.includes('tuna') || foodName.includes('cod') || foodName.includes('mackerel')) score -= 100;
         }
@@ -220,7 +231,9 @@ serve(async (req) => {
         if (originalName.includes('arroz integral')) {
           if (foodName.includes('brown rice')) score += 200;
           if (foodName.includes('rice') && foodName.includes('brown')) score += 150;
-          // Penalize white rice or rice dishes
+          // Prefer substantial rice portions
+          if (caloriesPerServing > 150) score += 100;
+          // Penalize white rice or rice dishes with very low calories
           if (foodName.includes('white rice') || foodName.includes('fried rice')) score -= 50;
         }
         
@@ -233,18 +246,24 @@ serve(async (req) => {
         if (originalName.includes('aceite de oliva') || originalName.includes('aceite')) {
           if (foodName.includes('olive oil')) score += 200;
           if (foodName.includes('oil') && foodName.includes('olive')) score += 150;
+          // Prefer higher calorie oil entries (more substantial servings)
+          if (caloriesPerServing > 80) score += 100;
           // Penalize other oils
           if (foodName.includes('vegetable oil') || foodName.includes('canola')) score -= 50;
         }
         
         if (originalName.includes('palta') || originalName.includes('aguacate')) {
           if (foodName.includes('avocado')) score += 200;
+          // Prefer higher calorie avocado entries
+          if (caloriesPerServing > 120) score += 100;
           // Penalize other vegetables
           if (!foodName.includes('avocado')) score -= 100;
         }
         
         if (originalName.includes('huevo')) {
           if (foodName.includes('egg')) score += 200;
+          // Prefer substantial egg preparations
+          if (caloriesPerServing > 100) score += 100;
           // Penalize eggplant
           if (foodName.includes('eggplant')) score -= 200;
         }
@@ -270,12 +289,18 @@ serve(async (req) => {
       
       console.log(`Food selection for "${food.name}":`, {
         searchTerm,
-        topCandidates: scoredFoods.slice(0, 3).map((f: any) => ({ 
+        topCandidates: scoredFoods.slice(0, 5).map((f: any) => ({ 
           name: f.food_name, 
           brand: f.brand_name, 
+          calories: f.calories_per_serving,
           score: f.score 
         })),
-        selected: { name: selectedFood.food_name, brand: selectedFood.brand_name, score: selectedFood.score }
+        selected: { 
+          name: selectedFood.food_name, 
+          brand: selectedFood.brand_name, 
+          calories: selectedFood.calories_per_serving,
+          score: selectedFood.score 
+        }
       });
       
       console.log(`Selected food for "${food.name}":`, { name: selectedFood.food_name, brand: selectedFood.brand_name });
