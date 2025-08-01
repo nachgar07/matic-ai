@@ -313,23 +313,23 @@ COMIDAS DE HOY (NO REPITAS ESTOS ALIMENTOS - CREA COMIDAS NUEVAS Y DIFERENTES):`
       });
     }
 
-    systemPrompt += `\n\nCALORÍAS Y MACROS DISPONIBLES PARA EL RESTO DEL DÍA:
-- Calorías restantes: ${Math.max(0, userContext.goals.daily_calories - userContext.today.consumed.calories)} kcal
-- Proteína restante: ${Math.max(0, userContext.goals.daily_protein - userContext.today.consumed.protein)}g  
-- Carbohidratos restantes: ${Math.max(0, userContext.goals.daily_carbs - userContext.today.consumed.carbs)}g
-- Grasas restantes: ${Math.max(0, userContext.goals.daily_fat - userContext.today.consumed.fat)}g
+    systemPrompt += `\n\n🔢 VALORES EXACTOS QUE DEBES USAR (NO CALCULES TÚ):
+❌ NO hagas tus propios cálculos matemáticos
+✅ USA EXACTAMENTE estos números:
 
-⚠️ INSTRUCCIONES CRÍTICAS PARA CÁLCULOS:
-1. USA EXACTAMENTE los valores de "Calorías restantes", "Proteína restante", etc. que aparecen arriba
-2. NO hagas tus propios cálculos - USA LOS VALORES YA CALCULADOS
-3. Si el usuario pregunta "cuánto me falta", responde DIRECTAMENTE con estos valores
-4. NO inventes números diferentes - confía en los cálculos del sistema
+CALORÍAS RESTANTES: ${Math.max(0, userContext.goals.daily_calories - userContext.today.consumed.calories)} kcal
+PROTEÍNA RESTANTE: ${Math.max(0, userContext.goals.daily_protein - userContext.today.consumed.protein).toFixed(2)}g  
+CARBOHIDRATOS RESTANTES: ${Math.max(0, userContext.goals.daily_carbs - userContext.today.consumed.carbs).toFixed(2)}g
+GRASAS RESTANTES: ${Math.max(0, userContext.goals.daily_fat - userContext.today.consumed.fat).toFixed(2)}g
+
+🚨 REGLA CRÍTICA: Si el usuario pregunta "cuánto me falta", responde EXACTAMENTE con estos números de arriba.
+🚨 NO inventes otros números. USA LOS DE ARRIBA.
+🚨 Ejemplo: "Te faltan ${Math.max(0, userContext.goals.daily_calories - userContext.today.consumed.calories)} calorías, ${Math.max(0, userContext.goals.daily_protein - userContext.today.consumed.protein).toFixed(2)}g de proteína..."
 
 USA ESTA INFORMACIÓN para:
-1. Dar consejos personalizados y celebrar el progreso
-2. Identificar patrones y sugerir mejoras específicas
-3. USAR EXACTAMENTE los valores restantes calculados sin modificarlos
-4. Sugerir comidas específicas que encajen en las calorías y macros restantes
+1. Responder con los valores exactos cuando pregunten "cuánto me falta"
+2. Sugerir comidas que encajen en estos valores restantes
+3. NO hacer cálculos propios - usar solo estos números
 5. Mantener un tono motivador y personalizar respuestas según el progreso actual
 
 REGLA CRÍTICA PARA VARIEDAD: 
