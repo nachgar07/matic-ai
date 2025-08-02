@@ -60,8 +60,9 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
 
   // Water drop calculations
   const waterDropSize = size * 0.15;
-  const waterTarget = 8; // 8 glasses = ~2.2 liters
-  const waterPercentage = Math.min(100, (waterGlasses / waterTarget) * 100);
+  const waterTarget = 12; // 12 glasses = ~3 liters
+  const displayWaterGlasses = waterGlasses > waterTarget ? waterGlasses - waterTarget : waterGlasses;
+  const waterPercentage = Math.min(100, (displayWaterGlasses / waterTarget) * 100);
   const waterFillHeight = (waterPercentage / 100) * (waterDropSize * 0.75);
 
   const handleWaterClick = () => {
@@ -183,10 +184,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
               <clipPath id="dropClip">
                 <path
                   d="M 20 5 
-                      C 20 5, 10 20, 10 30
-                      C 10 36, 14 42, 20 42
-                      C 26 42, 30 36, 30 30
-                      C 30 20, 20 5, 20 5 Z"
+                      C 20 5, 8 20, 8 30
+                      C 8 38, 12 42, 20 42
+                      C 28 42, 32 38, 32 30
+                      C 32 20, 20 5, 20 5 Z"
                 />
               </clipPath>
             </defs>
@@ -194,10 +195,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
             {/* Drop background - celeste opaco */}
             <path
               d="M 20 5 
-                  C 20 5, 10 20, 10 30
-                  C 10 36, 14 42, 20 42
-                  C 26 42, 30 36, 30 30
-                  C 30 20, 20 5, 20 5 Z"
+                  C 20 5, 8 20, 8 30
+                  C 8 38, 12 42, 20 42
+                  C 28 42, 32 38, 32 30
+                  C 32 20, 20 5, 20 5 Z"
               stroke="#64b5f6"
               strokeWidth="2"
               fill="#e3f2fd"
@@ -205,9 +206,9 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
             
             {/* Water fill */}
             <rect
-              x="10"
+              x="8"
               y={42 - (waterFillHeight / waterDropSize) * 32}
-              width="20"
+              width="24"
               height={(waterFillHeight / waterDropSize) * 32}
               fill="#2196f3"
               clipPath="url(#dropClip)"
@@ -217,7 +218,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
           
           {/* Water glass count - centered in drop */}
           <div className="absolute inset-0 flex items-center justify-center pt-1">
-            <span className="text-xs font-semibold text-blue-600 z-10">{waterGlasses}</span>
+            <span className="text-xs font-semibold text-blue-600 z-10">{displayWaterGlasses}</span>
           </div>
         </div>
         
