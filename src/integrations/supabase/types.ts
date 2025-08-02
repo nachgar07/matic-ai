@@ -254,6 +254,159 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_progress: {
+        Row: {
+          completed_value: number
+          created_at: string
+          date: string
+          goal_id: string
+          id: string
+          is_completed: boolean
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_value?: number
+          created_at?: string
+          date?: string
+          goal_id: string
+          id?: string
+          is_completed?: boolean
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_value?: number
+          created_at?: string
+          date?: string
+          goal_id?: string
+          id?: string
+          is_completed?: boolean
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          category: string
+          color: string
+          created_at: string
+          description: string | null
+          end_date: string | null
+          frequency: string
+          frequency_days: string[] | null
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          priority: number
+          start_date: string
+          target_value: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          color?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          frequency?: string
+          frequency_days?: string[] | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          priority?: number
+          start_date?: string
+          target_value?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          color?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          frequency?: string
+          frequency_days?: string[] | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          priority?: number
+          start_date?: string
+          target_value?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      list_items: {
+        Row: {
+          created_at: string
+          id: string
+          is_completed: boolean
+          list_id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          list_id: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          list_id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      lists: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_entries: {
         Row: {
           consumed_at: string
@@ -352,6 +505,51 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          due_time: string | null
+          id: string
+          is_completed: boolean
+          priority: number
+          reminder_time: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          id?: string
+          is_completed?: boolean
+          priority?: number
+          reminder_time?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          id?: string
+          is_completed?: boolean
+          priority?: number
+          reminder_time?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

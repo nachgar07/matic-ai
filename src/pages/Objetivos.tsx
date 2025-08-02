@@ -1,140 +1,218 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
+import { WeeklyCalendar } from "@/components/WeeklyCalendar/WeeklyCalendar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Calendar, Target, TrendingDown, Minus, TrendingUp } from "lucide-react";
-
-interface Objetivo {
-  id: string;
-  nombre: string;
-  prioridad: number;
-  fechaInicio: string;
-  fechaFin: string;
-  subtareas: { texto: string; completado: boolean; prioridad: number }[];
-  progreso: number;
-}
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GoalCard } from "@/components/GoalCard/GoalCard";
+import { TaskCard } from "@/components/TaskCard/TaskCard";
+import { HabitTracker } from "@/components/HabitTracker/HabitTracker";
+import { useGoals, useTasks, useGoalStats } from "@/hooks/useGoals";
+import { supabase } from "@/integrations/supabase/client";
+import { Plus, Calendar, Target, BarChart3, List, Filter, Search, Settings, TrendingUp, Minus, TrendingDown } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 export const Objetivos = () => {
-  const [objetivos] = useState<Objetivo[]>([
-    {
-      id: "1",
-      nombre: "Perder 5kg en 3 meses",
-      prioridad: 9,
-      fechaInicio: "2024-01-01",
-      fechaFin: "2024-04-01",
-      subtareas: [
-        { texto: "Hacer ejercicio 4 veces por semana", completado: false, prioridad: 8 },
-        { texto: "Reducir calorías a 1800 diarias", completado: true, prioridad: 9 },
-        { texto: "Beber 2L de agua diariamente", completado: false, prioridad: 6 }
-      ],
-      progreso: 33
-    }
-  ]);
+  const [activeTab, setActiveTab] = useState('hoy');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [user, setUser] = useState(null);
 
-  const getPriorityColor = (prioridad: number) => {
-    if (prioridad >= 8) return "border-l-red-500 bg-red-50";
-    if (prioridad >= 6) return "border-l-yellow-500 bg-yellow-50";
-    return "border-l-green-500 bg-green-50";
-  };
+  const { data: goals = [], isLoading: goalsLoading } = useGoals();
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks(format(selectedDate, 'yyyy-MM-dd'));
+  const { data: stats } = useGoalStats();
 
-  const getPriorityIcon = (prioridad: number) => {
-    if (prioridad >= 8) return <TrendingUp className="text-red-500" size={16} />;
-    if (prioridad >= 6) return <Minus className="text-yellow-500" size={16} />;
-    return <TrendingDown className="text-green-500" size={16} />;
-  };
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, []);
+
+  // Filtrar objetivos según frecuencia diaria para la vista de hábitos
+  const dailyGoals = goals.filter(goal => goal.frequency === 'daily');
+  const weeklyGoals = goals.filter(goal => goal.frequency === 'weekly');
+  const allGoals = goals;
+
+  // Filtrar tareas por estado
+  const pendingTasks = tasks.filter(task => !task.is_completed);
+  const completedTasks = tasks.filter(task => task.is_completed);
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header 
-        title="Mis Objetivos" 
+        title="Hoy" 
         rightAction={
-          <Button size="sm" className="rounded-full">
-            <Plus size={16} />
-          </Button>
-        }
-      />
-      
-      <div className="p-4 space-y-4">
-        {objetivos.length === 0 ? (
-          <div className="bg-card rounded-lg p-6 text-center">
-            <Target className="mx-auto mb-4 text-muted-foreground" size={48} />
-            <div className="text-muted-foreground mb-2">
-              No tienes objetivos activos
-            </div>
-            <div className="text-sm text-muted-foreground mb-4">
-              Crea tu primer objetivo para comenzar
-            </div>
-            <Button>
-              <Plus className="mr-2" size={16} />
-              Crear Objetivo
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm">
+              <Search size={16} />
+            </Button>
+            <Button variant="ghost" size="sm">
+              <Filter size={16} />
+            </Button>
+            <Button variant="ghost" size="sm">
+              <Calendar size={16} />
+            </Button>
+            <Button variant="ghost" size="sm">
+              <Settings size={16} />
             </Button>
           </div>
-        ) : (
-          objetivos.map((objetivo) => (
-            <Card key={objetivo.id} className={`p-4 border-l-4 ${getPriorityColor(objetivo.prioridad)}`}>
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">{objetivo.nombre}</h3>
-                  <div className="flex items-center mt-1 text-sm text-muted-foreground">
-                    <Calendar size={14} className="mr-1" />
-                    <span>{new Date(objetivo.fechaInicio).toLocaleDateString()} - {new Date(objetivo.fechaFin).toLocaleDateString()}</span>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  {getPriorityIcon(objetivo.prioridad)}
-                  <span className="ml-1 text-sm font-medium">{objetivo.prioridad}</span>
-                </div>
-              </div>
+        }
+      />
 
-              {/* Progress Bar */}
-              <div className="mb-3">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-muted-foreground">Progreso</span>
-                  <span className="font-medium">{objetivo.progreso}%</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${objetivo.progreso}%` }}
-                  />
-                </div>
-              </div>
+      {/* Calendario Semanal */}
+      <div className="px-4 py-2">
+        <WeeklyCalendar />
+      </div>
 
-              {/* Subtasks Preview */}
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Subtareas ({objetivo.subtareas.filter(s => s.completado).length}/{objetivo.subtareas.length})</div>
-                {objetivo.subtareas.slice(0, 2).map((subtarea, index) => (
-                  <div key={index} className="flex items-center text-sm">
-                    <div className={`w-4 h-4 rounded border-2 mr-2 flex items-center justify-center ${
-                      subtarea.completado ? 'bg-primary border-primary' : 'border-muted-foreground'
-                    }`}>
-                      {subtarea.completado && <span className="text-primary-foreground text-xs">✓</span>}
-                    </div>
-                    <span className={subtarea.completado ? 'line-through text-muted-foreground' : ''}>
-                      {subtarea.texto}
-                    </span>
-                  </div>
+      {/* Navegación por pestañas */}
+      <div className="px-4">
+        <div className="flex gap-2 mb-4 overflow-x-auto">
+          <Button 
+            variant={activeTab === 'hoy' ? 'default' : 'ghost'} 
+            size="sm"
+            onClick={() => setActiveTab('hoy')}
+          >
+            Todo
+          </Button>
+          <Button 
+            variant={activeTab === 'trabajo' ? 'default' : 'ghost'} 
+            size="sm"
+            onClick={() => setActiveTab('trabajo')}
+            className="whitespace-nowrap"
+          >
+            💼 Trabajo
+          </Button>
+          <Button 
+            variant={activeTab === 'compras' ? 'default' : 'ghost'} 
+            size="sm"
+            onClick={() => setActiveTab('compras')}
+            className="whitespace-nowrap"
+          >
+            🛒 Compras
+          </Button>
+          <Button 
+            variant={activeTab === 'objetivos' ? 'default' : 'ghost'} 
+            size="sm"
+            onClick={() => setActiveTab('objetivos')}
+            className="whitespace-nowrap"
+          >
+            ⭐ Objetivos
+          </Button>
+        </div>
+      </div>
+
+      <div className="px-4 space-y-4">
+        {/* Vista principal con tareas y hábitos mezclados */}
+        {activeTab === 'hoy' && (
+          <div className="space-y-4">
+            {/* Hábitos del día */}
+            {dailyGoals.length > 0 && (
+              <div className="space-y-3">
+                {dailyGoals.map((goal) => (
+                  <HabitTracker key={goal.id} goal={goal} />
                 ))}
-                {objetivo.subtareas.length > 2 && (
-                  <div className="text-xs text-muted-foreground">
-                    +{objetivo.subtareas.length - 2} más...
-                  </div>
-                )}
               </div>
-            </Card>
-          ))
+            )}
+
+            {/* Tareas pendientes */}
+            {pendingTasks.length > 0 && (
+              <div className="space-y-3">
+                {pendingTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            )}
+
+            {/* Tareas completadas */}
+            {completedTasks.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  ✅ Completadas ({completedTasks.length})
+                </h3>
+                {completedTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            )}
+
+            {/* Estado vacío */}
+            {pendingTasks.length === 0 && dailyGoals.length === 0 && (
+              <div className="text-center py-12">
+                <Target className="mx-auto mb-4 text-muted-foreground" size={48} />
+                <h3 className="font-medium mb-2">¡Perfecto día!</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  No tienes tareas pendientes para hoy
+                </p>
+                <Button>
+                  <Plus className="mr-2" size={16} />
+                  Agregar tarea
+                </Button>
+              </div>
+            )}
+          </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4 mt-6">
-          <Button variant="outline" className="h-20 flex-col">
-            <Plus className="mb-2" size={20} />
-            <span className="text-sm">Nuevo Objetivo</span>
-          </Button>
-          <Button variant="outline" className="h-20 flex-col">
-            <Calendar className="mb-2" size={20} />
-            <span className="text-sm">Vista Calendario</span>
+        {/* Vista de objetivos */}
+        {activeTab === 'objetivos' && (
+          <div className="space-y-4">
+            {goals.length > 0 ? (
+              goals.map((goal) => (
+                <GoalCard 
+                  key={goal.id} 
+                  goal={goal} 
+                  progress={Math.random() * 100} // Aquí iría el cálculo real del progreso
+                  todayCompleted={Math.random() > 0.5} // Aquí iría el estado real
+                />
+              ))
+            ) : (
+              <div className="text-center py-12">
+                <Target className="mx-auto mb-4 text-muted-foreground" size={48} />
+                <h3 className="font-medium mb-2">No tienes objetivos</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Crea tu primer objetivo para comenzar
+                </p>
+                <Button>
+                  <Plus className="mr-2" size={16} />
+                  Crear objetivo
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Vista filtrada por categoría */}
+        {activeTab !== 'hoy' && activeTab !== 'objetivos' && (
+          <div className="space-y-4">
+            {tasks
+              .filter(task => task.category === activeTab)
+              .map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))}
+            
+            {tasks.filter(task => task.category === activeTab).length === 0 && (
+              <div className="text-center py-12">
+                <List className="mx-auto mb-4 text-muted-foreground" size={48} />
+                <h3 className="font-medium mb-2">No hay tareas</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  No tienes tareas en esta categoría
+                </p>
+                <Button>
+                  <Plus className="mr-2" size={16} />
+                  Agregar tarea
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Botón flotante para agregar */}
+        <div className="fixed bottom-24 right-4">
+          <Button size="lg" className="rounded-full shadow-lg">
+            <Plus size={24} />
           </Button>
         </div>
       </div>
