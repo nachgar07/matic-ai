@@ -98,57 +98,35 @@ export const TaskCard = ({ task }: TaskCardProps) => {
   };
 
   return (
-    <Card className="p-4 transition-all hover:shadow-md">
-      <div className="flex items-start gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleToggleComplete}
-          disabled={isUpdating}
-          className="p-1 h-auto mt-1"
+    <Card className="p-3 transition-all hover:shadow-md">
+      <div className="flex items-center gap-3">
+        {/* Icono de la izquierda */}
+        <div 
+          className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg"
+          style={{ 
+            backgroundColor: getCategoryColor(task.category),
+          }}
         >
-          {task.is_completed ? (
-            <CheckCircle2 className="w-5 h-5 text-green-500" />
-          ) : (
-            <Circle className="w-5 h-5 text-muted-foreground" />
-          )}
-        </Button>
+          <Clock className="w-6 h-6 text-white" />
+        </div>
 
+        {/* Contenido central */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className={`font-medium ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-              {task.title}
-            </h3>
+          <h3 className={`font-medium text-lg ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+            {task.title}
+          </h3>
+          
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-sm text-primary capitalize">
+              {task.category}
+            </span>
             
-            <div className="flex items-center gap-1">
-              <div 
-                className="w-6 h-6 rounded flex items-center justify-center text-sm"
-                style={{ 
-                  backgroundColor: getCategoryColor(task.category) + '20',
-                  color: getCategoryColor(task.category)
-                }}
-              >
-                {getCategoryIcon(task.category)}
-              </div>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="p-1 h-auto">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleEdit}>
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Eliminar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            {task.due_time && (
+              <>
+                <Bell className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{task.due_time}</span>
+              </>
+            )}
           </div>
 
           {task.description && (
@@ -156,40 +134,41 @@ export const TaskCard = ({ task }: TaskCardProps) => {
               {task.description}
             </p>
           )}
+        </div>
 
-          <div className="flex items-center gap-4 mt-3">
-            {task.due_date && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <CalendarDays className="w-4 h-4" />
-                <span>
-                  {format(new Date(task.due_date), 'd/M/yy', { locale: es })}
-                </span>
-              </div>
+        {/* Botón de check a la derecha */}
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-1 h-auto">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleEdit}>
+                <Edit2 className="w-4 h-4 mr-2" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Eliminar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleToggleComplete}
+            disabled={isUpdating}
+            className="p-2 h-auto"
+          >
+            {task.is_completed ? (
+              <CheckCircle2 className="w-6 h-6 text-green-500" />
+            ) : (
+              <Circle className="w-6 h-6 text-muted-foreground" />
             )}
-
-            {task.due_time && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Clock className="w-4 h-4" />
-                <span>{task.due_time}</span>
-              </div>
-            )}
-
-            {task.reminder_time && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Bell className="w-4 h-4" />
-                <span>Recordatorio</span>
-              </div>
-            )}
-
-            <div className="ml-auto">
-              <Badge 
-                variant="outline" 
-                className={`text-xs ${getPriorityColor(task.priority)}`}
-              >
-                {task.priority >= 8 ? '🔴' : task.priority >= 6 ? '🟡' : '🟢'}
-              </Badge>
-            </div>
-          </div>
+          </Button>
         </div>
       </div>
       
