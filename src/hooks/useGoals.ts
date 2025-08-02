@@ -12,7 +12,7 @@ export interface Goal {
   icon: string;
   color: string;
   priority: number;
-  frequency: 'daily' | 'weekly' | 'monthly';
+  frequency: 'daily' | 'weekly' | 'monthly' | 'custom';
   frequency_days?: string[];
   target_value: number;
   start_date: string;

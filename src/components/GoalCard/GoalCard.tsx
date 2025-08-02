@@ -5,11 +5,13 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle, Clock, MoreHorizontal, Edit, Trash2, BarChart3 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { EditGoalDialog } from "@/components/EditGoalDialog/EditGoalDialog";
 import { format, isToday } from "date-fns";
 import { es } from "date-fns/locale";
 import { Goal, useUpdateGoalProgress } from "@/hooks/useGoals";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface GoalCardProps {
   goal: Goal;
@@ -21,8 +23,10 @@ interface GoalCardProps {
 
 export const GoalCard = ({ goal, progress = 0, todayCompleted = false, onEdit, onViewStats }: GoalCardProps) => {
   const [isCompleting, setIsCompleting] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const updateProgress = useUpdateGoalProgress();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleToggleComplete = async () => {
     if (isCompleting) return;
@@ -41,10 +45,7 @@ export const GoalCard = ({ goal, progress = 0, todayCompleted = false, onEdit, o
   };
 
   const handleEdit = () => {
-    toast({
-      title: "Función en desarrollo",
-      description: "La edición de objetivos estará disponible pronto.",
-    });
+    setEditDialogOpen(true);
   };
 
   const handleViewStats = () => {
@@ -62,6 +63,11 @@ export const GoalCard = ({ goal, progress = 0, todayCompleted = false, onEdit, o
         .eq('id', goal.id);
 
       if (error) throw error;
+
+      // Invalidar queries para actualizar la UI
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goal-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['goal-stats'] });
 
       toast({
         title: "Objetivo eliminado",
@@ -189,6 +195,12 @@ export const GoalCard = ({ goal, progress = 0, todayCompleted = false, onEdit, o
           </Badge>
         </div>
       </div>
+      
+      <EditGoalDialog 
+        goal={goal}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+      />
     </Card>
   );
 };

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,11 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useCreateGoal } from "@/hooks/useGoals";
+import { Goal } from "@/hooks/useGoals";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 const categories = [
   { value: "deportes", label: "Deportes", icon: "🏃" },
@@ -45,12 +48,13 @@ const priorities = [
   { value: 3, label: "Alta", color: "#ef4444" },
 ];
 
-interface CreateGoalDialogProps {
-  children: React.ReactNode;
+interface EditGoalDialogProps {
+  goal: Goal;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const CreateGoalDialog = ({ children }: CreateGoalDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const EditGoalDialog = ({ goal, open, onOpenChange }: EditGoalDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -61,8 +65,26 @@ export const CreateGoalDialog = ({ children }: CreateGoalDialogProps) => {
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [reminderTime, setReminderTime] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const createGoal = useCreateGoal();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Llenar el formulario con los datos del objetivo
+  useEffect(() => {
+    if (goal && open) {
+      setName(goal.name);
+      setDescription(goal.description || "");
+      setCategory(goal.category);
+      setPriority(goal.priority);
+      setFrequency(goal.frequency);
+      setSelectedDays(goal.frequency_days || []);
+      setTargetValue(goal.target_value);
+      setStartDate(new Date(goal.start_date));
+      setEndDate(goal.end_date ? new Date(goal.end_date) : undefined);
+      setReminderTime("");
+    }
+  }, [goal, open]);
 
   const selectedCategory = categories.find(cat => cat.value === category);
 
@@ -79,48 +101,56 @@ export const CreateGoalDialog = ({ children }: CreateGoalDialogProps) => {
     
     if (!name || !category) return;
 
-    const goalData = {
-      name,
-      description,
-      category,
-      icon: selectedCategory?.icon || "🎯",
-      color: priorities.find(p => p.value === priority)?.color || "#6366f1",
-      priority,
-      frequency: frequency as "daily" | "weekly" | "monthly" | "custom",
-      frequency_days: frequency === "custom" ? selectedDays : null,
-      target_value: targetValue,
-      start_date: format(startDate, "yyyy-MM-dd"),
-      end_date: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
-      is_active: true,
-    };
-
+    setIsUpdating(true);
+    
     try {
-      await createGoal.mutateAsync(goalData);
-      setOpen(false);
-      // Reset form
-      setName("");
-      setDescription("");
-      setCategory("");
-      setPriority(1);
-      setFrequency("daily");
-      setSelectedDays([]);
-      setTargetValue(1);
-      setStartDate(new Date());
-      setEndDate(undefined);
-      setReminderTime("");
+      const { error } = await supabase
+        .from('goals')
+        .update({
+          name,
+          description,
+          category,
+          icon: selectedCategory?.icon || goal.icon,
+          color: priorities.find(p => p.value === priority)?.color || goal.color,
+          priority,
+          frequency: frequency as "daily" | "weekly" | "monthly" | "custom",
+          frequency_days: frequency === "custom" ? selectedDays : null,
+          target_value: targetValue,
+          start_date: format(startDate, "yyyy-MM-dd"),
+          end_date: endDate ? format(endDate, "yyyy-MM-dd") : null,
+        })
+        .eq('id', goal.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Objetivo actualizado",
+        description: "Los cambios se han guardado exitosamente.",
+      });
+
+      // Invalidar queries para actualizar la UI
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goal-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['goal-stats'] });
+      
+      onOpenChange(false);
     } catch (error) {
-      console.error("Error creating goal:", error);
+      console.error("Error updating goal:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el objetivo. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Crear nuevo objetivo</DialogTitle>
+          <DialogTitle>Editar objetivo</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -342,17 +372,17 @@ export const CreateGoalDialog = ({ children }: CreateGoalDialogProps) => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
               className="flex-1"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={!name || !category || createGoal.isPending}
+              disabled={!name || !category || isUpdating}
               className="flex-1"
             >
-              {createGoal.isPending ? "Creando..." : "Crear objetivo"}
+              {isUpdating ? "Guardando..." : "Guardar cambios"}
             </Button>
           </div>
         </form>
