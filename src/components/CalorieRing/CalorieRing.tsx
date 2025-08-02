@@ -35,35 +35,45 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const carbsTarget = target * 0.45;   // 45% carbs 
   const fatTarget = target * 0.30;     // 30% fat
   
-  // Simplified approach - fixed segments with clear separation
-  const segmentLength = circumference * 0.28; // Each segment is 28% of circle
-  const gapLength = circumference * 0.053; // 5.3% gap between segments
+  // New approach using SVG paths for precise positioning
+  const centerX = size / 2;
+  const centerY = size / 2;
   
-  // Calculate progress within each segment
+  // Calculate progress percentages
   const proteinProgress = Math.min(100, (proteinCals / proteinTarget) * 100);
   const carbsProgress = Math.min(100, (carbsCals / carbsTarget) * 100);
   const fatProgress = Math.min(100, (fatCals / fatTarget) * 100);
   
-  // Calculate stroke lengths for progress
-  const proteinStroke = (proteinProgress / 100) * segmentLength;
-  const carbsStroke = (carbsProgress / 100) * segmentLength;
-  const fatStroke = (fatProgress / 100) * segmentLength;
+  // Each segment is 110 degrees with 10 degree gaps
+  const segmentAngle = 110;
+  const gapAngle = 10;
   
-  // Calculate positions - start from top (75% of circle) and go clockwise
-  // Protein (red) - first segment
-  const proteinStart = circumference * 0.75;
-  const proteinOffset = proteinStart - proteinStroke;
-  const proteinBgOffset = proteinStart - segmentLength;
+  // Starting angles for each segment (in degrees)
+  const proteinStartAngle = -55; // Top center
+  const carbsStartAngle = proteinStartAngle + segmentAngle + gapAngle;
+  const fatStartAngle = carbsStartAngle + segmentAngle + gapAngle;
   
-  // Carbs (orange) - second segment  
-  const carbsStart = proteinStart - segmentLength - gapLength;
-  const carbsOffset = carbsStart - carbsStroke;
-  const carbsBgOffset = carbsStart - segmentLength;
+  // Calculate end angles based on progress
+  const proteinEndAngle = proteinStartAngle + (proteinProgress / 100) * segmentAngle;
+  const carbsEndAngle = carbsStartAngle + (carbsProgress / 100) * segmentAngle;
+  const fatEndAngle = fatStartAngle + (fatProgress / 100) * segmentAngle;
   
-  // Fat (green) - third segment
-  const fatStart = carbsStart - segmentLength - gapLength;
-  const fatOffset = fatStart - fatStroke;
-  const fatBgOffset = fatStart - segmentLength;
+  // Helper function to create arc path
+  const createArcPath = (startAngle: number, endAngle: number, radius: number) => {
+    const start = polarToCartesian(centerX, centerY, radius, endAngle);
+    const end = polarToCartesian(centerX, centerY, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+    return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+  };
+  
+  // Helper function to convert polar to cartesian coordinates
+  function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
+    const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+    return {
+      x: centerX + (radius * Math.cos(angleInRadians)),
+      y: centerY + (radius * Math.sin(angleInRadians))
+    };
+  }
 
   // Water drop calculations
   const waterDropSize = size * 0.15;
@@ -125,80 +135,65 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
               />
             </>
           ) : (
-            // Complex mode - macro breakdown
+            // Complex mode - macro breakdown using SVG paths
             <>
               {/* Background segments */}
-              <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
+              <path
+                d={createArcPath(proteinStartAngle, proteinStartAngle + segmentAngle, radius)}
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="transparent"
-                strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
-                strokeDashoffset={proteinBgOffset}
-                className="text-muted transition-all duration-500 ease-in-out opacity-20"
+                strokeLinecap="round"
+                className="text-muted opacity-20"
               />
-              <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
+              <path
+                d={createArcPath(carbsStartAngle, carbsStartAngle + segmentAngle, radius)}
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="transparent"
-                strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
-                strokeDashoffset={carbsBgOffset}
-                className="text-muted transition-all duration-500 ease-in-out opacity-20"
+                strokeLinecap="round"
+                className="text-muted opacity-20"
               />
-              <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
+              <path
+                d={createArcPath(fatStartAngle, fatStartAngle + segmentAngle, radius)}
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="transparent"
-                strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
-                strokeDashoffset={fatBgOffset}
-                className="text-muted transition-all duration-500 ease-in-out opacity-20"
+                strokeLinecap="round"
+                className="text-muted opacity-20"
               />
               
               {/* Progress segments */}
-              <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="transparent"
-                strokeDasharray={`${proteinStroke} ${circumference - proteinStroke}`}
-                strokeDashoffset={proteinOffset}
-                strokeLinecap="round"
-                className="text-protein transition-all duration-500 ease-in-out"
-              />
-              <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="transparent"
-                strokeDasharray={`${carbsStroke} ${circumference - carbsStroke}`}
-                strokeDashoffset={carbsOffset}
-                strokeLinecap="round"
-                className="text-carbs transition-all duration-500 ease-in-out"
-              />
-              <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="transparent"
-                strokeDasharray={`${fatStroke} ${circumference - fatStroke}`}
-                strokeDashoffset={fatOffset}
-                strokeLinecap="round"
-                className="text-fat transition-all duration-500 ease-in-out"
-              />
+              {proteinProgress > 0 && (
+                <path
+                  d={createArcPath(proteinStartAngle, proteinEndAngle, radius)}
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeLinecap="round"
+                  className="text-protein transition-all duration-500 ease-in-out"
+                />
+              )}
+              {carbsProgress > 0 && (
+                <path
+                  d={createArcPath(carbsStartAngle, carbsEndAngle, radius)}
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeLinecap="round"
+                  className="text-carbs transition-all duration-500 ease-in-out"
+                />
+              )}
+              {fatProgress > 0 && (
+                <path
+                  d={createArcPath(fatStartAngle, fatEndAngle, radius)}
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeLinecap="round"
+                  className="text-fat transition-all duration-500 ease-in-out"
+                />
+              )}
             </>
           )}
         </svg>
