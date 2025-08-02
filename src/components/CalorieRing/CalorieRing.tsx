@@ -35,45 +35,35 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const carbsTarget = target * 0.45;   // 45% carbs 
   const fatTarget = target * 0.30;     // 30% fat
   
-  // Calculate fixed proportions for each macro based on targets
-  const proteinProportion = 25; // 25% of circle
-  const carbsProportion = 45;   // 45% of circle
-  const fatProportion = 30;     // 30% of circle
+  // Simplified approach - fixed segments with clear separation
+  const segmentLength = circumference * 0.28; // Each segment is 28% of circle
+  const gapLength = circumference * 0.053; // 5.3% gap between segments
   
   // Calculate progress within each segment
   const proteinProgress = Math.min(100, (proteinCals / proteinTarget) * 100);
   const carbsProgress = Math.min(100, (carbsCals / carbsTarget) * 100);
   const fatProgress = Math.min(100, (fatCals / fatTarget) * 100);
   
-  // Convert proportions to actual stroke lengths
-  const totalProportion = proteinProportion + carbsProportion + fatProportion;
-  const availableCircumference = circumference * 0.9; // Use 90% to leave gaps
+  // Calculate stroke lengths for progress
+  const proteinStroke = (proteinProgress / 100) * segmentLength;
+  const carbsStroke = (carbsProgress / 100) * segmentLength;
+  const fatStroke = (fatProgress / 100) * segmentLength;
   
-  const proteinMaxStroke = (proteinProportion / totalProportion) * availableCircumference;
-  const carbsMaxStroke = (carbsProportion / totalProportion) * availableCircumference;
-  const fatMaxStroke = (fatProportion / totalProportion) * availableCircumference;
+  // Calculate positions - start from top (75% of circle) and go clockwise
+  // Protein (red) - first segment
+  const proteinStart = circumference * 0.75;
+  const proteinOffset = proteinStart - proteinStroke;
+  const proteinBgOffset = proteinStart - segmentLength;
   
-  // Calculate actual progress strokes
-  const proteinStroke = (proteinProgress / 100) * proteinMaxStroke;
-  const carbsStroke = (carbsProgress / 100) * carbsMaxStroke;
-  const fatStroke = (fatProgress / 100) * fatMaxStroke;
-  
-  // Calculate positions (start from top, go clockwise)
-  const gapSize = circumference * 0.033; // 3.3% gap between segments
-  
-  // Protein segment (red) - starts at top
-  const proteinOffset = circumference * 0.75 - proteinStroke;
-  const proteinBgOffset = circumference * 0.75 - proteinMaxStroke;
-  
-  // Carbs segment (orange) - follows protein
-  const carbsStart = circumference * 0.75 - proteinMaxStroke - gapSize;
+  // Carbs (orange) - second segment  
+  const carbsStart = proteinStart - segmentLength - gapLength;
   const carbsOffset = carbsStart - carbsStroke;
-  const carbsBgOffset = carbsStart - carbsMaxStroke;
+  const carbsBgOffset = carbsStart - segmentLength;
   
-  // Fat segment (green) - follows carbs
-  const fatStart = carbsStart - carbsMaxStroke - gapSize;
+  // Fat (green) - third segment
+  const fatStart = carbsStart - segmentLength - gapLength;
   const fatOffset = fatStart - fatStroke;
-  const fatBgOffset = fatStart - fatMaxStroke;
+  const fatBgOffset = fatStart - segmentLength;
 
   // Water drop calculations
   const waterDropSize = size * 0.15;
@@ -145,7 +135,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="transparent"
-                strokeDasharray={`${proteinMaxStroke} ${circumference - proteinMaxStroke}`}
+                strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
                 strokeDashoffset={proteinBgOffset}
                 className="text-muted transition-all duration-500 ease-in-out opacity-20"
               />
@@ -156,7 +146,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="transparent"
-                strokeDasharray={`${carbsMaxStroke} ${circumference - carbsMaxStroke}`}
+                strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
                 strokeDashoffset={carbsBgOffset}
                 className="text-muted transition-all duration-500 ease-in-out opacity-20"
               />
@@ -167,7 +157,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="transparent"
-                strokeDasharray={`${fatMaxStroke} ${circumference - fatMaxStroke}`}
+                strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
                 strokeDashoffset={fatBgOffset}
                 className="text-muted transition-all duration-500 ease-in-out opacity-20"
               />
