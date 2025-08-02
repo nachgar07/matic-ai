@@ -14,6 +14,10 @@ import { useUserMeals, Food, useDeleteMeal } from "@/hooks/useFatSecret";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 export const Comidas = () => {
   const [showCamera, setShowCamera] = useState(false);
@@ -21,11 +25,13 @@ export const Comidas = () => {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
   const [showAssistant, setShowAssistant] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   
   // Estado para manejar las imágenes de cada plato
   const [plateImages, setPlateImages] = useState<Record<string, string>>({});
   
-  const { data: mealsData, isLoading } = useUserMeals();
+  const dateString = selectedDate.toISOString().split('T')[0];
+  const { data: mealsData, isLoading } = useUserMeals(dateString);
   const { mutateAsync: deleteMeal } = useDeleteMeal();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -104,18 +110,33 @@ export const Comidas = () => {
     if (meals.length === 0) {
       toast({
         title: "No hay comidas",
-        description: "No tienes comidas registradas para sincronizar hoy",
+        description: "No tienes comidas registradas para sincronizar",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      const today = new Date().toISOString().split('T')[0];
-      await syncMealsToCalendar(meals, today);
+      await syncMealsToCalendar(meals, dateString);
     } catch (error) {
       // Error already handled in the hook
     }
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
+
+  const handleTodayClick = () => {
+    setSelectedDate(new Date());
+  };
+
+  const isToday = selectedDate.toDateString() === new Date().toDateString();
+  const formatDisplayDate = (date: Date) => {
+    if (isToday) return "Hoy";
+    return format(date, "d MMM yyyy", { locale: es });
   };
 
   if (isLoading) {
@@ -173,10 +194,40 @@ export const Comidas = () => {
           {/* Nutrition Summary */}
           <NutritionSummary dailyTotals={dailyTotals} />
 
+          {/* Date Navigation */}
+          <div className="flex items-center gap-2 justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {formatDisplayDate(selectedDate)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              {!isToday && (
+                <Button variant="ghost" onClick={handleTodayClick} className="text-primary">
+                  Hoy
+                </Button>
+              )}
+            </div>
+          </div>
+
           {/* Recent Meals */}
-          <div className="mt-8">
+          <div className="mt-4">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold">Comidas de Hoy</h2>
+              <h2 className="text-lg font-semibold">
+                Comidas {isToday ? "de Hoy" : `del ${format(selectedDate, "d 'de' MMMM", { locale: es })}`}
+              </h2>
             </div>
           <MealPlateList 
             meals={meals}
@@ -204,6 +255,7 @@ export const Comidas = () => {
           food={selectedFood}
           onClose={() => setSelectedFood(null)}
           onSuccess={handleMealSuccess}
+          selectedDate={selectedDate}
         />
       )}
 

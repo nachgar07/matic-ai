@@ -67,14 +67,15 @@ export const useSearchFoods = () => {
 // Add meal entry
 export const useAddMeal = () => {
   return useMutation({
-    mutationFn: async ({ foodId, servings, mealType, plateImage }: {
+    mutationFn: async ({ foodId, servings, mealType, plateImage, consumedAt }: {
       foodId: string;
       servings: number;
       mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
       plateImage?: string;
+      consumedAt?: Date;
     }) => {
       const { data, error } = await supabase.functions.invoke('add-meal', {
-        body: { foodId, servings, mealType, plateImage }
+        body: { foodId, servings, mealType, plateImage, consumedAt: consumedAt?.toISOString() }
       });
 
       if (error) throw error;

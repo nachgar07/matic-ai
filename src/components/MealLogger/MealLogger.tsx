@@ -11,9 +11,10 @@ interface MealLoggerProps {
   food: Food;
   onClose: () => void;
   onSuccess: () => void;
+  selectedDate?: Date;
 }
 
-export const MealLogger = ({ food, onClose, onSuccess }: MealLoggerProps) => {
+export const MealLogger = ({ food, onClose, onSuccess, selectedDate }: MealLoggerProps) => {
   const [servings, setServings] = useState("1");
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
   const { mutateAsync: addMeal, isPending } = useAddMeal();
@@ -33,7 +34,8 @@ export const MealLogger = ({ food, onClose, onSuccess }: MealLoggerProps) => {
       await addMeal({
         foodId: food.food_id,
         servings: parseFloat(servings) || 1,
-        mealType
+        mealType,
+        consumedAt: selectedDate
       });
       
       toast({
