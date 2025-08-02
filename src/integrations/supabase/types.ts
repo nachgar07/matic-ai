@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_water_intake: {
+        Row: {
+          created_at: string
+          date: string
+          glasses_consumed: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          glasses_consumed?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          glasses_consumed?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       expense_categories: {
         Row: {
           color: string
