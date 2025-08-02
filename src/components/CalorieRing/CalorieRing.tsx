@@ -62,7 +62,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const waterDropSize = size * 0.15;
   const waterTarget = 12; // 12 glasses = ~3 liters
   const displayWaterGlasses = waterGlasses > waterTarget ? waterGlasses - waterTarget : waterGlasses;
-  const waterPercentage = Math.min(100, (displayWaterGlasses / waterTarget) * 100);
+  const waterPercentage = Math.min(100, (Math.min(waterGlasses, waterTarget) / waterTarget) * 100);
   const waterFillHeight = (waterPercentage / 100) * (waterDropSize * 0.75);
 
   const handleWaterClick = () => {
