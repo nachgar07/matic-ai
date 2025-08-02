@@ -66,18 +66,8 @@ export const GoalCard = ({ goal, progress = 0, todayCompleted = false, onEdit, o
         </div>
         
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleComplete}
-            disabled={isCompleting}
-            className="p-2"
-          >
-            {todayCompleted ? (
-              <CheckCircle2 className="w-6 h-6 text-green-500" />
-            ) : (
-              <Circle className="w-6 h-6 text-muted-foreground" />
-            )}
+          <Button variant="ghost" size="sm" className="p-2">
+            <MoreHorizontal className="w-4 h-4" />
           </Button>
         </div>
       </div>
