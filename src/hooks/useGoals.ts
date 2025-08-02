@@ -130,8 +130,9 @@ export const useTasks = (date?: string) => {
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
-        .or(`due_date.eq.${targetDate},due_date.is.null`)
-        .order('priority', { ascending: false });
+        .or(`due_date.eq.${targetDate},due_date.is.null,due_date.gte.${targetDate}`)
+        .order('priority', { ascending: false })
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data as Task[];
