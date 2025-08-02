@@ -127,7 +127,10 @@ export const Home = () => {
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
-        <WeeklyCalendar />
+        <WeeklyCalendar 
+          selectedDate={new Date()}
+          onDateChange={() => {}}
+        />
       </div>
 
       {/* Main Calorie Ring */}
