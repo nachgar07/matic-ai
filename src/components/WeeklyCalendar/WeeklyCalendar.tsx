@@ -172,11 +172,11 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
   }, []);
 
   return (
-    <div className="bg-card p-2 sm:p-4 rounded-lg overflow-hidden">
+    <div className="bg-card p-2 rounded-lg overflow-hidden">
       <div 
         ref={containerRef}
         className="relative w-full"
-        style={{ height: '90px' }}
+        style={{ height: '80px' }}
       >
         <div 
           className="flex items-center cursor-grab active:cursor-grabbing select-none absolute top-0 left-0"
@@ -200,7 +200,7 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
             return (
               <div
                 key={`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`}
-                className={`flex flex-col items-center justify-center p-2 rounded-2xl cursor-pointer transition-all flex-shrink-0 ${
+                className={`flex flex-col items-center justify-center rounded-2xl cursor-pointer transition-all flex-shrink-0 ${
                   isSelected
                     ? "bg-primary text-primary-foreground shadow-lg"
                     : isToday && !isSelected
@@ -208,16 +208,16 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
                     : "bg-secondary/50 text-foreground hover:bg-secondary"
                 }`}
                 style={{ 
-                  width: `${dayWidth}px`,
-                  height: '70px',
-                  margin: '0 1px'
+                  width: `${dayWidth - 4}px`,
+                  height: '60px',
+                  margin: '0 2px'
                 }}
                 onClick={() => handleDateClick(date)}
               >
-                <span className="text-xs font-medium capitalize text-center">
+                <span className="text-xs font-medium capitalize">
                   {format(date, "EEE", { locale: es }).slice(0, 3)}
                 </span>
-                <span className="text-lg font-semibold mt-1">{format(date, "d")}</span>
+                <span className="text-xl font-semibold">{format(date, "d")}</span>
               </div>
             );
           })}
