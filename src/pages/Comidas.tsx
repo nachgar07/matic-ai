@@ -19,6 +19,8 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+import { useWaterIntake } from "@/hooks/useWaterIntake";
+
 export const Comidas = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [showFoodSearch, setShowFoodSearch] = useState(false);
@@ -192,42 +194,38 @@ export const Comidas = () => {
           </div>
 
           {/* Nutrition Summary */}
-          <NutritionSummary dailyTotals={dailyTotals} />
+          <NutritionSummary dailyTotals={dailyTotals} selectedDate={dateString} />
 
-          {/* Date Navigation */}
-          <div className="flex items-center gap-2 justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {formatDisplayDate(selectedDate)}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={handleDateSelect}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-              {!isToday && (
-                <Button variant="ghost" onClick={handleTodayClick} className="text-primary">
-                  Hoy
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Recent Meals */}
-          <div className="mt-4">
-            <div className="mb-4">
+          {/* Recent Meals Section with Date Navigation */}
+          <div className="mt-8">
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">
                 Comidas {isToday ? "de Hoy" : `del ${format(selectedDate, "d 'de' MMMM", { locale: es })}`}
               </h2>
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {formatDisplayDate(selectedDate)}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={handleDateSelect}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                {!isToday && (
+                  <Button variant="ghost" onClick={handleTodayClick} className="text-primary">
+                    Hoy
+                  </Button>
+                )}
+              </div>
             </div>
           <MealPlateList 
             meals={meals}

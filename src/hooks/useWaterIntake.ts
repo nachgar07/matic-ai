@@ -2,18 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export const useWaterIntake = () => {
+export const useWaterIntake = (date?: string) => {
   const [waterGlasses, setWaterGlasses] = useState(0);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Get today's date in YYYY-MM-DD format
-  const getTodayDate = () => {
-    return new Date().toISOString().split('T')[0];
+  // Get target date in YYYY-MM-DD format
+  const getTargetDate = () => {
+    return date || new Date().toISOString().split('T')[0];
   };
 
-  // Load water intake for today
-  const loadTodayWaterIntake = async () => {
+  // Load water intake for target date
+  const loadWaterIntake = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -22,7 +22,7 @@ export const useWaterIntake = () => {
         .from('daily_water_intake')
         .select('glasses_consumed')
         .eq('user_id', user.id)
-        .eq('date', getTodayDate())
+        .eq('date', getTargetDate())
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -48,7 +48,7 @@ export const useWaterIntake = () => {
         .from('daily_water_intake')
         .upsert({
           user_id: user.id,
-          date: getTodayDate(),
+          date: getTargetDate(),
           glasses_consumed: newGlasses
         }, {
           onConflict: 'user_id,date'
@@ -75,15 +75,18 @@ export const useWaterIntake = () => {
     }
   };
 
-  // Add one glass of water
+  // Add one glass of water (only for today)
   const addWaterGlass = () => {
+    const isToday = getTargetDate() === new Date().toISOString().split('T')[0];
+    if (!isToday) return; // Only allow adding water for today
+    
     const newCount = waterGlasses + 1;
     updateWaterIntake(newCount);
   };
 
   useEffect(() => {
-    loadTodayWaterIntake();
-  }, []);
+    loadWaterIntake();
+  }, [date]);
 
   return {
     waterGlasses,

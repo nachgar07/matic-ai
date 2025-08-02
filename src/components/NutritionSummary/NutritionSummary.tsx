@@ -6,11 +6,12 @@ import { useWaterIntake } from "@/hooks/useWaterIntake";
 
 interface NutritionSummaryProps {
   dailyTotals: DailyTotals;
+  selectedDate?: string;
 }
 
-export const NutritionSummary = ({ dailyTotals }: NutritionSummaryProps) => {
+export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummaryProps) => {
   const { data: nutritionGoals } = useNutritionGoals();
-  const { waterGlasses, addWaterGlass } = useWaterIntake();
+  const { waterGlasses, addWaterGlass } = useWaterIntake(selectedDate);
   
   const goals = {
     calories: nutritionGoals?.daily_calories || 2000,
