@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 interface CalorieRingProps {
   consumed: number;
   target: number;
@@ -10,6 +12,8 @@ interface CalorieRingProps {
 }
 
 export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200, waterGlasses = 0, onWaterClick }: CalorieRingProps) => {
+  const [showWaterAnimation, setShowWaterAnimation] = useState(false);
+  
   const remaining = Math.max(0, target - consumed);
   const percentage = Math.min(100, (consumed / target) * 100);
   const radius = (size - 20) / 2;
@@ -41,6 +45,22 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const waterCircumference = Math.PI * waterRadius;
   const waterPercentage = Math.min(100, (waterGlasses / 8) * 100); // 8 glasses target
   const waterStroke = (waterPercentage / 100) * waterCircumference;
+
+  const handleWaterClick = () => {
+    if (onWaterClick) {
+      onWaterClick();
+      setShowWaterAnimation(true);
+    }
+  };
+
+  useEffect(() => {
+    if (showWaterAnimation) {
+      const timer = setTimeout(() => {
+        setShowWaterAnimation(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [showWaterAnimation]);
 
   return (
     <div className="flex flex-col items-center">
@@ -109,8 +129,38 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
             width: waterRadius * 2,
             height: waterRadius * 2
           }}
-          onClick={onWaterClick}
+          onClick={handleWaterClick}
         >
+          {/* Water drop animations */}
+          {showWaterAnimation && (
+            <>
+              {/* Water drops */}
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-2 h-2 bg-blue-400 rounded-full animate-[fade-in_0.3s_ease-out,scale-in_0.2s_ease-out] opacity-0"
+                  style={{
+                    top: `${30 + i * 5}%`,
+                    left: `${45 + i * 10}%`,
+                    animationDelay: `${i * 0.1}s`,
+                    animationFillMode: 'forwards',
+                    transform: `translateY(-${20 + i * 10}px)`,
+                    animationDuration: '0.8s'
+                  }}
+                />
+              ))}
+              {/* +1 vaso indicator */}
+              <div 
+                className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-bold text-blue-500 animate-[fade-in_0.3s_ease-out] opacity-0 pointer-events-none"
+                style={{
+                  animationFillMode: 'forwards',
+                  animationDelay: '0.1s'
+                }}
+              >
+                +1 vaso
+              </div>
+            </>
+          )}
           <svg
             width={waterRadius * 2}
             height={waterRadius * 2}
