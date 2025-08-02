@@ -7,17 +7,25 @@ import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Footprints, Flame, Sparkles, LogOut } from "lucide-react";
 import { User, Session } from '@supabase/supabase-js';
+import { useUserMeals, useNutritionGoals } from "@/hooks/useFatSecret";
+import { useWaterIntake } from "@/hooks/useWaterIntake";
 
 export const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // Mock data
-  const caloriesConsumed = 0;
-  const caloriesTarget = 2586;
-  const steps = 0;
-  const activeCalories = 0;
+  // Get real data from hooks
+  const { data: mealsData, isLoading: mealsLoading } = useUserMeals();
+  const { data: nutritionGoals } = useNutritionGoals();
+  const { waterGlasses } = useWaterIntake();
+  
+  // Calculate real values from meal data
+  const dailyTotals = mealsData?.dailyTotals || { calories: 0, carbs: 0, protein: 0, fat: 0 };
+  const caloriesConsumed = Math.round(dailyTotals.calories);
+  const caloriesTarget = nutritionGoals?.daily_calories || 2586;
+  const steps = 0; // Still mock data - not implemented
+  const activeCalories = 0; // Still mock data - not implemented
 
   useEffect(() => {
     // Set up auth state listener
@@ -87,8 +95,8 @@ export const Home = () => {
     }
   };
 
-  // Show loading while checking auth
-  if (loading) {
+  // Show loading while checking auth or loading meal data
+  if (loading || mealsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -127,10 +135,11 @@ export const Home = () => {
         <CalorieRing
           consumed={caloriesConsumed}
           target={caloriesTarget}
-          protein={0}
-          carbs={0}
-          fat={0}
+          protein={Math.round(dailyTotals.protein)}
+          carbs={Math.round(dailyTotals.carbs)}
+          fat={Math.round(dailyTotals.fat)}
           size={220}
+          waterGlasses={waterGlasses}
         />
       </div>
 
@@ -160,22 +169,22 @@ export const Home = () => {
           <MacroCard
             icon="🥩"
             label="Protein"
-            current={0}
-            target={129}
+            current={Math.round(dailyTotals.protein)}
+            target={nutritionGoals?.daily_protein || 129}
             unit="g"
           />
           <MacroCard
             icon="🍞"
             label="Carbs"
-            current={0}
-            target={323}
+            current={Math.round(dailyTotals.carbs)}
+            target={nutritionGoals?.daily_carbs || 323}
             unit="g"
           />
           <MacroCard
             icon="🥑"
             label="Fat"
-            current={0}
-            target={86}
+            current={Math.round(dailyTotals.fat)}
+            target={nutritionGoals?.daily_fat || 86}
             unit="g"
           />
         </div>
@@ -193,15 +202,26 @@ export const Home = () => {
 
       {/* Calorie Logs Section */}
       <div className="px-4">
-        <h2 className="text-xl font-bold mb-4">Calorie logs</h2>
-        <div className="bg-card rounded-lg p-6 text-center">
-          <div className="text-muted-foreground mb-2">
-            You haven't logged any food
+        <h2 className="text-xl font-bold mb-4">Registro de calorías</h2>
+        {mealsData?.meals && mealsData.meals.length > 0 ? (
+          <div className="bg-card rounded-lg p-6 text-center">
+            <div className="text-muted-foreground mb-2">
+              {mealsData.meals.length} comida{mealsData.meals.length === 1 ? '' : 's'} registrada{mealsData.meals.length === 1 ? '' : 's'} hoy
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {caloriesConsumed} calorías consumidas de {caloriesTarget} objetivo
+            </div>
           </div>
-          <div className="text-sm text-muted-foreground">
-            Start tracking today's calories by taking a quick photo
+        ) : (
+          <div className="bg-card rounded-lg p-6 text-center">
+            <div className="text-muted-foreground mb-2">
+              No has registrado ninguna comida
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Comienza a hacer seguimiento tomando una foto rápida
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <BottomNavigation />
