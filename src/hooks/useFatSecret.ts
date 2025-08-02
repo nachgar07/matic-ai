@@ -91,9 +91,7 @@ export const useUserMeals = (date?: string) => {
   return useQuery({
     queryKey: ['user-meals', targetDate],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('get-user-meals', {
-        body: { date: targetDate }
-      });
+      const { data, error } = await supabase.functions.invoke(`get-user-meals?date=${targetDate}`);
 
       if (error) throw error;
       return data as { meals: MealEntry[]; dailyTotals: DailyTotals };
