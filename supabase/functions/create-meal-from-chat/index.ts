@@ -76,105 +76,181 @@ serve(async (req) => {
     for (const food of foods) {
       console.log(`Searching for food: ${food.name}`);
       
-      // Simplify search term - remove preparation details and map Spanish to English
-      let searchTerm = food.name.toLowerCase();
+      // ENHANCED CONTEXTUAL ANALYSIS - Understand the COMPLETE phrase, not individual words
+      let searchTerm = food.name.toLowerCase().trim();
+      let contextualHints = {
+        isMainDish: false,
+        isSideDish: false,
+        isBeverage: false,
+        isPasta: false,
+        isMeat: false,
+        isVegetable: false,
+        isFruit: false,
+        cookingMethod: null,
+        expectedCalories: null
+      };
       
-        // Enhanced Spanish to English food mapping for better FatSecret results
-        const foodMapping: { [key: string]: string } = {
-          // Exact phrases first (more specific)
-          'filete de salmón': 'salmon fillet',
+      // STEP 1: Analyze complete phrase patterns for better understanding
+      const analyzePhrase = (phrase: string) => {
+        // Pasta/Noodles patterns
+        if (/fideos?\s+blancos?/i.test(phrase) || /pasta\s+blanca/i.test(phrase)) {
+          contextualHints.isPasta = true;
+          contextualHints.expectedCalories = 200;
+          return 'white pasta';
+        }
+        if (/fideos?\s+integrales?/i.test(phrase) || /pasta\s+integral/i.test(phrase)) {
+          contextualHints.isPasta = true;
+          contextualHints.expectedCalories = 220;
+          return 'whole wheat pasta';
+        }
+        if (/fideos?\s+con\s+/i.test(phrase)) {
+          contextualHints.isPasta = true;
+          contextualHints.isMainDish = true;
+          return 'pasta with sauce';
+        }
+        if (/fideos?$/i.test(phrase) || /^pasta$/i.test(phrase)) {
+          contextualHints.isPasta = true;
+          return 'pasta';
+        }
+        
+        // Meat patterns with cooking methods
+        if (/pollo\s+(a\s+la\s+)?plancha/i.test(phrase) || /pechuga\s+plancha/i.test(phrase)) {
+          contextualHints.isMeat = true;
+          contextualHints.cookingMethod = 'grilled';
+          contextualHints.isMainDish = true;
+          contextualHints.expectedCalories = 180;
+          return 'grilled chicken breast';
+        }
+        if (/pollo\s+hervido/i.test(phrase) || /pollo\s+cocido/i.test(phrase)) {
+          contextualHints.isMeat = true;
+          contextualHints.cookingMethod = 'boiled';
+          return 'boiled chicken';
+        }
+        if (/pechuga\s+de\s+pollo/i.test(phrase)) {
+          contextualHints.isMeat = true;
+          contextualHints.isMainDish = true;
+          return 'chicken breast';
+        }
+        if (/pollo$/i.test(phrase)) {
+          contextualHints.isMeat = true;
+          contextualHints.isMainDish = true;
+          return 'chicken breast';
+        }
+        
+        // Rice patterns
+        if (/arroz\s+integral/i.test(phrase)) {
+          contextualHints.isSideDish = true;
+          contextualHints.expectedCalories = 150;
+          return 'brown rice';
+        }
+        if (/arroz\s+blanco/i.test(phrase)) {
+          contextualHints.isSideDish = true;
+          contextualHints.expectedCalories = 140;
+          return 'white rice';
+        }
+        if (/arroz$/i.test(phrase)) {
+          contextualHints.isSideDish = true;
+          return 'rice';
+        }
+        
+        // Egg patterns with cooking methods
+        if (/huevos?\s+fritos?/i.test(phrase)) {
+          contextualHints.cookingMethod = 'fried';
+          contextualHints.expectedCalories = 150;
+          return 'fried eggs';
+        }
+        if (/huevos?\s+hervidos?/i.test(phrase) || /huevos?\s+duros?/i.test(phrase)) {
+          contextualHints.cookingMethod = 'boiled';
+          return 'boiled eggs';
+        }
+        if (/huevos?\s+revueltos?/i.test(phrase)) {
+          contextualHints.cookingMethod = 'scrambled';
+          return 'scrambled eggs';
+        }
+        if (/huevos?$/i.test(phrase)) {
+          return 'eggs';
+        }
+        
+        // Bread patterns
+        if (/pan\s+tostado/i.test(phrase) || /tostadas?/i.test(phrase)) {
+          contextualHints.cookingMethod = 'toasted';
+          return 'toasted bread';
+        }
+        if (/pan\s+integral/i.test(phrase)) {
+          return 'whole wheat bread';
+        }
+        if (/pan$/i.test(phrase)) {
+          return 'bread';
+        }
+        
+        // Vegetable patterns
+        if (/br[óo]coli\s+al\s+vapor/i.test(phrase)) {
+          contextualHints.isVegetable = true;
+          contextualHints.cookingMethod = 'steamed';
+          return 'steamed broccoli';
+        }
+        if (/br[óo]coli$/i.test(phrase)) {
+          contextualHints.isVegetable = true;
+          return 'broccoli';
+        }
+        
+        // Oil patterns
+        if (/aceite\s+de\s+oliva/i.test(phrase)) {
+          contextualHints.expectedCalories = 120;
+          return 'olive oil';
+        }
+        if (/aceite$/i.test(phrase)) {
+          contextualHints.expectedCalories = 120;
+          return 'olive oil';
+        }
+        
+        // Fruit patterns
+        if (/pl[áa]tano\s+maduro/i.test(phrase) || /banana\s+madura/i.test(phrase)) {
+          contextualHints.isFruit = true;
+          return 'ripe banana';
+        }
+        if (/pl[áa]tano$/i.test(phrase) || /banana$/i.test(phrase)) {
+          contextualHints.isFruit = true;
+          return 'banana';
+        }
+        
+        // If no specific pattern matches, try simple word mapping
+        return null;
+      };
+      
+      // Apply contextual analysis
+      let analyzedTerm = analyzePhrase(searchTerm);
+      
+      // STEP 2: Fallback to enhanced word mapping if no pattern matched
+      if (!analyzedTerm) {
+        const enhancedMapping: { [key: string]: string } = {
+          // Direct translations prioritizing context
           'salmón': 'salmon',
           'salmon': 'salmon',
-          'arroz integral': 'brown rice',
-          'arroz integral cocido': 'brown rice cooked',
-          'arroz blanco': 'white rice',
-          'brócoli al vapor': 'steamed broccoli',
-          'brócoli': 'broccoli',
-          'brocoli': 'broccoli',
-          'aceite de oliva': 'olive oil',
-          'aceite': 'olive oil',
-          'pechuga de pollo': 'chicken breast',
-          'pollo': 'chicken breast',
-          'carne de res': 'beef',
-          'carne': 'beef',
-          'filete': 'steak',
-          
-          // Pasta and noodles - CRITICAL fixes for fideos
-          'fideos blancos': 'white pasta',
-          'fideos': 'pasta',
-          'pasta': 'pasta',
-          'tallarines': 'noodles',
-          'espaguetis': 'spaghetti',
-          'macarrones': 'macaroni',
-          
-          // Common foods
           'palta': 'avocado',
-          'aguacate': 'avocado', 
-          'huevo': 'egg',
-          'huevos': 'eggs',
-          'pan': 'bread',
-          'arroz': 'rice',
+          'aguacate': 'avocado',
+          'tomate': 'tomato',
           'papa': 'potato',
           'papas': 'potatoes',
-          'tomate': 'tomato',
           'pescado': 'fish',
           'atún': 'tuna',
           'leche': 'milk',
           'queso': 'cheese',
           'mantequilla': 'butter',
-          'sal': 'salt',
-          'azúcar': 'sugar',
-          'miel': 'honey',
           'yogur': 'yogurt',
-          'yogurt': 'yogurt',
-          
-          // Vegetables
           'lechuga': 'lettuce',
           'espinaca': 'spinach',
           'zanahoria': 'carrot',
           'cebolla': 'onion',
-          'ajo': 'garlic',
-          'pimiento': 'bell pepper',
-          'apio': 'celery',
-          
-          // Fruits
           'manzana': 'apple',
-          'banana': 'banana',
-          'plátano': 'banana',
           'naranja': 'orange',
-          'limón': 'lemon',
-          'uva': 'grape',
-          'fresa': 'strawberry',
-          
-          // Nuts and seeds
-          'nuez': 'walnut',
-          'nueces': 'walnuts',
-          'almendra': 'almond',
-          'almendras': 'almonds'
+          'limón': 'lemon'
         };
-
-      // First, check for exact matches in the mapping
-      let foundMapping = false;
-      for (const [spanish, english] of Object.entries(foodMapping)) {
-        if (searchTerm === spanish || searchTerm.includes(spanish)) {
-          searchTerm = english;
-          foundMapping = true;
-          break;
-        }
+        
+        analyzedTerm = enhancedMapping[searchTerm] || searchTerm;
       }
       
-      // If no mapping found, try to extract basic ingredient from complex preparations
-      if (!foundMapping) {
-        if (searchTerm.includes('huevos fritos') || searchTerm.includes('huevo frito')) {
-          searchTerm = 'fried eggs';
-        } else if (searchTerm.includes('pan tostado')) {
-          searchTerm = 'toast bread';
-        } else if (searchTerm.includes('papa') && (searchTerm.includes('hervida') || searchTerm.includes('hervido'))) {
-          searchTerm = 'potato boiled';
-        } else if (searchTerm.includes('puré') && searchTerm.includes('papa')) {
-          searchTerm = 'mashed potato';
-        }
-      }
+      searchTerm = analyzedTerm;
       
       console.log(`Simplified search term: ${searchTerm}`);
       
@@ -209,97 +285,93 @@ serve(async (req) => {
       let selectedFood = searchData.foods[0];
       const originalName = food.name.toLowerCase();
       
-      // Sort foods by relevance score for better matching
+      // Sort foods by relevance score using CONTEXTUAL understanding
       const scoredFoods = searchData.foods.map((f: any) => {
         let score = 0;
         const foodName = f.food_name.toLowerCase();
         const caloriesPerServing = f.calories_per_serving || 0;
         
-        // Higher score for exact matches
-        if (foodName.includes(searchTerm)) score += 100;
+        // CONTEXTUAL SCORING - Use the hints we gathered about what type of food this should be
+        if (contextualHints.isPasta) {
+          if (foodName.includes('pasta') || foodName.includes('noodle') || foodName.includes('spaghetti') || foodName.includes('macaroni')) score += 500;
+          if (foodName.includes('fideo')) score += 400;
+          // SEVERELY penalize non-pasta items when we expect pasta
+          if (foodName.includes('banana') || foodName.includes('fruit') || foodName.includes('sweet potato')) score -= 1000;
+          if (foodName.includes('guinea') || foodName.includes('blanco maduro')) score -= 2000;
+          if (!foodName.includes('pasta') && !foodName.includes('noodle') && !foodName.includes('spaghetti') && !foodName.includes('fideo')) score -= 300;
+        }
         
-        // Bonus for higher calorie foods (more substantial foods)
-        if (caloriesPerServing > 100) score += 50;
-        if (caloriesPerServing > 200) score += 50;
-        if (caloriesPerServing > 300) score += 30;
+        if (contextualHints.isMeat) {
+          if (foodName.includes('chicken') || foodName.includes('beef') || foodName.includes('pork') || foodName.includes('meat')) score += 400;
+          if (contextualHints.cookingMethod === 'grilled' && foodName.includes('grilled')) score += 200;
+          if (contextualHints.cookingMethod === 'boiled' && foodName.includes('boiled')) score += 200;
+          // Penalize non-meat items when we expect meat
+          if (!foodName.includes('chicken') && !foodName.includes('beef') && !foodName.includes('pork') && !foodName.includes('meat')) score -= 200;
+        }
         
-        // Penalty for very low calorie foods that might be seasonings or tiny portions
-        if (caloriesPerServing < 50) score -= 100;
+        if (contextualHints.isVegetable) {
+          if (foodName.includes('broccoli') || foodName.includes('carrot') || foodName.includes('spinach')) score += 300;
+          if (contextualHints.cookingMethod === 'steamed' && foodName.includes('steamed')) score += 200;
+          // Penalize non-vegetables when we expect vegetables
+          if (foodName.includes('meat') || foodName.includes('chicken') || foodName.includes('beef')) score -= 200;
+        }
         
-        // Specific food type bonuses
+        if (contextualHints.isFruit) {
+          if (foodName.includes('banana') || foodName.includes('apple') || foodName.includes('orange')) score += 300;
+          // Penalize non-fruits when we expect fruits
+          if (!foodName.includes('fruit') && !foodName.includes('banana') && !foodName.includes('apple')) score -= 100;
+        }
+        
+        // Expected calorie matching
+        if (contextualHints.expectedCalories) {
+          const caloriesDiff = Math.abs(caloriesPerServing - contextualHints.expectedCalories);
+          if (caloriesDiff < 50) score += 200;  // Very close to expected
+          else if (caloriesDiff < 100) score += 100; // Reasonably close
+          else if (caloriesDiff > 200) score -= 100; // Too far from expected
+        }
+        
+        // Main dish vs side dish context
+        if (contextualHints.isMainDish) {
+          if (caloriesPerServing > 150) score += 100; // Main dishes should have substantial calories
+          if (caloriesPerServing < 100) score -= 150; // Penalize low-calorie items for main dishes
+        }
+        
+        if (contextualHints.isSideDish) {
+          if (caloriesPerServing > 50 && caloriesPerServing < 200) score += 100; // Side dishes should be moderate calories
+        }
+        
+        // Higher score for exact search term matches
+        if (foodName.includes(searchTerm.toLowerCase())) score += 150;
+        
+        // General calorie-based scoring (less important now with contextual hints)
+        if (caloriesPerServing > 100) score += 30;
+        if (caloriesPerServing > 200) score += 30;
+        
+        // Penalty for very low calorie foods that might be seasonings
+        if (caloriesPerServing < 20) score -= 200;
+        
+        // Legacy specific food bonuses (kept for backward compatibility)
         if (originalName.includes('salmón') || originalName.includes('salmon')) {
           if (foodName.includes('salmon')) score += 200;
           if (foodName.includes('fillet') || foodName.includes('filet')) score += 50;
-          // Prefer higher calorie salmon preparations
-          if (caloriesPerServing > 150) score += 100;
-          // Penalize non-salmon fish
-          if (foodName.includes('tuna') || foodName.includes('cod') || foodName.includes('mackerel')) score -= 100;
         }
         
-        if (originalName.includes('arroz integral')) {
-          if (foodName.includes('brown rice')) score += 200;
-          if (foodName.includes('rice') && foodName.includes('brown')) score += 150;
-          // Prefer substantial rice portions
-          if (caloriesPerServing > 150) score += 100;
-          // Penalize white rice or rice dishes with very low calories
-          if (foodName.includes('white rice') || foodName.includes('fried rice')) score -= 50;
-        }
-        
-        if (originalName.includes('brócoli') || originalName.includes('brocoli')) {
-          if (foodName.includes('broccoli')) score += 200;
-          // Penalize other vegetables
-          if (foodName.includes('cauliflower') || foodName.includes('cabbage')) score -= 50;
-        }
-        
-        if (originalName.includes('aceite de oliva') || originalName.includes('aceite')) {
+        if (originalName.includes('aceite')) {
           if (foodName.includes('olive oil')) score += 200;
           if (foodName.includes('oil') && foodName.includes('olive')) score += 150;
-          // Prefer higher calorie oil entries (more substantial servings)
-          if (caloriesPerServing > 80) score += 100;
-          // Penalize other oils
-          if (foodName.includes('vegetable oil') || foodName.includes('canola')) score -= 50;
-        }
-        
-        if (originalName.includes('palta') || originalName.includes('aguacate')) {
-          if (foodName.includes('avocado')) score += 200;
-          // Prefer higher calorie avocado entries
-          if (caloriesPerServing > 120) score += 100;
-          // Penalize other vegetables
-          if (!foodName.includes('avocado')) score -= 100;
         }
         
         if (originalName.includes('huevo')) {
           if (foodName.includes('egg')) score += 200;
-          // Prefer substantial egg preparations
-          if (caloriesPerServing > 100) score += 100;
           // Penalize eggplant
-          if (foodName.includes('eggplant')) score -= 200;
-        }
-        
-        if (originalName.includes('pan')) {
-          if (foodName.includes('bread') || foodName.includes('toast')) score += 200;
-          // Penalize unrelated items
-          if (!foodName.includes('bread') && !foodName.includes('toast')) score -= 50;
-        }
-        
-        // CRITICAL: Handle pasta/fideos correctly
-        if (originalName.includes('fideos') || originalName.includes('pasta') || originalName.includes('tallarines')) {
-          if (foodName.includes('pasta') || foodName.includes('noodle') || foodName.includes('spaghetti') || foodName.includes('macaroni')) score += 300;
-          if (foodName.includes('fideo')) score += 250;
-          // Prefer higher calorie pasta entries (substantial portions)
-          if (caloriesPerServing > 200) score += 100;
-          // SEVERELY penalize fruits, vegetables, and non-pasta items
-          if (foodName.includes('banana') || foodName.includes('fruit') || foodName.includes('sweet potato')) score -= 500;
-          if (foodName.includes('guinea') || foodName.includes('blanco maduro')) score -= 1000;
-          // Penalize anything that's not carb-heavy
-          if (caloriesPerServing < 100) score -= 200;
+          if (foodName.includes('eggplant')) score -= 300;
         }
         
         // Prefer foods without brand (generic foods)
-        if (!f.brand_name) score += 30;
+        if (!f.brand_name) score += 50;
         
-        // Penalize overly complex dishes
-        if (foodName.split(' ').length > 5) score -= 20;
+        // Penalize overly complex dishes unless we expect a main dish
+        if (foodName.split(' ').length > 5 && !contextualHints.isMainDish) score -= 30;
         
         return { ...f, score };
       });
