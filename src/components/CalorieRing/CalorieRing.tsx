@@ -23,22 +23,40 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const proteinCals = protein * 4;
   const carbsCals = carbs * 4;
   const fatCals = fat * 9;
-  const totalMacroCals = proteinCals + carbsCals + fatCals;
   
-  // Calculate proportions for each macro based on consumed calories
-  const proteinPercentage = totalMacroCals > 0 ? (proteinCals / consumed) * percentage : 0;
-  const carbsPercentage = totalMacroCals > 0 ? (carbsCals / consumed) * percentage : 0;
-  const fatPercentage = totalMacroCals > 0 ? (fatCals / consumed) * percentage : 0;
+  // Calculate target calories for each macro (assuming balanced diet)
+  const proteinTarget = target * 0.25; // 25% protein
+  const carbsTarget = target * 0.45;   // 45% carbs 
+  const fatTarget = target * 0.30;     // 30% fat
   
-  // Calculate stroke dash arrays for each segment
-  const proteinStroke = (proteinPercentage / 100) * circumference;
-  const carbsStroke = (carbsPercentage / 100) * circumference;
-  const fatStroke = (fatPercentage / 100) * circumference;
+  // Calculate fixed proportions for each macro based on targets
+  const proteinProportion = 25; // 25% of circle
+  const carbsProportion = 45;   // 45% of circle
+  const fatProportion = 30;     // 30% of circle
   
-  // Calculate offsets for positioning segments
+  // Calculate progress within each segment
+  const proteinProgress = Math.min(100, (proteinCals / proteinTarget) * 100);
+  const carbsProgress = Math.min(100, (carbsCals / carbsTarget) * 100);
+  const fatProgress = Math.min(100, (fatCals / fatTarget) * 100);
+  
+  // Calculate stroke lengths for backgrounds (full segments)
+  const proteinBgStroke = (proteinProportion / 100) * circumference;
+  const carbsBgStroke = (carbsProportion / 100) * circumference;
+  const fatBgStroke = (fatProportion / 100) * circumference;
+  
+  // Calculate stroke lengths for progress
+  const proteinStroke = (proteinProgress / 100) * proteinBgStroke;
+  const carbsStroke = (carbsProgress / 100) * carbsBgStroke;
+  const fatStroke = (fatProgress / 100) * fatBgStroke;
+  
+  // Calculate offsets for positioning segments with gaps
+  const gapSize = circumference * 0.02; // 2% gap between segments
   const proteinOffset = circumference - proteinStroke;
-  const carbsOffset = circumference - proteinStroke - carbsStroke;
-  const fatOffset = circumference - proteinStroke - carbsStroke - fatStroke;
+  const proteinBgOffset = circumference - proteinBgStroke;
+  const carbsOffset = circumference - proteinBgStroke - gapSize - carbsStroke;
+  const carbsBgOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke;
+  const fatOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke - gapSize - fatStroke;
+  const fatBgOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke - gapSize - fatBgStroke;
 
   // Water semicircle calculations
   const waterRadius = size * 0.15;
@@ -71,14 +89,45 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
           height={size}
           className="transform -rotate-90"
         >
+          {/* Background segments - opaque versions */}
+          {/* Protein background */}
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="hsl(var(--muted))"
+            stroke="#ff6b3540"
             strokeWidth="8"
             fill="transparent"
+            strokeDasharray={`${proteinBgStroke} ${circumference - proteinBgStroke}`}
+            strokeDashoffset={proteinBgOffset}
+            strokeLinecap="round"
           />
+          {/* Carbs background */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#ffa72640"
+            strokeWidth="8"
+            fill="transparent"
+            strokeDasharray={`${carbsBgStroke} ${circumference - carbsBgStroke}`}
+            strokeDashoffset={carbsBgOffset}
+            strokeLinecap="round"
+          />
+          {/* Fat background */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#4caf5040"
+            strokeWidth="8"
+            fill="transparent"
+            strokeDasharray={`${fatBgStroke} ${circumference - fatBgStroke}`}
+            strokeDashoffset={fatBgOffset}
+            strokeLinecap="round"
+          />
+          
+          {/* Progress segments - full color */}
           {/* Protein segment (red/orange) */}
           <circle
             cx={size / 2}
