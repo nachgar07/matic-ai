@@ -8,6 +8,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { format, isToday } from "date-fns";
 import { es } from "date-fns/locale";
 import { Goal, useUpdateGoalProgress } from "@/hooks/useGoals";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GoalCardProps {
   goal: Goal;
@@ -20,6 +22,7 @@ interface GoalCardProps {
 export const GoalCard = ({ goal, progress = 0, todayCompleted = false, onEdit, onViewStats }: GoalCardProps) => {
   const [isCompleting, setIsCompleting] = useState(false);
   const updateProgress = useUpdateGoalProgress();
+  const { toast } = useToast();
 
   const handleToggleComplete = async () => {
     if (isCompleting) return;
@@ -34,6 +37,42 @@ export const GoalCard = ({ goal, progress = 0, todayCompleted = false, onEdit, o
       });
     } finally {
       setIsCompleting(false);
+    }
+  };
+
+  const handleEdit = () => {
+    toast({
+      title: "Función en desarrollo",
+      description: "La edición de objetivos estará disponible pronto.",
+    });
+  };
+
+  const handleViewStats = () => {
+    toast({
+      title: "Función en desarrollo", 
+      description: "Las estadísticas detalladas estarán disponibles pronto.",
+    });
+  };
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .update({ is_active: false })
+        .eq('id', goal.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Objetivo eliminado",
+        description: "El objetivo se ha desactivado exitosamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el objetivo.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -74,15 +113,15 @@ export const GoalCard = ({ goal, progress = 0, todayCompleted = false, onEdit, o
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onEdit}>
+              <DropdownMenuItem onClick={handleEdit}>
                 <Edit className="w-4 h-4 mr-2" />
                 Editar
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onViewStats}>
+              <DropdownMenuItem onClick={handleViewStats}>
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Ver estadísticas
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Eliminar
               </DropdownMenuItem>
