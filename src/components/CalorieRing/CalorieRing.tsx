@@ -134,10 +134,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
         <div 
           className="absolute cursor-pointer transition-transform hover:scale-110"
           style={{ 
-            top: -waterDropSize * 0.5, 
-            right: -waterDropSize * 0.5,
-            width: waterDropSize * 1.2,
-            height: waterDropSize * 1.4
+            top: -waterDropSize * 0.7, 
+            right: -waterDropSize * 0.7,
+            width: waterDropSize * 1.4,
+            height: waterDropSize * 1.6
           }}
           onClick={handleWaterClick}
         >
@@ -174,25 +174,26 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
           
           {/* Water drop SVG */}
           <svg
-            width={waterDropSize}
-            height={waterDropSize * 1.2}
-            viewBox={`0 0 ${waterDropSize} ${waterDropSize * 1.2}`}
+            width="100%"
+            height="100%"
+            viewBox="0 0 40 50"
+            className="absolute inset-0"
           >
             <defs>
               <clipPath id="dropClip">
                 <path
-                  d={`M ${waterDropSize/2} 5 
-                      C ${waterDropSize/2 - 12} 15, ${waterDropSize/2 - 12} 25, ${waterDropSize/2} ${waterDropSize - 5}
-                      C ${waterDropSize/2 + 12} 25, ${waterDropSize/2 + 12} 15, ${waterDropSize/2} 5 Z`}
+                  d="M 20 5 
+                      C 12 15, 12 25, 20 40
+                      C 28 25, 28 15, 20 5 Z"
                 />
               </clipPath>
             </defs>
             
             {/* Drop background - celeste opaco */}
             <path
-              d={`M ${waterDropSize/2} 5 
-                  C ${waterDropSize/2 - 12} 15, ${waterDropSize/2 - 12} 25, ${waterDropSize/2} ${waterDropSize - 5}
-                  C ${waterDropSize/2 + 12} 25, ${waterDropSize/2 + 12} 15, ${waterDropSize/2} 5 Z`}
+              d="M 20 5 
+                  C 12 15, 12 25, 20 40
+                  C 28 25, 28 15, 20 5 Z"
               stroke="#64b5f6"
               strokeWidth="2"
               fill="#e3f2fd"
@@ -201,9 +202,9 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
             {/* Water fill */}
             <rect
               x="0"
-              y={waterDropSize * 1.2 - 5 - waterFillHeight}
-              width={waterDropSize}
-              height={waterFillHeight + 5}
+              y={40 - (waterFillHeight / waterDropSize) * 35}
+              width="40"
+              height={(waterFillHeight / waterDropSize) * 35 + 5}
               fill="#2196f3"
               clipPath="url(#dropClip)"
               className="transition-all duration-500 ease-in-out"
@@ -211,7 +212,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
           </svg>
           
           {/* Water glass count - centered in drop */}
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center pt-1">
             <span className="text-xs font-semibold text-blue-600 z-10">{waterGlasses}</span>
           </div>
         </div>
