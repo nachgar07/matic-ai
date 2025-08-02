@@ -154,14 +154,22 @@ export const GoalCard = ({ goal, progress = 0, todayCompleted = false, onEdit, o
         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, index) => {
           const date = new Date();
           date.setDate(date.getDate() - date.getDay() + index + 1);
-          const isCompleted = Math.random() > 0.5; // Placeholder - aquí irían los datos reales
           const isCurrentDay = isToday(date);
+          
+          // Mapear días de la semana a los nombres en inglés que usa frequency_days
+          const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+          const dayName = dayNames[index];
+          
+          // Verificar si este día está en los frequency_days del objetivo
+          const isDayActive = goal.frequency === 'daily' || 
+                             (goal.frequency === 'custom' && goal.frequency_days?.includes(dayName)) ||
+                             (goal.frequency === 'weekly' && index === 0); // Lunes para semanal
           
           return (
             <div
               key={day}
               className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                isCompleted
+                isDayActive
                   ? 'bg-green-500 text-white'
                   : isCurrentDay
                   ? 'bg-primary text-primary-foreground'
