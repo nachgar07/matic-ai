@@ -12,47 +12,36 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
   const [weekOffset, setWeekOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
-  const [dragOffset, setDragOffset] = useState(0);
+  const [currentTranslate, setCurrentTranslate] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Calcular la semana actual basada en el offset y mantener el día seleccionado centrado
-  useEffect(() => {
-    const currentWeekStart = startOfWeek(selectedDate, { weekStartsOn: 1 }); // Lunes como primer día
-    const selectedWeekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
-    const todayWeekStart = startOfWeek(today, { weekStartsOn: 1 });
-    
-    // Calcular cuántas semanas hay de diferencia
-    const daysDiff = Math.floor((selectedWeekStart.getTime() - todayWeekStart.getTime()) / (1000 * 60 * 60 * 24));
-    const weeksDiff = Math.floor(daysDiff / 7);
-    setWeekOffset(weeksDiff);
-  }, [selectedDate]);
-
+  // Calcular la semana actual basada en el offset
   const currentWeekStart = addDays(startOfWeek(today, { weekStartsOn: 1 }), weekOffset * 7);
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Detectar el inicio del arrastre
+  const handleDragStart = (clientX: number) => {
     setIsDragging(true);
-    setStartX(e.clientX);
-    setCurrentX(e.clientX);
+    setStartX(clientX);
+    setCurrentTranslate(0);
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  // Manejar el movimiento del arrastre
+  const handleDragMove = (clientX: number) => {
     if (!isDragging) return;
-    e.preventDefault();
-    setCurrentX(e.clientX);
-    const diff = e.clientX - startX;
-    setDragOffset(diff);
+    
+    const deltaX = clientX - startX;
+    setCurrentTranslate(deltaX);
   };
 
-  const handleMouseUp = () => {
+  // Finalizar el arrastre y determinar si cambiar semana
+  const handleDragEnd = () => {
     if (!isDragging) return;
     
-    const diff = currentX - startX;
-    const threshold = 50; // Umbral mínimo para cambiar semana
+    const threshold = 80; // Umbral mínimo para cambiar semana
     
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0) {
+    if (Math.abs(currentTranslate) > threshold) {
+      if (currentTranslate > 0) {
         // Arrastrar hacia la derecha = semana anterior
         setWeekOffset(prev => prev - 1);
       } else {
@@ -61,40 +50,53 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
       }
     }
     
+    // Reset del estado
     setIsDragging(false);
-    setDragOffset(0);
+    setCurrentTranslate(0);
     setStartX(0);
-    setCurrentX(0);
   };
 
+  // Eventos del mouse
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleDragStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleDragMove(e.clientX);
+  };
+
+  const handleMouseUp = () => {
+    handleDragEnd();
+  };
+
+  // Eventos táctiles
   const handleTouchStart = (e: React.TouchEvent) => {
-    setIsDragging(true);
-    setStartX(e.touches[0].clientX);
-    setCurrentX(e.touches[0].clientX);
+    handleDragStart(e.touches[0].clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    setCurrentX(e.touches[0].clientX);
-    const diff = e.touches[0].clientX - startX;
-    setDragOffset(diff);
+    handleDragMove(e.touches[0].clientX);
   };
 
   const handleTouchEnd = () => {
-    handleMouseUp();
+    handleDragEnd();
   };
 
   const handleDateClick = (date: Date) => {
-    onDateChange(date);
+    if (!isDragging) {
+      onDateChange(date);
+    }
   };
 
   return (
-    <div className="bg-card p-4 rounded-lg overflow-hidden">
+    <div className="bg-card p-2 sm:p-4 rounded-lg overflow-hidden">
       <div 
         ref={containerRef}
-        className="flex justify-between items-center cursor-grab active:cursor-grabbing select-none transition-transform duration-200 ease-out"
+        className="flex justify-between items-center cursor-grab active:cursor-grabbing select-none transition-transform duration-200 ease-out gap-1 sm:gap-2"
         style={{
-          transform: `translateX(${dragOffset}px)`,
+          transform: `translateX(${currentTranslate}px)`,
         }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -111,7 +113,7 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
           return (
             <div
               key={date.toISOString()}
-              className={`flex flex-col items-center p-3 rounded-2xl cursor-pointer transition-all min-w-[60px] ${
+              className={`flex flex-col items-center p-2 sm:p-3 rounded-xl sm:rounded-2xl cursor-pointer transition-all flex-1 min-w-0 ${
                 isSelected
                   ? "bg-primary text-primary-foreground shadow-lg scale-105"
                   : isToday
@@ -120,13 +122,27 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
               }`}
               onClick={() => handleDateClick(date)}
             >
-              <span className="text-xs font-medium capitalize">
+              <span className="text-xs font-medium capitalize truncate w-full text-center">
                 {format(date, "EEE", { locale: es }).slice(0, 3)}
               </span>
-              <span className="text-lg font-semibold mt-1">{format(date, "d")}</span>
+              <span className="text-sm sm:text-lg font-semibold mt-1">{format(date, "d")}</span>
             </div>
           );
         })}
+      </div>
+      
+      {/* Indicador de semana para mobile */}
+      <div className="flex justify-center mt-2 sm:hidden">
+        <div className="flex space-x-1">
+          {[-2, -1, 0, 1, 2].map((offset) => (
+            <div
+              key={offset}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                offset === 0 ? 'bg-primary' : 'bg-muted'
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
