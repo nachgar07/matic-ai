@@ -271,6 +271,7 @@ export const Comidas = () => {
           analysis={analysisResults}
           onClose={() => setAnalysisResults(null)}
           onSuccess={handleMealSuccess}
+          selectedDate={selectedDate}
         />
       )}
 
@@ -278,6 +279,7 @@ export const Comidas = () => {
       {showAssistant && (
         <NutriAssistant
           onClose={() => setShowAssistant(false)}
+          selectedDate={selectedDate}
         />
       )}
     </>

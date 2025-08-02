@@ -16,6 +16,7 @@ interface MealCreateRequest {
   foods: FoodItem[];
   meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   user_message?: string;
+  consumed_at?: string;
 }
 
 serve(async (req) => {
@@ -24,7 +25,7 @@ serve(async (req) => {
   }
 
   try {
-    const { foods, meal_type, user_message } = await req.json() as MealCreateRequest;
+    const { foods, meal_type, user_message, consumed_at } = await req.json() as MealCreateRequest;
     
     console.log('Creating meal from chat:', { foods, meal_type, user_message });
 
@@ -549,7 +550,7 @@ serve(async (req) => {
           food_id: result.food_data.id,
           servings: result.servings,
           meal_type: meal_type,
-          consumed_at: new Date().toISOString()
+          consumed_at: consumed_at || new Date().toISOString()
         })
         .select(`
           *,

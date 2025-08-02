@@ -631,7 +631,8 @@ async function executeCreateMeal(args: any, userContext: any) {
       body: JSON.stringify({
         foods: args.foods || [],
         meal_type: args.meal_type || 'snack',
-        user_message: userContext.originalUserMessage || null // Pass original message for target extraction
+        user_message: userContext.originalUserMessage || null, // Pass original message for target extraction
+        consumed_at: userContext.selectedDate || null // Pass selected date
       })
     });
 

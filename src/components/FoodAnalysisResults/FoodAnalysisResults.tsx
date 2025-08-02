@@ -35,9 +35,10 @@ interface FoodAnalysisResultsProps {
   };
   onClose: () => void;
   onSuccess: () => void;
+  selectedDate?: Date;
 }
 
-export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalysisResultsProps) => {
+export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate }: FoodAnalysisResultsProps) => {
   const [editingFood, setEditingFood] = useState<number | null>(null);
   const [editedFoods, setEditedFoods] = useState(analysis.foods);
   const [selectedMealTypes, setSelectedMealTypes] = useState<Record<number, string>>({});
@@ -96,7 +97,8 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess }: FoodAnalys
         foodId: foodIdToUse,
         servings: foodServings,
         mealType,
-        plateImage: analysis.originalImage
+        plateImage: analysis.originalImage,
+        consumedAt: selectedDate
       });
 
       await queryClient.invalidateQueries({ queryKey: ['user-meals'] });

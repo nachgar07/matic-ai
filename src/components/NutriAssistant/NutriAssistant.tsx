@@ -18,9 +18,10 @@ interface Message {
 interface NutriAssistantProps {
   onClose: () => void;
   initialContext?: string; // For photo analysis context
+  selectedDate?: Date;
 }
 
-export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps) => {
+export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriAssistantProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -358,7 +359,8 @@ export const NutriAssistant = ({ onClose, initialContext }: NutriAssistantProps)
           conversationHistory,
           userContext: {
             ...userContext,
-            originalUserMessage: messageText // Add original message for target extraction
+            originalUserMessage: messageText, // Add original message for target extraction
+            selectedDate: selectedDate?.toISOString() // Add selected date
           }
         }
       });
