@@ -130,25 +130,12 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
           />
         </svg>
 
-        {/* Water glass count - above drop */}
-        <div 
-          className="absolute text-xs font-semibold text-blue-600"
-          style={{ 
-            top: -waterDropSize * 0.8, 
-            right: -waterDropSize * 0.3,
-            width: waterDropSize * 0.6,
-            textAlign: 'center'
-          }}
-        >
-          {waterGlasses}
-        </div>
-
         {/* Water drop - top right */}
         <div 
           className="absolute cursor-pointer transition-transform hover:scale-110"
           style={{ 
-            top: -waterDropSize * 0.4, 
-            right: -waterDropSize * 0.4,
+            top: -waterDropSize * 0.3, 
+            right: -waterDropSize * 0.3,
             width: waterDropSize,
             height: waterDropSize * 1.2
           }}
@@ -223,6 +210,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
             />
           </svg>
           
+          {/* Water glass count - centered in drop */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-semibold text-blue-600 z-10">{waterGlasses}</span>
+          </div>
         </div>
         
         {/* Center content */}
