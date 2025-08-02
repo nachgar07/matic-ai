@@ -177,11 +177,11 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     handleEnd();
   };
 
-  // Click en día específico - solo aquí se cambia la fecha seleccionada
+  // Click en día específico - cambiar la fecha seleccionada
   const handleDateClick = (date: Date, index: number) => {
     if (isDragging) return;
     
-    // Solo cambiar la fecha seleccionada, no mover el carrusel
+    console.log('Click en fecha:', date, 'selectedDate actual:', selectedDate);
     onDateChange(date);
   };
 
@@ -194,18 +194,17 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     };
   }, []);
 
-  // Centrar el día de hoy al inicio - calcular posición exacta para centrarlo
+  // Centrar el día de hoy al inicio - asegurar que esté exactamente en el centro
   useEffect(() => {
-    // Para centrar el día de hoy, necesitamos posicionarlo en el centro de los 7 días visibles
-    // El centro está en la posición 3 (de 0 a 6)
-    // Calculamos cuánto mover para que el día de hoy esté en esa posición
-    const centerPosition = 3; // Posición central de los 7 días visibles
-    const offsetToCenter = (todayIndex - centerPosition) * dayWidth;
-    setPosition(-offsetToCenter);
-  }, [dayWidth, todayIndex]);
+    if (containerRef.current && dayWidth > 0) {
+      // El centro de la pantalla debe mostrar el día de hoy
+      // No necesitamos calcular offset, solo posicionar el array correctamente
+      setPosition(0);
+    }
+  }, [dayWidth]);
 
   const containerStyle = {
-    transform: `translateX(${position}px)`,
+    transform: `translateX(calc(-50% + ${position}px - ${(todayIndex - 3) * dayWidth}px))`,
     transition: isDragging || isAnimating ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
     willChange: 'transform',
   };
@@ -221,9 +220,7 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
           className="flex items-center cursor-grab active:cursor-grabbing select-none absolute top-0"
           style={{
             left: '50%',
-            transform: `translateX(-50%) translateX(${position}px)`,
-            transition: isDragging || isAnimating ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            willChange: 'transform',
+            ...containerStyle
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
