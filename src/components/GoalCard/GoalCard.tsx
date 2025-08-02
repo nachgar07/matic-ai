@@ -79,10 +79,6 @@ export const GoalCard = ({ goal, progress = 0, todayCompleted = false, onEdit, o
               <Circle className="w-6 h-6 text-muted-foreground" />
             )}
           </Button>
-          
-          <Button variant="ghost" size="sm" className="p-2">
-            <MoreHorizontal className="w-4 h-4" />
-          </Button>
         </div>
       </div>
 
