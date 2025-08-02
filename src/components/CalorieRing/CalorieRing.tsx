@@ -89,45 +89,6 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
           height={size}
           className="transform -rotate-90"
         >
-          {/* Background segments - opaque versions */}
-          {/* Protein background */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="#ff6b3540"
-            strokeWidth="8"
-            fill="transparent"
-            strokeDasharray={`${proteinBgStroke} ${circumference - proteinBgStroke}`}
-            strokeDashoffset={proteinBgOffset}
-            strokeLinecap="round"
-          />
-          {/* Carbs background */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="#ffa72640"
-            strokeWidth="8"
-            fill="transparent"
-            strokeDasharray={`${carbsBgStroke} ${circumference - carbsBgStroke}`}
-            strokeDashoffset={carbsBgOffset}
-            strokeLinecap="round"
-          />
-          {/* Fat background */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="#4caf5040"
-            strokeWidth="8"
-            fill="transparent"
-            strokeDasharray={`${fatBgStroke} ${circumference - fatBgStroke}`}
-            strokeDashoffset={fatBgOffset}
-            strokeLinecap="round"
-          />
-          
-          {/* Progress segments - full color */}
           {/* Protein segment (red/orange) */}
           <circle
             cx={size / 2}
