@@ -203,14 +203,18 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     };
   }, []);
 
-  // Centrar el día de hoy al inicio - asegurar que el día actual esté centrado
+  // Centrar el día de hoy al inicio - calcular posición exacta para centrarlo
   useEffect(() => {
-    // El día de hoy debe aparecer en el centro
-    setPosition(0); // Posición 0 = día de hoy centrado
-  }, []);
+    // Para centrar el día de hoy, necesitamos posicionarlo en el centro de los 7 días visibles
+    // El centro está en la posición 3 (de 0 a 6)
+    // Calculamos cuánto mover para que el día de hoy esté en esa posición
+    const centerPosition = 3; // Posición central de los 7 días visibles
+    const offsetToCenter = (todayIndex - centerPosition) * dayWidth;
+    setPosition(-offsetToCenter);
+  }, [dayWidth, todayIndex]);
 
   const containerStyle = {
-    transform: `translateX(calc(50% + ${position}px - ${todayIndex * dayWidth}px))`,
+    transform: `translateX(${position}px)`,
     transition: isDragging || isAnimating ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
     willChange: 'transform',
   };
@@ -223,8 +227,13 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
         style={{ height: '90px', minHeight: '90px' }}
       >
         <div 
-          className="flex items-center cursor-grab active:cursor-grabbing select-none absolute top-0 left-0"
-          style={containerStyle}
+          className="flex items-center cursor-grab active:cursor-grabbing select-none absolute top-0"
+          style={{
+            left: '50%',
+            transform: `translateX(-50%) translateX(${position}px)`,
+            transition: isDragging || isAnimating ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            willChange: 'transform',
+          }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
