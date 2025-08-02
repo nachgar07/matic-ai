@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { format, addDays, startOfWeek, isSameDay } from "date-fns";
+import { format, addDays, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface WeeklyCalendarProps {
@@ -17,43 +17,25 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
   const containerRef = useRef<HTMLDivElement>(null);
   const lastMoveTime = useRef(0);
   const lastPosition = useRef(0);
-  const startPosition = useRef(0);
   const animationRef = useRef<number>();
-  const velocityHistory = useRef<Array<{ time: number; delta: number }>>([]);
+  const velocityHistory = useRef<Array<{ time: number; position: number }>>([]);
 
-  // Generar días en un rango más amplio para el efecto carrusel
-  const generateDays = useCallback((centerDate: Date, range: number = 14) => {
+  // Generar un rango amplio de días (60 días hacia atrás y 60 hacia adelante)
+  const generateDays = useCallback(() => {
     const days = [];
-    for (let i = -range; i <= range; i++) {
-      days.push(addDays(centerDate, i));
+    for (let i = -60; i <= 60; i++) {
+      days.push(addDays(today, i));
     }
     return days;
-  }, []);
+  }, [today]);
 
-  const days = generateDays(today);
+  const days = generateDays();
+  const todayIndex = 60; // El día de hoy está en el índice 60
+  const dayWidth = 80; // Ancho de cada día en píxeles
 
-  // Calcular qué día está más cerca del centro
-  const getCenterDayIndex = useCallback(() => {
-    const dayWidth = 80; // Ancho aproximado de cada día
-    const centerOffset = position;
-    const dayIndex = Math.round(-centerOffset / dayWidth);
-    return Math.max(0, Math.min(days.length - 1, dayIndex + Math.floor(days.length / 2)));
-  }, [position, days.length]);
-
-  // Actualizar el día seleccionado basado en la posición
-  useEffect(() => {
-    if (!isDragging && !isAnimating) {
-      const centerIndex = getCenterDayIndex();
-      const centerDay = days[centerIndex];
-      if (centerDay && !isSameDay(centerDay, selectedDate)) {
-        onDateChange(centerDay);
-      }
-    }
-  }, [position, isDragging, isAnimating, getCenterDayIndex, days, selectedDate, onDateChange]);
-
-  // Función de inercia
+  // Función de inercia mejorada para móviles
   const startInertia = useCallback(() => {
-    if (Math.abs(velocity) < 0.5) {
+    if (Math.abs(velocity) < 2) { // Umbral más bajo para móviles
       setIsAnimating(false);
       return;
     }
@@ -62,34 +44,70 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     
     const animate = () => {
       setVelocity(prev => {
-        const newVelocity = prev * 0.95; // Factor de fricción
+        const friction = 0.92; // Fricción más fuerte para control
+        const newVelocity = prev * friction;
         
-        if (Math.abs(newVelocity) < 0.5) {
+        if (Math.abs(newVelocity) < 1) {
           setIsAnimating(false);
           return 0;
         }
         
-        setPosition(prevPos => prevPos + newVelocity);
-        animationRef.current = requestAnimationFrame(animate);
+        setPosition(prevPos => {
+          const newPos = prevPos + newVelocity;
+          // Limitar el rango de posición
+          const maxPosition = (days.length - 7) * dayWidth / 2;
+          const minPosition = -maxPosition;
+          return Math.max(minPosition, Math.min(maxPosition, newPos));
+        });
+        
+        if (Math.abs(newVelocity) > 1) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          setIsAnimating(false);
+        }
+        
         return newVelocity;
       });
     };
     
     animationRef.current = requestAnimationFrame(animate);
-  }, [velocity]);
+  }, [velocity, days.length, dayWidth]);
 
-  // Calcular velocidad basada en el historial de movimientos
+  // Calcular velocidad mejorada para móviles
   const calculateVelocity = useCallback(() => {
     const now = Date.now();
-    const recentMoves = velocityHistory.current.filter(move => now - move.time < 100);
+    const recentMoves = velocityHistory.current.filter(move => now - move.time < 150);
     
     if (recentMoves.length < 2) return 0;
     
-    const totalDelta = recentMoves.reduce((sum, move) => sum + move.delta, 0);
-    const totalTime = recentMoves[recentMoves.length - 1].time - recentMoves[0].time;
+    const first = recentMoves[0];
+    const last = recentMoves[recentMoves.length - 1];
+    const deltaPosition = last.position - first.position;
+    const deltaTime = last.time - first.time;
     
-    return totalTime > 0 ? (totalDelta / totalTime) * 16 : 0; // Normalizar a 60fps
+    if (deltaTime === 0) return 0;
+    
+    // Multiplicar por factor para móviles
+    return (deltaPosition / deltaTime) * 20; // Factor aumentado para mejor inercia
   }, []);
+
+  // Obtener el día más cercano al centro
+  const getCenterDay = useCallback(() => {
+    const centerOffset = -position / dayWidth;
+    const centerIndex = Math.round(todayIndex + centerOffset);
+    return Math.max(0, Math.min(days.length - 1, centerIndex));
+  }, [position, dayWidth, todayIndex, days.length]);
+
+  // Actualizar día seleccionado cuando no se está arrastrando
+  useEffect(() => {
+    if (!isDragging && !isAnimating) {
+      const centerIndex = getCenterDay();
+      const centerDay = days[centerIndex];
+      if (centerDay && !isSameDay(centerDay, selectedDate)) {
+        onDateChange(centerDay);
+      }
+    }
+  }, [position, isDragging, isAnimating, getCenterDay, days, selectedDate, onDateChange]);
 
   // Manejadores de eventos
   const handleStart = useCallback((clientX: number) => {
@@ -99,10 +117,10 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
       cancelAnimationFrame(animationRef.current);
     }
     
-    startPosition.current = clientX;
     lastPosition.current = clientX;
     lastMoveTime.current = Date.now();
-    velocityHistory.current = [];
+    velocityHistory.current = [{ time: Date.now(), position: clientX }];
+    setVelocity(0);
   }, []);
 
   const handleMove = useCallback((clientX: number) => {
@@ -111,11 +129,12 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     const delta = clientX - lastPosition.current;
     const now = Date.now();
     
-    setPosition(prev => prev + delta);
+    // Aumentar la sensibilidad del movimiento
+    setPosition(prev => prev + delta * 1.5); // Factor de sensibilidad
     
     // Guardar historial para calcular velocidad
-    velocityHistory.current.push({ time: now, delta });
-    if (velocityHistory.current.length > 10) {
+    velocityHistory.current.push({ time: now, position: clientX });
+    if (velocityHistory.current.length > 5) {
       velocityHistory.current.shift();
     }
     
@@ -129,10 +148,13 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     setIsDragging(false);
     const finalVelocity = calculateVelocity();
     setVelocity(finalVelocity);
-    startInertia();
+    
+    if (Math.abs(finalVelocity) > 2) {
+      startInertia();
+    }
   }, [isDragging, calculateVelocity, startInertia]);
 
-  // Eventos del mouse
+  // Eventos del mouse (escritorio)
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     handleStart(e.clientX);
@@ -147,12 +169,14 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     handleEnd();
   };
 
-  // Eventos táctiles
+  // Eventos táctiles (móvil)
   const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
     handleStart(e.touches[0].clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
     handleMove(e.touches[0].clientX);
   };
 
@@ -164,10 +188,7 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
   const handleDateClick = (date: Date, index: number) => {
     if (isDragging) return;
     
-    const dayWidth = 80;
-    const centerIndex = Math.floor(days.length / 2);
-    const targetPosition = (centerIndex - index) * dayWidth;
-    
+    const targetPosition = (todayIndex - index) * dayWidth;
     setPosition(targetPosition);
     onDateChange(date);
   };
@@ -181,6 +202,11 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     };
   }, []);
 
+  // Centrar el día de hoy al inicio
+  useEffect(() => {
+    setPosition(0); // El día de hoy estará en posición 0 (centro)
+  }, []);
+
   return (
     <div className="bg-card p-2 sm:p-4 rounded-lg overflow-hidden">
       <div 
@@ -189,12 +215,11 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
         style={{ height: '80px' }}
       >
         <div 
-          className="flex items-center cursor-grab active:cursor-grabbing select-none absolute"
+          className="flex items-center cursor-grab active:cursor-grabbing select-none absolute touch-pan-y"
           style={{
-            transform: `translateX(${position}px)`,
-            transition: isDragging || isAnimating ? 'none' : 'transform 0.3s ease-out',
-            left: '50%',
-            marginLeft: '-40px', // Centrar el primer elemento
+            transform: `translateX(calc(50% + ${position}px - ${todayIndex * dayWidth}px))`,
+            transition: isDragging || isAnimating ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            willChange: 'transform',
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -215,12 +240,12 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
                   isSelected
                     ? "bg-primary text-primary-foreground shadow-lg scale-105"
                     : isToday
-                    ? "bg-primary/20 text-primary"
+                    ? "bg-primary/20 text-primary scale-105"
                     : "bg-secondary/50 text-foreground hover:bg-secondary"
                 }`}
                 style={{ 
-                  minWidth: '60px',
-                  width: '60px',
+                  minWidth: `${dayWidth}px`,
+                  width: `${dayWidth}px`,
                   flexShrink: 0
                 }}
                 onClick={() => handleDateClick(date, index)}
@@ -235,9 +260,9 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
         </div>
       </div>
       
-      {/* Indicador central sutil */}
+      {/* Indicador central */}
       <div className="flex justify-center mt-2">
-        <div className="w-1 h-1 bg-primary/30 rounded-full"></div>
+        <div className="w-1 h-1 bg-primary/50 rounded-full"></div>
       </div>
     </div>
   );
