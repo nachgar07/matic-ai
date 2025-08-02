@@ -134,10 +134,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
         <div 
           className="absolute cursor-pointer transition-transform hover:scale-110"
           style={{ 
-            top: -waterDropSize * 0.3, 
-            right: -waterDropSize * 0.3,
-            width: waterDropSize,
-            height: waterDropSize * 1.2
+            top: -waterDropSize * 0.5, 
+            right: -waterDropSize * 0.5,
+            width: waterDropSize * 1.2,
+            height: waterDropSize * 1.4
           }}
           onClick={handleWaterClick}
         >
