@@ -79,71 +79,79 @@ serve(async (req) => {
       // Simplify search term - remove preparation details and map Spanish to English
       let searchTerm = food.name.toLowerCase();
       
-      // Enhanced Spanish to English food mapping for better FatSecret results
-      const foodMapping: { [key: string]: string } = {
-        // Exact phrases first (more specific)
-        'filete de salmón': 'salmon fillet',
-        'salmón': 'salmon',
-        'salmon': 'salmon',
-        'arroz integral': 'brown rice',
-        'arroz integral cocido': 'brown rice cooked',
-        'arroz blanco': 'white rice',
-        'brócoli al vapor': 'steamed broccoli',
-        'brócoli': 'broccoli',
-        'brocoli': 'broccoli',
-        'aceite de oliva': 'olive oil',
-        'aceite': 'olive oil',
-        'pechuga de pollo': 'chicken breast',
-        'pollo': 'chicken breast',
-        'carne de res': 'beef',
-        'carne': 'beef',
-        'filete': 'steak',
-        
-        // Common foods
-        'palta': 'avocado',
-        'aguacate': 'avocado', 
-        'huevo': 'egg',
-        'huevos': 'eggs',
-        'pan': 'bread',
-        'arroz': 'rice',
-        'papa': 'potato',
-        'papas': 'potatoes',
-        'tomate': 'tomato',
-        'pescado': 'fish',
-        'atún': 'tuna',
-        'leche': 'milk',
-        'queso': 'cheese',
-        'mantequilla': 'butter',
-        'sal': 'salt',
-        'azúcar': 'sugar',
-        'miel': 'honey',
-        'yogur': 'yogurt',
-        'yogurt': 'yogurt',
-        
-        // Vegetables
-        'lechuga': 'lettuce',
-        'espinaca': 'spinach',
-        'zanahoria': 'carrot',
-        'cebolla': 'onion',
-        'ajo': 'garlic',
-        'pimiento': 'bell pepper',
-        'apio': 'celery',
-        
-        // Fruits
-        'manzana': 'apple',
-        'banana': 'banana',
-        'plátano': 'banana',
-        'naranja': 'orange',
-        'limón': 'lemon',
-        'uva': 'grape',
-        'fresa': 'strawberry',
-        
-        // Nuts and seeds
-        'nuez': 'walnut',
-        'nueces': 'walnuts',
-        'almendra': 'almond',
-        'almendras': 'almonds'
-      };
+        // Enhanced Spanish to English food mapping for better FatSecret results
+        const foodMapping: { [key: string]: string } = {
+          // Exact phrases first (more specific)
+          'filete de salmón': 'salmon fillet',
+          'salmón': 'salmon',
+          'salmon': 'salmon',
+          'arroz integral': 'brown rice',
+          'arroz integral cocido': 'brown rice cooked',
+          'arroz blanco': 'white rice',
+          'brócoli al vapor': 'steamed broccoli',
+          'brócoli': 'broccoli',
+          'brocoli': 'broccoli',
+          'aceite de oliva': 'olive oil',
+          'aceite': 'olive oil',
+          'pechuga de pollo': 'chicken breast',
+          'pollo': 'chicken breast',
+          'carne de res': 'beef',
+          'carne': 'beef',
+          'filete': 'steak',
+          
+          // Pasta and noodles - CRITICAL fixes for fideos
+          'fideos blancos': 'white pasta',
+          'fideos': 'pasta',
+          'pasta': 'pasta',
+          'tallarines': 'noodles',
+          'espaguetis': 'spaghetti',
+          'macarrones': 'macaroni',
+          
+          // Common foods
+          'palta': 'avocado',
+          'aguacate': 'avocado', 
+          'huevo': 'egg',
+          'huevos': 'eggs',
+          'pan': 'bread',
+          'arroz': 'rice',
+          'papa': 'potato',
+          'papas': 'potatoes',
+          'tomate': 'tomato',
+          'pescado': 'fish',
+          'atún': 'tuna',
+          'leche': 'milk',
+          'queso': 'cheese',
+          'mantequilla': 'butter',
+          'sal': 'salt',
+          'azúcar': 'sugar',
+          'miel': 'honey',
+          'yogur': 'yogurt',
+          'yogurt': 'yogurt',
+          
+          // Vegetables
+          'lechuga': 'lettuce',
+          'espinaca': 'spinach',
+          'zanahoria': 'carrot',
+          'cebolla': 'onion',
+          'ajo': 'garlic',
+          'pimiento': 'bell pepper',
+          'apio': 'celery',
+          
+          // Fruits
+          'manzana': 'apple',
+          'banana': 'banana',
+          'plátano': 'banana',
+          'naranja': 'orange',
+          'limón': 'lemon',
+          'uva': 'grape',
+          'fresa': 'strawberry',
+          
+          // Nuts and seeds
+          'nuez': 'walnut',
+          'nueces': 'walnuts',
+          'almendra': 'almond',
+          'almendras': 'almonds'
+        };
 
       // First, check for exact matches in the mapping
       let foundMapping = false;
@@ -272,6 +280,19 @@ serve(async (req) => {
           if (foodName.includes('bread') || foodName.includes('toast')) score += 200;
           // Penalize unrelated items
           if (!foodName.includes('bread') && !foodName.includes('toast')) score -= 50;
+        }
+        
+        // CRITICAL: Handle pasta/fideos correctly
+        if (originalName.includes('fideos') || originalName.includes('pasta') || originalName.includes('tallarines')) {
+          if (foodName.includes('pasta') || foodName.includes('noodle') || foodName.includes('spaghetti') || foodName.includes('macaroni')) score += 300;
+          if (foodName.includes('fideo')) score += 250;
+          // Prefer higher calorie pasta entries (substantial portions)
+          if (caloriesPerServing > 200) score += 100;
+          // SEVERELY penalize fruits, vegetables, and non-pasta items
+          if (foodName.includes('banana') || foodName.includes('fruit') || foodName.includes('sweet potato')) score -= 500;
+          if (foodName.includes('guinea') || foodName.includes('blanco maduro')) score -= 1000;
+          // Penalize anything that's not carb-heavy
+          if (caloriesPerServing < 100) score -= 200;
         }
         
         // Prefer foods without brand (generic foods)
