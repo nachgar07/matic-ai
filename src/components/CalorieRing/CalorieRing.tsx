@@ -114,7 +114,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
           <svg
             width={waterRadius * 2}
             height={waterRadius * 2}
-            className="transform rotate-90"
+            className="transform -rotate-90"
           >
             {/* Background semicircle */}
             <circle

@@ -2,6 +2,7 @@ import { DailyTotals, useNutritionGoals } from "@/hooks/useFatSecret";
 import { MacroCard } from "@/components/MacroCard/MacroCard";
 import { CalorieRing } from "@/components/CalorieRing/CalorieRing";
 import { Card } from "@/components/ui/card";
+import { useState } from "react";
 
 interface NutritionSummaryProps {
   dailyTotals: DailyTotals;
@@ -9,6 +10,7 @@ interface NutritionSummaryProps {
 
 export const NutritionSummary = ({ dailyTotals }: NutritionSummaryProps) => {
   const { data: nutritionGoals } = useNutritionGoals();
+  const [waterGlasses, setWaterGlasses] = useState(0);
   
   const goals = {
     calories: nutritionGoals?.daily_calories || 2000,
@@ -27,6 +29,8 @@ export const NutritionSummary = ({ dailyTotals }: NutritionSummaryProps) => {
           carbs={dailyTotals.carbs}
           fat={dailyTotals.fat}
           size={160}
+          waterGlasses={waterGlasses}
+          onWaterClick={() => setWaterGlasses(prev => prev + 1)}
         />
       </Card>
 
