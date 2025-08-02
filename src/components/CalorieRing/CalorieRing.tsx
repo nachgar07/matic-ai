@@ -59,10 +59,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const fatBgOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke - gapSize - fatBgStroke;
 
   // Water drop calculations
-  const waterDropSize = size * 0.18;
+  const waterDropSize = size * 0.15;
   const waterTarget = 8; // 8 glasses = ~2.2 liters
   const waterPercentage = Math.min(100, (waterGlasses / waterTarget) * 100);
-  const waterFillHeight = (waterPercentage / 100) * (waterDropSize * 0.8);
+  const waterFillHeight = (waterPercentage / 100) * (waterDropSize * 0.75);
 
   const handleWaterClick = () => {
     if (onWaterClick) {
@@ -130,12 +130,25 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
           />
         </svg>
 
+        {/* Water glass count - above drop */}
+        <div 
+          className="absolute text-xs font-semibold text-blue-600"
+          style={{ 
+            top: -waterDropSize * 0.8, 
+            right: -waterDropSize * 0.3,
+            width: waterDropSize * 0.6,
+            textAlign: 'center'
+          }}
+        >
+          {waterGlasses}
+        </div>
+
         {/* Water drop - top right */}
         <div 
           className="absolute cursor-pointer transition-transform hover:scale-110"
           style={{ 
-            top: -waterDropSize * 0.6, 
-            right: -waterDropSize * 0.6,
+            top: -waterDropSize * 0.4, 
+            right: -waterDropSize * 0.4,
             width: waterDropSize,
             height: waterDropSize * 1.2
           }}
@@ -210,10 +223,6 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
             />
           </svg>
           
-          {/* Water glass count */}
-          <div className="absolute inset-0 flex items-center justify-center pt-2">
-            <span className="text-xs font-medium text-white mix-blend-difference">{waterGlasses}</span>
-          </div>
         </div>
         
         {/* Center content */}
