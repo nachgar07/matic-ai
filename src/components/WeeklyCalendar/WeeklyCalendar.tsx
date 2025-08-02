@@ -20,17 +20,18 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
   const animationRef = useRef<number>();
   const velocityHistory = useRef<Array<{ time: number; position: number }>>([]);
 
-  // Generar un rango amplio de días (30 días hacia atrás y 30 hacia adelante)
+  // Generar un rango amplio de días (2 meses hacia atrás y 2 meses hacia adelante)
   const generateDays = useCallback(() => {
     const days = [];
-    for (let i = -30; i <= 30; i++) {
+    // 2 meses = aproximadamente 60 días cada uno
+    for (let i = -60; i <= 60; i++) {
       days.push(addDays(today, i));
     }
     return days;
   }, [today]);
 
   const days = generateDays();
-  const todayIndex = 30; // El día de hoy está en el índice 30
+  const todayIndex = 60; // El día de hoy está en el índice 60 (centro del rango)
   
   // Calcular el ancho para que entren exactamente 7 días en pantalla
   const containerWidth = containerRef.current?.offsetWidth || 400;
@@ -202,9 +203,10 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     };
   }, []);
 
-  // Centrar el día de hoy al inicio
+  // Centrar el día de hoy al inicio - asegurar que el día actual esté centrado
   useEffect(() => {
-    setPosition(0);
+    // El día de hoy debe aparecer en el centro
+    setPosition(0); // Posición 0 = día de hoy centrado
   }, []);
 
   const containerStyle = {
