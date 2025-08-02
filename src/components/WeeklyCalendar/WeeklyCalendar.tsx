@@ -15,27 +15,19 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
   const [isAnimating, setIsAnimating] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastMoveTime = useRef(0);
   const lastPosition = useRef(0);
   const animationRef = useRef<number>();
   const velocityHistory = useRef<Array<{ time: number; position: number }>>([]);
 
-  // Generar un rango amplio de días (2 meses hacia atrás y 2 meses hacia adelante)
-  const generateDays = useCallback(() => {
-    const days = [];
-    // 2 meses = aproximadamente 60 días cada uno
-    for (let i = -60; i <= 60; i++) {
-      days.push(addDays(today, i));
-    }
-    return days;
-  }, [today]);
+  // Generar días (2 meses atrás y 2 meses adelante)
+  const days = [];
+  for (let i = -60; i <= 60; i++) {
+    days.push(addDays(today, i));
+  }
 
-  const days = generateDays();
-  const todayIndex = 60; // El día de hoy está en el índice 60 (centro del rango)
-  
-  // Calcular el ancho para que entren exactamente 7 días en pantalla
+  // Calcular ancho por día
   const containerWidth = containerRef.current?.offsetWidth || 400;
-  const dayWidth = Math.floor(containerWidth / 7); // Dividir pantalla en 7 días exactos
+  const dayWidth = Math.floor(containerWidth / 7);
 
   // Función de inercia
   const startInertia = useCallback(() => {
@@ -48,33 +40,21 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     
     const animate = () => {
       setVelocity(prev => {
-        const friction = 0.92;
-        const newVelocity = prev * friction;
+        const newVelocity = prev * 0.92;
         
         if (Math.abs(newVelocity) < 1) {
           setIsAnimating(false);
           return 0;
         }
         
-        setPosition(prevPos => {
-          const newPos = prevPos + newVelocity;
-          const maxPosition = (days.length - 7) * dayWidth / 2;
-          const minPosition = -maxPosition;
-          return Math.max(minPosition, Math.min(maxPosition, newPos));
-        });
-        
-        if (Math.abs(newVelocity) > 1) {
-          animationRef.current = requestAnimationFrame(animate);
-        } else {
-          setIsAnimating(false);
-        }
-        
+        setPosition(prevPos => prevPos + newVelocity);
+        animationRef.current = requestAnimationFrame(animate);
         return newVelocity;
       });
     };
     
     animationRef.current = requestAnimationFrame(animate);
-  }, [velocity, days.length, dayWidth]);
+  }, [velocity]);
 
   // Calcular velocidad
   const calculateVelocity = useCallback(() => {
@@ -88,22 +68,10 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     const deltaPosition = last.position - first.position;
     const deltaTime = last.time - first.time;
     
-    if (deltaTime === 0) return 0;
-    
-    return (deltaPosition / deltaTime) * 20;
+    return deltaTime > 0 ? (deltaPosition / deltaTime) * 20 : 0;
   }, []);
 
-  // Obtener el día más cercano al centro
-  const getCenterDay = useCallback(() => {
-    const centerOffset = -position / dayWidth;
-    const centerIndex = Math.round(todayIndex + centerOffset);
-    return Math.max(0, Math.min(days.length - 1, centerIndex));
-  }, [position, dayWidth, todayIndex, days.length]);
-
-  // Actualizar día seleccionado solo cuando el usuario hace click
-  // Ya no se auto-selecciona por posición del carrusel
-
-  // Manejadores de eventos
+  // Eventos de drag
   const handleStart = useCallback((clientX: number) => {
     setIsDragging(true);
     setIsAnimating(false);
@@ -112,7 +80,6 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     }
     
     lastPosition.current = clientX;
-    lastMoveTime.current = Date.now();
     velocityHistory.current = [{ time: Date.now(), position: clientX }];
     setVelocity(0);
   }, []);
@@ -121,17 +88,14 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     if (!isDragging) return;
     
     const delta = clientX - lastPosition.current;
-    const now = Date.now();
-    
     setPosition(prev => prev + delta * 1.5);
     
-    velocityHistory.current.push({ time: now, position: clientX });
+    velocityHistory.current.push({ time: Date.now(), position: clientX });
     if (velocityHistory.current.length > 5) {
       velocityHistory.current.shift();
     }
     
     lastPosition.current = clientX;
-    lastMoveTime.current = now;
   }, [isDragging]);
 
   const handleEnd = useCallback(() => {
@@ -146,7 +110,7 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     }
   }, [isDragging, calculateVelocity, startInertia]);
 
-  // Eventos del mouse
+  // Eventos mouse
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     handleStart(e.clientX);
@@ -161,7 +125,7 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     handleEnd();
   };
 
-  // Eventos táctiles
+  // Eventos touch
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
     handleStart(e.touches[0].clientX);
@@ -172,20 +136,24 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     handleMove(e.touches[0].clientX);
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
+  const handleTouchEnd = () => {
     handleEnd();
   };
 
-  // Click en día específico - cambiar la fecha seleccionada
-  const handleDateClick = (date: Date, index: number) => {
+  // Click en día
+  const handleDateClick = (date: Date) => {
     if (isDragging) return;
-    
-    console.log('Click en fecha:', date, 'selectedDate actual:', selectedDate);
     onDateChange(date);
   };
 
-  // Limpiar animación al desmontar
+  // Posición inicial centrada en el día de hoy
+  useEffect(() => {
+    // El día de hoy está en el índice 60, lo centramos
+    const centerOffset = -60 * dayWidth + (containerWidth / 2) - (dayWidth / 2);
+    setPosition(centerOffset);
+  }, [dayWidth, containerWidth]);
+
+  // Cleanup
   useEffect(() => {
     return () => {
       if (animationRef.current) {
@@ -194,33 +162,19 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     };
   }, []);
 
-  // Centrar el día de hoy al inicio - asegurar que esté exactamente en el centro
-  useEffect(() => {
-    if (containerRef.current && dayWidth > 0) {
-      // El centro de la pantalla debe mostrar el día de hoy
-      // No necesitamos calcular offset, solo posicionar el array correctamente
-      setPosition(0);
-    }
-  }, [dayWidth]);
-
-  const containerStyle = {
-    transform: `translateX(calc(-50% + ${position}px - ${(todayIndex - 3) * dayWidth}px))`,
-    transition: isDragging || isAnimating ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-    willChange: 'transform',
-  };
-
   return (
     <div className="bg-card p-2 sm:p-4 rounded-lg overflow-hidden">
       <div 
         ref={containerRef}
         className="relative w-full"
-        style={{ height: '90px', minHeight: '90px' }}
+        style={{ height: '90px' }}
       >
         <div 
-          className="flex items-center cursor-grab active:cursor-grabbing select-none absolute top-0"
+          className="flex items-center cursor-grab active:cursor-grabbing select-none absolute top-0 left-0"
           style={{
-            left: '50%',
-            ...containerStyle
+            transform: `translateX(${position}px)`,
+            transition: isDragging || isAnimating ? 'none' : 'transform 0.3s ease-out',
+            willChange: 'transform',
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -238,8 +192,10 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
               <div
                 key={`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`}
                 className={`flex flex-col items-center justify-center p-2 rounded-2xl cursor-pointer transition-all flex-shrink-0 ${
-                  isSelected || isToday
+                  isSelected
                     ? "bg-primary text-primary-foreground shadow-lg"
+                    : isToday && !isSelected
+                    ? "bg-primary/20 text-primary"
                     : "bg-secondary/50 text-foreground hover:bg-secondary"
                 }`}
                 style={{ 
@@ -247,9 +203,9 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
                   height: '70px',
                   margin: '0 1px'
                 }}
-                onClick={() => handleDateClick(date, index)}
+                onClick={() => handleDateClick(date)}
               >
-                <span className="text-xs font-medium capitalize text-center leading-tight">
+                <span className="text-xs font-medium capitalize text-center">
                   {format(date, "EEE", { locale: es }).slice(0, 3)}
                 </span>
                 <span className="text-lg font-semibold mt-1">{format(date, "d")}</span>
