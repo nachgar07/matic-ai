@@ -59,7 +59,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const fatBgOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke - gapSize - fatBgStroke;
 
   // Water drop calculations
-  const waterDropSize = size * 0.12;
+  const waterDropSize = size * 0.18;
   const waterTarget = 8; // 8 glasses = ~2.2 liters
   const waterPercentage = Math.min(100, (waterGlasses / waterTarget) * 100);
   const waterFillHeight = (waterPercentage / 100) * (waterDropSize * 0.8);
@@ -134,8 +134,8 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
         <div 
           className="absolute cursor-pointer transition-transform hover:scale-110"
           style={{ 
-            top: -waterDropSize / 2, 
-            right: -waterDropSize / 2,
+            top: -waterDropSize * 0.6, 
+            right: -waterDropSize * 0.6,
             width: waterDropSize,
             height: waterDropSize * 1.2
           }}
@@ -188,14 +188,14 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
               </clipPath>
             </defs>
             
-            {/* Drop outline */}
+            {/* Drop background - celeste opaco */}
             <path
               d={`M ${waterDropSize/2} 5 
                   C ${waterDropSize/2 - 12} 15, ${waterDropSize/2 - 12} 25, ${waterDropSize/2} ${waterDropSize - 5}
                   C ${waterDropSize/2 + 12} 25, ${waterDropSize/2 + 12} 15, ${waterDropSize/2} 5 Z`}
-              stroke="hsl(var(--muted))"
+              stroke="#64b5f6"
               strokeWidth="2"
-              fill="transparent"
+              fill="#e3f2fd"
             />
             
             {/* Water fill */}
