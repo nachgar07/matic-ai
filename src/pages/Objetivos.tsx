@@ -10,6 +10,7 @@ import { GoalCard } from "@/components/GoalCard/GoalCard";
 import { TaskCard } from "@/components/TaskCard/TaskCard";
 import { HabitTracker } from "@/components/HabitTracker/HabitTracker";
 import { CreateGoalDialog } from "@/components/CreateGoalDialog/CreateGoalDialog";
+import { CreateTaskDialog } from "@/components/CreateTaskDialog/CreateTaskDialog";
 import { useGoals, useTasks, useGoalStats } from "@/hooks/useGoals";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Calendar, Target, BarChart3, List, Filter, Search, Settings, TrendingUp, Minus, TrendingDown } from "lucide-react";
@@ -148,10 +149,12 @@ export const Objetivos = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   No tienes tareas pendientes para hoy
                 </p>
-                <Button>
-                  <Plus className="mr-2" size={16} />
-                  Agregar tarea
-                </Button>
+                <CreateTaskDialog>
+                  <Button>
+                    <Plus className="mr-2" size={16} />
+                    Agregar tarea
+                  </Button>
+                </CreateTaskDialog>
               </div>
             )}
           </div>
@@ -203,10 +206,12 @@ export const Objetivos = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   No tienes tareas en esta categoría
                 </p>
-                <Button>
-                  <Plus className="mr-2" size={16} />
-                  Agregar tarea
-                </Button>
+                <CreateTaskDialog>
+                  <Button>
+                    <Plus className="mr-2" size={16} />
+                    Agregar tarea
+                  </Button>
+                </CreateTaskDialog>
               </div>
             )}
           </div>
