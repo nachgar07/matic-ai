@@ -50,7 +50,8 @@ export const Archivos = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Gasto>>({});
-  const [filterDate, setFilterDate] = useState<Date>(new Date()); // Por defecto hoy
+  const [filterDate, setFilterDate] = useState<Date | null>(null);
+  const [filterType, setFilterType] = useState<'recent' | 'today' | 'all' | 'custom'>('recent'); // Por defecto recientes
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<'day' | 'week' | 'month'>('month'); // Período para el gráfico
@@ -146,7 +147,8 @@ export const Archivos = () => {
           // Cargar gastos solo si no se han cargado ya
           if (!hasLoadedExpenses) {
             hasLoadedExpenses = true;
-            await loadExpenses(session.user.id, filterDate);
+            // Cargar recientes por defecto
+            await loadExpenses(session.user.id, null, true);
           }
           
           // Configurar realtime para escuchar cambios en expenses
@@ -376,8 +378,31 @@ export const Archivos = () => {
   const handleDateFilterChange = async (date: Date | undefined) => {
     if (date && user) {
       setFilterDate(date);
+      setFilterType('custom');
       await loadExpenses(user.id, date);
       setIsCalendarOpen(false); // Cerrar el popover después de seleccionar fecha
+    }
+  };
+
+  // Función para manejar los filtros de botones
+  const handleFilterChange = async (type: 'recent' | 'today' | 'all') => {
+    if (!user) return;
+    
+    setFilterType(type);
+    
+    switch (type) {
+      case 'today':
+        setFilterDate(new Date());
+        await loadExpenses(user.id, new Date());
+        break;
+      case 'all':
+        setFilterDate(null);
+        await loadExpenses(user.id, null, false);
+        break;
+      case 'recent':
+        setFilterDate(null);
+        await loadExpenses(user.id, null, true);
+        break;
     }
   };
 
@@ -827,33 +852,27 @@ export const Archivos = () => {
             
             <div className="flex gap-1 sm:gap-2">
               <Button
-                variant="ghost"
+                variant={filterType === 'today' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => handleDateFilterChange(new Date())}
+                onClick={() => handleFilterChange('today')}
                 className="text-xs flex-1 sm:flex-initial"
               >
                 Hoy
               </Button>
               
               <Button
-                variant="ghost"
+                variant={filterType === 'all' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => {
-                  setFilterDate(null);
-                  if (user) loadExpenses(user.id, null, false);
-                }}
+                onClick={() => handleFilterChange('all')}
                 className="text-xs flex-1 sm:flex-initial"
               >
                 Todos
               </Button>
               
               <Button
-                variant="ghost"
+                variant={filterType === 'recent' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => {
-                  setFilterDate(null);
-                  if (user) loadExpenses(user.id, null, true);
-                }}
+                onClick={() => handleFilterChange('recent')}
                 className="text-xs flex-1 sm:flex-initial"
               >
                 Recientes
