@@ -35,6 +35,16 @@ All colors MUST be HSL.
     --warning: 35 100% 60%;
     --warning-foreground: 0 0% 100%;
 
+    /* Macro colors for calorie ring */
+    --protein: 14 100% 57%;
+    --protein-foreground: 0 0% 100%;
+    
+    --carbs: 40 100% 56%;
+    --carbs-foreground: 0 0% 100%;
+    
+    --fat: 120 49% 53%;
+    --fat-foreground: 0 0% 100%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 

@@ -55,14 +55,23 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const carbsStroke = (carbsProgress / 100) * carbsBgStroke;
   const fatStroke = (fatProgress / 100) * fatBgStroke;
   
-  // Calculate offsets for positioning segments with gaps
-  const gapSize = circumference * 0.02; // 2% gap between segments
-  const proteinOffset = circumference - proteinStroke;
-  const proteinBgOffset = circumference - proteinBgStroke;
-  const carbsOffset = circumference - proteinBgStroke - gapSize - carbsStroke;
-  const carbsBgOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke;
-  const fatOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke - gapSize - fatStroke;
-  const fatBgOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke - gapSize - fatBgStroke;
+  // Calculate offsets for positioning segments with proper gaps
+  const gapSize = circumference * 0.03; // 3% gap between segments
+  
+  // Start positions for each segment (clockwise from top)
+  const proteinStartOffset = circumference * 0.25; // Start at top
+  const carbsStartOffset = circumference * 0.25 + proteinBgStroke + gapSize;
+  const fatStartOffset = circumference * 0.25 + proteinBgStroke + gapSize + carbsBgStroke + gapSize;
+  
+  // Progress offsets
+  const proteinOffset = proteinStartOffset + proteinBgStroke - proteinStroke;
+  const carbsOffset = carbsStartOffset + carbsBgStroke - carbsStroke;
+  const fatOffset = fatStartOffset + fatBgStroke - fatStroke;
+  
+  // Background offsets
+  const proteinBgOffset = proteinStartOffset;
+  const carbsBgOffset = carbsStartOffset;
+  const fatBgOffset = fatStartOffset;
 
   // Water drop calculations
   const waterDropSize = size * 0.15;
@@ -126,44 +135,77 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
           ) : (
             // Complex mode - macro breakdown
             <>
-              {/* Protein segment (red/orange) */}
+              {/* Background segments */}
               <circle
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                stroke="#ff6b35"
+                stroke="currentColor"
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={`${proteinBgStroke} ${circumference - proteinBgStroke}`}
+                strokeDashoffset={proteinBgOffset}
+                className="text-muted transition-all duration-500 ease-in-out opacity-30"
+              />
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="currentColor"
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={`${carbsBgStroke} ${circumference - carbsBgStroke}`}
+                strokeDashoffset={carbsBgOffset}
+                className="text-muted transition-all duration-500 ease-in-out opacity-30"
+              />
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="currentColor"
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={`${fatBgStroke} ${circumference - fatBgStroke}`}
+                strokeDashoffset={fatBgOffset}
+                className="text-muted transition-all duration-500 ease-in-out opacity-30"
+              />
+              
+              {/* Progress segments */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="currentColor"
                 strokeWidth="8"
                 fill="transparent"
                 strokeDasharray={`${proteinStroke} ${circumference - proteinStroke}`}
                 strokeDashoffset={proteinOffset}
                 strokeLinecap="round"
-                className="transition-all duration-500 ease-in-out"
+                className="text-protein transition-all duration-500 ease-in-out"
               />
-              {/* Carbs segment (yellow/gold) */}
               <circle
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                stroke="#ffa726"
+                stroke="currentColor"
                 strokeWidth="8"
                 fill="transparent"
                 strokeDasharray={`${carbsStroke} ${circumference - carbsStroke}`}
                 strokeDashoffset={carbsOffset}
                 strokeLinecap="round"
-                className="transition-all duration-500 ease-in-out"
+                className="text-carbs transition-all duration-500 ease-in-out"
               />
-              {/* Fat segment (green) */}
               <circle
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                stroke="#4caf50"
+                stroke="currentColor"
                 strokeWidth="8"
                 fill="transparent"
                 strokeDasharray={`${fatStroke} ${circumference - fatStroke}`}
                 strokeDashoffset={fatOffset}
                 strokeLinecap="round"
-                className="transition-all duration-500 ease-in-out"
+                className="text-fat transition-all duration-500 ease-in-out"
               />
             </>
           )}

@@ -52,6 +52,18 @@ export default {
 					DEFAULT: 'hsl(var(--warning))',
 					foreground: 'hsl(var(--warning-foreground))'
 				},
+				protein: {
+					DEFAULT: 'hsl(var(--protein))',
+					foreground: 'hsl(var(--protein-foreground))'
+				},
+				carbs: {
+					DEFAULT: 'hsl(var(--carbs))',
+					foreground: 'hsl(var(--carbs-foreground))'
+				},
+				fat: {
+					DEFAULT: 'hsl(var(--fat))',
+					foreground: 'hsl(var(--fat-foreground))'
+				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
 					foreground: 'hsl(var(--popover-foreground))'
