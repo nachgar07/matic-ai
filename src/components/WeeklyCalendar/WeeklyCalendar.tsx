@@ -86,17 +86,17 @@ export const WeeklyCalendar = () => {
           return (
             <div
               key={date.toISOString()}
-              className={`flex flex-col items-center p-2 rounded-lg cursor-pointer transition-colors min-w-[60px] ${
+              className={`flex flex-col items-center p-3 rounded-2xl cursor-pointer transition-all min-w-[60px] ${
                 isSelected || isToday
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-secondary"
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "bg-secondary/50 text-foreground hover:bg-secondary"
               }`}
               onClick={() => setSelectedDate(date)}
             >
-              <span className="text-sm font-medium">
+              <span className="text-xs font-medium capitalize">
                 {format(date, "EEE", { locale: es }).slice(0, 3)}
               </span>
-              <span className="text-sm mt-1">{format(date, "d")}</span>
+              <span className="text-lg font-semibold mt-1">{format(date, "d")}</span>
             </div>
           );
         })}
