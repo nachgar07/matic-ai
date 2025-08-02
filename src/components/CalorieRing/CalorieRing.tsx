@@ -56,22 +56,25 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const fatStroke = (fatProgress / 100) * fatBgStroke;
   
   // Calculate offsets for positioning segments with proper gaps
-  const gapSize = circumference * 0.03; // 3% gap between segments
+  const gapSize = circumference * 0.05; // 5% gap between segments
   
-  // Start positions for each segment (clockwise from top)
-  const proteinStartOffset = circumference * 0.25; // Start at top
-  const carbsStartOffset = circumference * 0.25 + proteinBgStroke + gapSize;
-  const fatStartOffset = circumference * 0.25 + proteinBgStroke + gapSize + carbsBgStroke + gapSize;
+  // Start from top and go clockwise
+  const startPosition = circumference * 0.75; // Start at top (12 o'clock)
   
-  // Progress offsets
-  const proteinOffset = proteinStartOffset + proteinBgStroke - proteinStroke;
-  const carbsOffset = carbsStartOffset + carbsBgStroke - carbsStroke;
-  const fatOffset = fatStartOffset + fatBgStroke - fatStroke;
+  // Calculate start positions for each segment
+  const proteinStartOffset = startPosition;
+  const carbsStartOffset = startPosition - proteinBgStroke - gapSize;
+  const fatStartOffset = startPosition - proteinBgStroke - gapSize - carbsBgStroke - gapSize;
+  
+  // Progress offsets (fill from start of each segment)
+  const proteinOffset = proteinStartOffset - proteinStroke;
+  const carbsOffset = carbsStartOffset - carbsStroke;
+  const fatOffset = fatStartOffset - fatStroke;
   
   // Background offsets
-  const proteinBgOffset = proteinStartOffset;
-  const carbsBgOffset = carbsStartOffset;
-  const fatBgOffset = fatStartOffset;
+  const proteinBgOffset = proteinStartOffset - proteinBgStroke;
+  const carbsBgOffset = carbsStartOffset - carbsBgStroke;
+  const fatBgOffset = fatStartOffset - fatBgStroke;
 
   // Water drop calculations
   const waterDropSize = size * 0.15;
