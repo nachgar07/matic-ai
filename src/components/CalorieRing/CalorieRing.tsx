@@ -183,8 +183,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
               <clipPath id="dropClip">
                 <path
                   d="M 20 5 
-                      C 12 15, 12 25, 20 40
-                      C 28 25, 28 15, 20 5 Z"
+                      C 20 5, 10 20, 10 30
+                      C 10 36, 14 42, 20 42
+                      C 26 42, 30 36, 30 30
+                      C 30 20, 20 5, 20 5 Z"
                 />
               </clipPath>
             </defs>
@@ -192,8 +194,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
             {/* Drop background - celeste opaco */}
             <path
               d="M 20 5 
-                  C 12 15, 12 25, 20 40
-                  C 28 25, 28 15, 20 5 Z"
+                  C 20 5, 10 20, 10 30
+                  C 10 36, 14 42, 20 42
+                  C 26 42, 30 36, 30 30
+                  C 30 20, 20 5, 20 5 Z"
               stroke="#64b5f6"
               strokeWidth="2"
               fill="#e3f2fd"
@@ -201,10 +205,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
             
             {/* Water fill */}
             <rect
-              x="0"
-              y={40 - (waterFillHeight / waterDropSize) * 35}
-              width="40"
-              height={(waterFillHeight / waterDropSize) * 35 + 5}
+              x="10"
+              y={42 - (waterFillHeight / waterDropSize) * 32}
+              width="20"
+              height={(waterFillHeight / waterDropSize) * 32}
               fill="#2196f3"
               clipPath="url(#dropClip)"
               className="transition-all duration-500 ease-in-out"
