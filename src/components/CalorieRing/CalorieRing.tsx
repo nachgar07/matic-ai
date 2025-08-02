@@ -61,9 +61,9 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   // Water drop calculations
   const waterDropSize = size * 0.15;
   const waterTarget = 12; // 12 glasses = ~3 liters
-  const displayWaterGlasses = waterGlasses > waterTarget ? waterGlasses - waterTarget : waterGlasses;
-  const waterPercentage = Math.min(100, (Math.min(waterGlasses, waterTarget) / waterTarget) * 100);
-  const waterFillHeight = (waterPercentage / 100) * (waterDropSize * 0.75);
+  const displayWaterGlasses = waterGlasses % waterTarget || (waterGlasses > 0 && waterGlasses % waterTarget === 0 ? waterTarget : 0);
+  const waterPercentage = Math.min(100, (displayWaterGlasses / waterTarget) * 100);
+  const waterFillHeight = waterPercentage === 100 ? 37 : (waterPercentage / 100) * 32;
 
   const handleWaterClick = () => {
     if (onWaterClick) {
@@ -207,9 +207,9 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
             {/* Water fill */}
             <rect
               x="8"
-              y={42 - (waterFillHeight / waterDropSize) * 32}
+              y={waterPercentage === 100 ? 5 : 42 - waterFillHeight}
               width="24"
-              height={(waterFillHeight / waterDropSize) * 32}
+              height={waterFillHeight}
               fill="#2196f3"
               clipPath="url(#dropClip)"
               className="transition-all duration-500 ease-in-out"
