@@ -16,6 +16,15 @@ export const Objetivos = () => {
 
   const { data: tasks = [] } = useTasks(format(selectedDate, 'yyyy-MM-dd'));
 
+  // Función para obtener el título del header basado en la fecha seleccionada
+  const getHeaderTitle = () => {
+    const today = new Date();
+    if (format(selectedDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
+      return 'Hoy';
+    }
+    return format(selectedDate, "dd 'de' MMMM", { locale: es });
+  };
+
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -27,7 +36,7 @@ export const Objetivos = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header 
-        title="Hoy" 
+        title={getHeaderTitle()} 
         rightAction={
           <div className="flex gap-2">
             <Button variant="ghost" size="sm">

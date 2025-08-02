@@ -100,16 +100,8 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     return Math.max(0, Math.min(days.length - 1, centerIndex));
   }, [position, dayWidth, todayIndex, days.length]);
 
-  // Actualizar día seleccionado cuando no se está arrastrando
-  useEffect(() => {
-    if (!isDragging && !isAnimating) {
-      const centerIndex = getCenterDay();
-      const centerDay = days[centerIndex];
-      if (centerDay && !isSameDay(centerDay, selectedDate)) {
-        onDateChange(centerDay);
-      }
-    }
-  }, [position, isDragging, isAnimating, getCenterDay, days, selectedDate, onDateChange]);
+  // Actualizar día seleccionado solo cuando el usuario hace click
+  // Ya no se auto-selecciona por posición del carrusel
 
   // Manejadores de eventos
   const handleStart = useCallback((clientX: number) => {
@@ -185,12 +177,11 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     handleEnd();
   };
 
-  // Click en día específico
+  // Click en día específico - solo aquí se cambia la fecha seleccionada
   const handleDateClick = (date: Date, index: number) => {
     if (isDragging) return;
     
-    const targetPosition = (todayIndex - index) * dayWidth;
-    setPosition(targetPosition);
+    // Solo cambiar la fecha seleccionada, no mover el carrusel
     onDateChange(date);
   };
 
