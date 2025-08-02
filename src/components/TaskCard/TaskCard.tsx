@@ -6,6 +6,10 @@ import { CheckCircle2, Circle, Clock, Bell, MessageSquare, MoreHorizontal, Calen
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Task, useUpdateTask } from "@/hooks/useGoals";
+import { EditTaskDialog } from "@/components/EditTaskDialog/EditTaskDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,13 +19,14 @@ import {
 
 interface TaskCardProps {
   task: Task;
-  onEdit?: () => void;
-  onDelete?: () => void;
 }
 
-export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
+export const TaskCard = ({ task }: TaskCardProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const updateTask = useUpdateTask();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleToggleComplete = async () => {
     if (isUpdating) return;
@@ -34,6 +39,35 @@ export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
       });
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleEdit = () => {
+    setEditDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', task.id);
+
+      if (error) throw error;
+
+      // Invalidar queries para actualizar la UI
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+
+      toast({
+        title: "Tarea eliminada",
+        description: "La tarea se ha eliminado exitosamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la tarea.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -104,11 +138,11 @@ export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={onEdit}>
+                  <DropdownMenuItem onClick={handleEdit}>
                     <Edit2 className="w-4 h-4 mr-2" />
                     Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                  <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                     <Trash2 className="w-4 h-4 mr-2" />
                     Eliminar
                   </DropdownMenuItem>
@@ -158,6 +192,12 @@ export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
           </div>
         </div>
       </div>
+      
+      <EditTaskDialog 
+        task={task}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+      />
     </Card>
   );
 };
