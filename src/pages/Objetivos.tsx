@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GoalCard } from "@/components/GoalCard/GoalCard";
 import { TaskCard } from "@/components/TaskCard/TaskCard";
 import { HabitTracker } from "@/components/HabitTracker/HabitTracker";
+import { CreateGoalDialog } from "@/components/CreateGoalDialog/CreateGoalDialog";
 import { useGoals, useTasks, useGoalStats } from "@/hooks/useGoals";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Calendar, Target, BarChart3, List, Filter, Search, Settings, TrendingUp, Minus, TrendingDown } from "lucide-react";
@@ -175,10 +176,12 @@ export const Objetivos = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Crea tu primer objetivo para comenzar
                 </p>
-                <Button>
-                  <Plus className="mr-2" size={16} />
-                  Crear objetivo
-                </Button>
+                <CreateGoalDialog>
+                  <Button>
+                    <Plus className="mr-2" size={16} />
+                    Crear objetivo
+                  </Button>
+                </CreateGoalDialog>
               </div>
             )}
           </div>
@@ -211,9 +214,11 @@ export const Objetivos = () => {
 
         {/* Botón flotante para agregar */}
         <div className="fixed bottom-24 right-4">
-          <Button size="lg" className="rounded-full shadow-lg">
-            <Plus size={24} />
-          </Button>
+          <CreateGoalDialog>
+            <Button size="lg" className="rounded-full shadow-lg">
+              <Plus size={24} />
+            </Button>
+          </CreateGoalDialog>
         </div>
       </div>
 
