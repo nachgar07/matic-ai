@@ -133,7 +133,7 @@ export const MealPlate = ({
         </Dialog>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col justify-center">
+        <div className="flex-1 flex flex-col justify-center min-w-0 pr-2">
           {isEditingName ? (
             <div className="flex items-center gap-2">
               <Input
@@ -166,7 +166,7 @@ export const MealPlate = ({
           ) : (
             <div className="space-y-1">
               {/* Title row */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 overflow-hidden">
                 <Badge 
                   style={{ backgroundColor: getMealTypeColor(mealType) }}
                   className="text-white shrink-0"
@@ -181,7 +181,7 @@ export const MealPlate = ({
                 >
                   <Edit2 size={12} />
                 </Button>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground truncate">
                   {meals.length} {meals.length === 1 ? 'ingrediente' : 'ingredientes'}
                 </span>
               </div>

@@ -175,19 +175,8 @@ export const Comidas = () => {
 
           {/* Recent Meals */}
           <div className="mt-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="mb-4">
               <h2 className="text-lg font-semibold">Comidas de Hoy</h2>
-              {meals.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSyncToCalendar}
-                  disabled={isCalendarLoading}
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {isCalendarLoading ? 'Sincronizando...' : 'Sincronizar con Google Calendar'}
-                </Button>
-              )}
             </div>
           <MealPlateList 
             meals={meals}
