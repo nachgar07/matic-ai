@@ -8,7 +8,7 @@ import { ExpenseChart } from "@/components/ExpenseChart/ExpenseChart";
 import { CategoryManager } from "@/components/CategoryManager/CategoryManager";
 import { ExpenseReviewModal } from "@/components/ExpenseReviewModal/ExpenseReviewModal";
 import { ManualExpenseEntry } from "@/components/ManualExpenseEntry/ManualExpenseEntry";
-import { GoogleDriveIntegration } from "@/components/GoogleDriveIntegration/GoogleDriveIntegration";
+
 import { useExpenseCategories } from "@/hooks/useExpenseCategories";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -729,11 +729,6 @@ export const Archivos = () => {
           />
         )}
 
-        {/* Google Drive Integration */}
-        <GoogleDriveIntegration 
-          expenses={gastos} 
-          onRefreshExpenses={fetchGastos}
-        />
 
         {/* Gestor de Categorías */}
         <div className="space-y-4">
