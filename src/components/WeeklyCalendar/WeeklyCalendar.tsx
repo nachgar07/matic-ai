@@ -29,9 +29,9 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
   const containerWidth = containerRef.current?.offsetWidth || 400;
   const dayWidth = Math.floor(containerWidth / 7);
 
-  // Función de inercia
+  // Función de inercia mejorada - más tiempo y más fuerza
   const startInertia = useCallback(() => {
-    if (Math.abs(velocity) < 2) {
+    if (Math.abs(velocity) < 1) { // Umbral más bajo
       setIsAnimating(false);
       return;
     }
@@ -40,9 +40,9 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     
     const animate = () => {
       setVelocity(prev => {
-        const newVelocity = prev * 0.92;
+        const newVelocity = prev * 0.98; // Fricción más baja para durar más tiempo
         
-        if (Math.abs(newVelocity) < 1) {
+        if (Math.abs(newVelocity) < 0.5) { // Umbral más bajo para durar más
           setIsAnimating(false);
           return 0;
         }
@@ -68,7 +68,7 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     const deltaPosition = last.position - first.position;
     const deltaTime = last.time - first.time;
     
-    return deltaTime > 0 ? (deltaPosition / deltaTime) * 20 : 0;
+    return deltaTime > 0 ? (deltaPosition / deltaTime) * 30 : 0; // Factor aumentado para más fuerza
   }, []);
 
   // Eventos de drag
@@ -88,7 +88,7 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     if (!isDragging) return;
     
     const delta = clientX - lastPosition.current;
-    setPosition(prev => prev + delta * 1.5);
+    setPosition(prev => prev + delta * 2); // Factor aumentado para más sensibilidad
     
     velocityHistory.current.push({ time: Date.now(), position: clientX });
     if (velocityHistory.current.length > 5) {
@@ -105,7 +105,7 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     const finalVelocity = calculateVelocity();
     setVelocity(finalVelocity);
     
-    if (Math.abs(finalVelocity) > 2) {
+    if (Math.abs(finalVelocity) > 1) { // Umbral más bajo para activar inercia
       startInertia();
     }
   }, [isDragging, calculateVelocity, startInertia]);
@@ -146,11 +146,20 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     onDateChange(date);
   };
 
-  // Posición inicial centrada en el día de hoy
+  // Posición inicial centrada en el día de hoy - EXACTAMENTE AL CENTRO
   useEffect(() => {
-    // El día de hoy está en el índice 60, lo centramos
-    const centerOffset = -60 * dayWidth + (containerWidth / 2) - (dayWidth / 2);
-    setPosition(centerOffset);
+    if (dayWidth > 0) {
+      // Calcular para que el día de hoy (índice 60) aparezca en el centro exacto de la pantalla
+      // Centro de pantalla = containerWidth / 2
+      // Centro del día = dayWidth / 2
+      // Posición del día de hoy = 60 * dayWidth
+      const centerScreen = containerWidth / 2;
+      const centerDay = dayWidth / 2;
+      const todayPosition = 60 * dayWidth;
+      const offsetToCenter = centerScreen - centerDay - todayPosition;
+      
+      setPosition(offsetToCenter);
+    }
   }, [dayWidth, containerWidth]);
 
   // Cleanup
