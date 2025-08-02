@@ -58,11 +58,11 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const fatOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke - gapSize - fatStroke;
   const fatBgOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke - gapSize - fatBgStroke;
 
-  // Water semicircle calculations
-  const waterRadius = size * 0.15;
-  const waterCircumference = Math.PI * waterRadius;
-  const waterPercentage = Math.min(100, (waterGlasses / 8) * 100); // 8 glasses target
-  const waterStroke = (waterPercentage / 100) * waterCircumference;
+  // Water drop calculations
+  const waterDropSize = size * 0.12;
+  const waterTarget = 8; // 8 glasses = ~2.2 liters
+  const waterPercentage = Math.min(100, (waterGlasses / waterTarget) * 100);
+  const waterFillHeight = (waterPercentage / 100) * (waterDropSize * 0.8);
 
   const handleWaterClick = () => {
     if (onWaterClick) {
@@ -130,14 +130,14 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
           />
         </svg>
 
-        {/* Water semicircle - top right */}
+        {/* Water drop - top right */}
         <div 
           className="absolute cursor-pointer transition-transform hover:scale-110"
           style={{ 
-            top: -waterRadius / 2, 
-            right: -waterRadius / 2,
-            width: waterRadius * 2,
-            height: waterRadius * 2
+            top: -waterDropSize / 2, 
+            right: -waterDropSize / 2,
+            width: waterDropSize,
+            height: waterDropSize * 1.2
           }}
           onClick={handleWaterClick}
         >
@@ -171,40 +171,48 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
               </div>
             </>
           )}
+          
+          {/* Water drop SVG */}
           <svg
-            width={waterRadius * 2}
-            height={waterRadius * 2}
-            className="transform -rotate-90"
+            width={waterDropSize}
+            height={waterDropSize * 1.2}
+            viewBox={`0 0 ${waterDropSize} ${waterDropSize * 1.2}`}
           >
-            {/* Background semicircle */}
-            <circle
-              cx={waterRadius}
-              cy={waterRadius}
-              r={waterRadius * 0.7}
+            <defs>
+              <clipPath id="dropClip">
+                <path
+                  d={`M ${waterDropSize/2} 5 
+                      C ${waterDropSize/2 - 12} 15, ${waterDropSize/2 - 12} 25, ${waterDropSize/2} ${waterDropSize - 5}
+                      C ${waterDropSize/2 + 12} 25, ${waterDropSize/2 + 12} 15, ${waterDropSize/2} 5 Z`}
+                />
+              </clipPath>
+            </defs>
+            
+            {/* Drop outline */}
+            <path
+              d={`M ${waterDropSize/2} 5 
+                  C ${waterDropSize/2 - 12} 15, ${waterDropSize/2 - 12} 25, ${waterDropSize/2} ${waterDropSize - 5}
+                  C ${waterDropSize/2 + 12} 25, ${waterDropSize/2 + 12} 15, ${waterDropSize/2} 5 Z`}
               stroke="hsl(var(--muted))"
-              strokeWidth="4"
+              strokeWidth="2"
               fill="transparent"
-              strokeDasharray={`${waterCircumference} ${waterCircumference}`}
-              strokeDashoffset={waterCircumference / 2}
-              strokeLinecap="round"
             />
-            {/* Water progress semicircle */}
-            <circle
-              cx={waterRadius}
-              cy={waterRadius}
-              r={waterRadius * 0.7}
-              stroke="#2196f3"
-              strokeWidth="4"
-              fill="transparent"
-              strokeDasharray={`${waterStroke} ${waterCircumference - waterStroke}`}
-              strokeDashoffset={waterCircumference / 2}
-              strokeLinecap="round"
+            
+            {/* Water fill */}
+            <rect
+              x="0"
+              y={waterDropSize * 1.2 - 5 - waterFillHeight}
+              width={waterDropSize}
+              height={waterFillHeight + 5}
+              fill="#2196f3"
+              clipPath="url(#dropClip)"
               className="transition-all duration-500 ease-in-out"
             />
           </svg>
+          
           {/* Water glass count */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-xs font-medium text-primary">{waterGlasses}</span>
+          <div className="absolute inset-0 flex items-center justify-center pt-2">
+            <span className="text-xs font-medium text-white mix-blend-difference">{waterGlasses}</span>
           </div>
         </div>
         
