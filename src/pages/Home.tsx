@@ -140,6 +140,7 @@ export const Home = () => {
           fat={Math.round(dailyTotals.fat)}
           size={220}
           waterGlasses={waterGlasses}
+          simple={true}
         />
       </div>
 

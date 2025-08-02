@@ -9,9 +9,10 @@ interface CalorieRingProps {
   size?: number;
   waterGlasses?: number;
   onWaterClick?: () => void;
+  simple?: boolean; // Nueva prop para modo simple
 }
 
-export const CalorieRing = ({ consumed, target, size = 200, waterGlasses = 0, onWaterClick }: CalorieRingProps) => {
+export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200, waterGlasses = 0, onWaterClick, simple = false }: CalorieRingProps) => {
   const [showWaterAnimation, setShowWaterAnimation] = useState(false);
   
   const remaining = Math.max(0, target - consumed);
@@ -19,9 +20,49 @@ export const CalorieRing = ({ consumed, target, size = 200, waterGlasses = 0, on
   const radius = (size - 20) / 2;
   const circumference = 2 * Math.PI * radius;
   
-  // Calculate stroke length for simple progress ring
+  // Simple mode - single progress ring
   const strokeLength = (percentage / 100) * circumference;
   const strokeOffset = circumference - strokeLength;
+
+  // Complex mode - macro breakdown
+  // Calculate calories from macros (protein and carbs = 4 cal/g, fat = 9 cal/g)
+  const proteinCals = protein * 4;
+  const carbsCals = carbs * 4;
+  const fatCals = fat * 9;
+  
+  // Calculate target calories for each macro (assuming balanced diet)
+  const proteinTarget = target * 0.25; // 25% protein
+  const carbsTarget = target * 0.45;   // 45% carbs 
+  const fatTarget = target * 0.30;     // 30% fat
+  
+  // Calculate fixed proportions for each macro based on targets
+  const proteinProportion = 25; // 25% of circle
+  const carbsProportion = 45;   // 45% of circle
+  const fatProportion = 30;     // 30% of circle
+  
+  // Calculate progress within each segment
+  const proteinProgress = Math.min(100, (proteinCals / proteinTarget) * 100);
+  const carbsProgress = Math.min(100, (carbsCals / carbsTarget) * 100);
+  const fatProgress = Math.min(100, (fatCals / fatTarget) * 100);
+  
+  // Calculate stroke lengths for backgrounds (full segments)
+  const proteinBgStroke = (proteinProportion / 100) * circumference;
+  const carbsBgStroke = (carbsProportion / 100) * circumference;
+  const fatBgStroke = (fatProportion / 100) * circumference;
+  
+  // Calculate stroke lengths for progress
+  const proteinStroke = (proteinProgress / 100) * proteinBgStroke;
+  const carbsStroke = (carbsProgress / 100) * carbsBgStroke;
+  const fatStroke = (fatProgress / 100) * fatBgStroke;
+  
+  // Calculate offsets for positioning segments with gaps
+  const gapSize = circumference * 0.02; // 2% gap between segments
+  const proteinOffset = circumference - proteinStroke;
+  const proteinBgOffset = circumference - proteinBgStroke;
+  const carbsOffset = circumference - proteinBgStroke - gapSize - carbsStroke;
+  const carbsBgOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke;
+  const fatOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke - gapSize - fatStroke;
+  const fatBgOffset = circumference - proteinBgStroke - gapSize - carbsBgStroke - gapSize - fatBgStroke;
 
   // Water drop calculations
   const waterDropSize = size * 0.15;
@@ -55,29 +96,77 @@ export const CalorieRing = ({ consumed, target, size = 200, waterGlasses = 0, on
           height={size}
           className="transform -rotate-90"
         >
-          {/* Background ring */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="#f3f4f6"
-            strokeWidth="8"
-            fill="transparent"
-          />
-          
-          {/* Progress ring */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="#10b981"
-            strokeWidth="8"
-            fill="transparent"
-            strokeDasharray={`${strokeLength} ${circumference - strokeLength}`}
-            strokeDashoffset={strokeOffset}
-            strokeLinecap="round"
-            className="transition-all duration-500 ease-in-out"
-          />
+          {simple ? (
+            // Simple mode - single progress ring
+            <>
+              {/* Background ring */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="#f3f4f6"
+                strokeWidth="8"
+                fill="transparent"
+              />
+              
+              {/* Progress ring */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="#10b981"
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={`${strokeLength} ${circumference - strokeLength}`}
+                strokeDashoffset={strokeOffset}
+                strokeLinecap="round"
+                className="transition-all duration-500 ease-in-out"
+              />
+            </>
+          ) : (
+            // Complex mode - macro breakdown
+            <>
+              {/* Protein segment (red/orange) */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="#ff6b35"
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={`${proteinStroke} ${circumference - proteinStroke}`}
+                strokeDashoffset={proteinOffset}
+                strokeLinecap="round"
+                className="transition-all duration-500 ease-in-out"
+              />
+              {/* Carbs segment (yellow/gold) */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="#ffa726"
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={`${carbsStroke} ${circumference - carbsStroke}`}
+                strokeDashoffset={carbsOffset}
+                strokeLinecap="round"
+                className="transition-all duration-500 ease-in-out"
+              />
+              {/* Fat segment (green) */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="#4caf50"
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={`${fatStroke} ${circumference - fatStroke}`}
+                strokeDashoffset={fatOffset}
+                strokeLinecap="round"
+                className="transition-all duration-500 ease-in-out"
+              />
+            </>
+          )}
         </svg>
 
         {/* Water drop - top right */}
