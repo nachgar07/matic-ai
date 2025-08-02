@@ -5,9 +5,11 @@ interface CalorieRingProps {
   carbs: number;
   fat: number;
   size?: number;
+  waterGlasses?: number;
+  onWaterClick?: () => void;
 }
 
-export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200 }: CalorieRingProps) => {
+export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200, waterGlasses = 0, onWaterClick }: CalorieRingProps) => {
   const remaining = Math.max(0, target - consumed);
   const percentage = Math.min(100, (consumed / target) * 100);
   const radius = (size - 20) / 2;
@@ -33,6 +35,12 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200 
   const proteinOffset = circumference - proteinStroke;
   const carbsOffset = circumference - proteinStroke - carbsStroke;
   const fatOffset = circumference - proteinStroke - carbsStroke - fatStroke;
+
+  // Water semicircle calculations
+  const waterRadius = size * 0.15;
+  const waterCircumference = Math.PI * waterRadius;
+  const waterPercentage = Math.min(100, (waterGlasses / 8) * 100); // 8 glasses target
+  const waterStroke = (waterPercentage / 100) * waterCircumference;
 
   return (
     <div className="flex flex-col items-center">
@@ -91,6 +99,54 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200 
             className="transition-all duration-500 ease-in-out"
           />
         </svg>
+
+        {/* Water semicircle - top right */}
+        <div 
+          className="absolute cursor-pointer transition-transform hover:scale-110"
+          style={{ 
+            top: -waterRadius / 2, 
+            right: -waterRadius / 2,
+            width: waterRadius * 2,
+            height: waterRadius * 2
+          }}
+          onClick={onWaterClick}
+        >
+          <svg
+            width={waterRadius * 2}
+            height={waterRadius * 2}
+            className="transform rotate-90"
+          >
+            {/* Background semicircle */}
+            <circle
+              cx={waterRadius}
+              cy={waterRadius}
+              r={waterRadius * 0.7}
+              stroke="hsl(var(--muted))"
+              strokeWidth="4"
+              fill="transparent"
+              strokeDasharray={`${waterCircumference} ${waterCircumference}`}
+              strokeDashoffset={waterCircumference / 2}
+              strokeLinecap="round"
+            />
+            {/* Water progress semicircle */}
+            <circle
+              cx={waterRadius}
+              cy={waterRadius}
+              r={waterRadius * 0.7}
+              stroke="#2196f3"
+              strokeWidth="4"
+              fill="transparent"
+              strokeDasharray={`${waterStroke} ${waterCircumference - waterStroke}`}
+              strokeDashoffset={waterCircumference / 2}
+              strokeLinecap="round"
+              className="transition-all duration-500 ease-in-out"
+            />
+          </svg>
+          {/* Water glass count */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-medium text-primary">{waterGlasses}</span>
+          </div>
+        </div>
         
         {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
