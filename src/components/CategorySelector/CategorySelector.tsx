@@ -35,28 +35,36 @@ export const CategorySelector = ({ isOpen, onClose, onSelectCategory }: Category
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-full bg-background">
-        <div className="flex flex-col h-full">
-          <SheetHeader className="text-center py-6">
-            <SheetTitle className="text-2xl font-bold text-primary">
+      <SheetContent side="bottom" className="h-[95vh] p-0 border-none">
+        <div className="flex flex-col h-full bg-background">
+          <div className="flex items-center justify-between p-6 border-b">
+            <SheetTitle className="text-xl font-bold text-foreground">
               Selecciona una categoría
             </SheetTitle>
-          </SheetHeader>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={onClose}
+              className="text-muted-foreground"
+            >
+              ✕
+            </Button>
+          </div>
 
-          <div className="flex-1 px-4 pb-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="grid grid-cols-2 gap-3">
               {categories.map((category) => (
                 <Button
                   key={category.value}
                   variant="ghost"
-                  className="h-16 justify-start gap-4 p-4 text-left hover:bg-transparent"
+                  className="h-20 justify-between p-4 text-left hover:bg-muted/50 border border-border/50 rounded-xl"
                   onClick={() => handleCategorySelect(category.value)}
                 >
-                  <span className="text-foreground font-medium flex-1">
+                  <span className="text-foreground font-medium text-sm">
                     {category.label}
                   </span>
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ml-2"
                     style={{ backgroundColor: category.color }}
                   >
                     {category.icon}
@@ -66,27 +74,27 @@ export const CategorySelector = ({ isOpen, onClose, onSelectCategory }: Category
               
               <Button
                 variant="ghost"
-                className="h-16 justify-start gap-4 p-4 text-left hover:bg-transparent"
+                className="h-20 justify-between p-4 text-left hover:bg-muted/50 border border-border/50 rounded-xl"
                 onClick={() => {
                   // TODO: Implementar crear categoría personalizada
                   console.log("Crear categoría personalizada");
                 }}
               >
-                <div className="flex-1">
-                  <div className="text-foreground font-medium">Crear categoría</div>
-                  <div className="text-sm text-muted-foreground">5 disponibles</div>
+                <div>
+                  <div className="text-foreground font-medium text-sm">Crear categoría</div>
+                  <div className="text-xs text-muted-foreground">5 disponibles</div>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 ml-2">
                   <Plus className="w-6 h-6 text-muted-foreground" />
                 </div>
               </Button>
             </div>
           </div>
 
-          <div className="p-4 pb-8">
+          <div className="p-4 border-t bg-background">
             <Button 
               variant="outline" 
-              className="w-full h-12 text-lg font-semibold"
+              className="w-full h-12 text-base font-semibold"
               onClick={onClose}
             >
               CANCELAR
