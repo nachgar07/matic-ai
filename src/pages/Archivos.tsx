@@ -776,108 +776,111 @@ export const Archivos = () => {
         </div>
 
         {/* Filtro de Fecha */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold">Gastos Recientes</h3>
-          
-          <div className="flex items-center gap-2">
-            {/* Botón + para crear gastos */}
-            <Popover open={showCreatePopup} onOpenChange={setShowCreatePopup}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-full">
-                  <Plus size={16} />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-3" align="end">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm mb-3">Crear Nuevo Gasto</h4>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start h-auto p-3 text-left"
-                    onClick={() => {
-                      setShowCreatePopup(false);
-                      setShowPhotoCapture(true);
-                    }}
-                  >
-                    <Camera className="mr-3 h-4 w-4 text-primary" />
-                    <div>
-                      <div className="font-medium">Escanear Recibo</div>
-                      <div className="text-xs text-muted-foreground">Detectar gastos automáticamente</div>
-                    </div>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start h-auto p-3 text-left"
-                    onClick={() => {
-                      setShowCreatePopup(false);
-                      setShowManualEntry(true);
-                    }}
-                  >
-                    <PenTool className="mr-3 h-4 w-4 text-secondary" />
-                    <div>
-                      <div className="font-medium">Crear Manual</div>
-                      <div className="text-xs text-muted-foreground">Ingresar detalles manualmente</div>
-                    </div>
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Gastos Recientes</h3>
             
-            {/* Filtro de calendario */}
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "justify-start text-left font-normal",
-                    !filterDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  <span className="truncate">
-                    {filterDate ? format(filterDate, "d 'de' MMM", { locale: es }) : "Seleccionar fecha"}
-                  </span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={filterDate}
-                  onSelect={handleDateFilterChange}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-            
-            <div className="flex gap-1 sm:gap-2">
-              <Button
-                variant={filterType === 'today' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => handleFilterChange('today')}
-                className="text-xs flex-1 sm:flex-initial"
-              >
-                Hoy
-              </Button>
+            <div className="flex items-center gap-2">
+              {/* Botón + para crear gastos */}
+              <Popover open={showCreatePopup} onOpenChange={setShowCreatePopup}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-full">
+                    <Plus size={16} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3" align="end">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm mb-3">Crear Nuevo Gasto</h4>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start h-auto p-3 text-left"
+                      onClick={() => {
+                        setShowCreatePopup(false);
+                        setShowPhotoCapture(true);
+                      }}
+                    >
+                      <Camera className="mr-3 h-4 w-4 text-primary" />
+                      <div>
+                        <div className="font-medium">Escanear Recibo</div>
+                        <div className="text-xs text-muted-foreground">Detectar gastos automáticamente</div>
+                      </div>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start h-auto p-3 text-left"
+                      onClick={() => {
+                        setShowCreatePopup(false);
+                        setShowManualEntry(true);
+                      }}
+                    >
+                      <PenTool className="mr-3 h-4 w-4 text-secondary" />
+                      <div>
+                        <div className="font-medium">Crear Manual</div>
+                        <div className="text-xs text-muted-foreground">Ingresar detalles manualmente</div>
+                      </div>
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
               
-              <Button
-                variant={filterType === 'all' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => handleFilterChange('all')}
-                className="text-xs flex-1 sm:flex-initial"
-              >
-                Todos
-              </Button>
-              
-              <Button
-                variant={filterType === 'recent' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => handleFilterChange('recent')}
-                className="text-xs flex-1 sm:flex-initial"
-              >
-                Recientes
-              </Button>
+              {/* Filtro de calendario */}
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !filterDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <span className="truncate">
+                      {filterDate ? format(filterDate, "d 'de' MMM", { locale: es }) : "Seleccionar fecha"}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={filterDate}
+                    onSelect={handleDateFilterChange}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
+          </div>
+          
+          {/* Botones de filtro debajo del título */}
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant={filterType === 'today' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleFilterChange('today')}
+              className="text-xs min-w-[60px] flex-1 sm:flex-initial"
+            >
+              Hoy
+            </Button>
+            
+            <Button
+              variant={filterType === 'all' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleFilterChange('all')}
+              className="text-xs min-w-[60px] flex-1 sm:flex-initial"
+            >
+              Todos
+            </Button>
+            
+            <Button
+              variant={filterType === 'recent' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleFilterChange('recent')}
+              className="text-xs min-w-[60px] flex-1 sm:flex-initial"
+            >
+              Recientes
+            </Button>
           </div>
         </div>
 
