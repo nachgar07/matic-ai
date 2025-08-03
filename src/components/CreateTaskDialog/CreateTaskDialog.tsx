@@ -1,28 +1,47 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { CalendarIcon, Clock, Bell, ChevronRight, CheckSquare, MessageSquare } from "lucide-react";
+import { CalendarIcon, Clock, Bell, ChevronRight, MessageSquare, X } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useCreateTask } from "@/hooks/useGoals";
 import { cn } from "@/lib/utils";
+import { CategorySelector } from "@/components/CategorySelector/CategorySelector";
 
 interface CreateTaskDialogProps {
   children: React.ReactNode;
 }
 
+const categories = [
+  { value: "bad_habit", label: "Dejar un mal hábito", icon: "🚫", color: "#ef4444" },
+  { value: "arte", label: "Arte", icon: "🎨", color: "#ec4899" },
+  { value: "tarea", label: "Tarea", icon: "⏰", color: "#ec4899" },
+  { value: "meditacion", label: "Meditación", icon: "🧘", color: "#a855f7" },
+  { value: "estudio", label: "Estudio", icon: "🎓", color: "#8b5cf6" },
+  { value: "deportes", label: "Deportes", icon: "🚴", color: "#3b82f6" },
+  { value: "entretenimiento", label: "Entretenimiento", icon: "⭐", color: "#06b6d4" },
+  { value: "social", label: "Social", icon: "💬", color: "#10b981" },
+  { value: "finanzas", label: "Finanzas", icon: "$", color: "#22c55e" },
+  { value: "salud", label: "Salud", icon: "➕", color: "#84cc16" },
+  { value: "trabajo", label: "Trabajo", icon: "💼", color: "#a3a3a3" },
+  { value: "nutricion", label: "Nutrición", icon: "🍽️", color: "#f59e0b" },
+  { value: "hogar", label: "Hogar", icon: "🏠", color: "#f97316" },
+  { value: "aire_libre", label: "Aire libre", icon: "⛰️", color: "#f97316" },
+  { value: "otros", label: "Otros", icon: "🔲", color: "#ef4444" },
+];
+
 export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
   const [open, setOpen] = useState(false);
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("personal");
+  const [category, setCategory] = useState("tarea");
   const [priority, setPriority] = useState(3);
   const [dueDate, setDueDate] = useState<Date>();
   const [dueTime, setDueTime] = useState("");
@@ -51,208 +70,219 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
       // Resetear formulario
       setTitle("");
       setDescription("");
-      setCategory("personal");
+      setCategory("tarea");
       setPriority(3);
       setDueDate(undefined);
       setDueTime("");
+      setNotes("");
+      setReminders(0);
+      setIsRecurring(false);
       setOpen(false);
     } catch (error) {
       console.error('Error creating task:', error);
     }
   };
 
-  const categories = [
-    { value: "personal", label: "Personal", icon: "👤" },
-    { value: "trabajo", label: "Trabajo", icon: "💼" },
-    { value: "compras", label: "Compras", icon: "🛒" },
-    { value: "salud", label: "Salud", icon: "🏥" },
-    { value: "hogar", label: "Hogar", icon: "🏠" },
-  ];
+  const handleCategorySelect = (categoryValue: string) => {
+    setCategory(categoryValue);
+    setShowCategorySelector(false);
+  };
+
+  const selectedCategory = categories.find(cat => cat.value === category);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Nueva Tarea</DialogTitle>
-          <DialogDescription>
-            Completa los detalles para crear una nueva tarea
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Título *</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej: Terminar reporte"
-              required
-            />
-          </div>
+    <>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          {children}
+        </SheetTrigger>
+        <SheetContent side="bottom" className="h-[95vh] p-0 border-none">
+          <div className="flex flex-col h-full bg-background">
+            <SheetHeader className="flex flex-row items-center justify-between p-6 border-b">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                Nueva Tarea
+              </SheetTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setOpen(false)}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </SheetHeader>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descripción opcional..."
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-              <div className="flex items-center gap-3">
-                <div className="h-5 w-5 flex items-center justify-center">
-                  <div className="w-3 h-3 bg-destructive rounded"></div>
-                </div>
-                <span className="font-medium">Categoría</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-destructive font-medium">
-                  {categories.find(cat => cat.value === category)?.label || "Tarea"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Fecha límite</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dueDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dueDate ? format(dueDate, "PPP", { locale: es }) : "Seleccionar fecha"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
-                    initialFocus
+            <div className="flex-1 overflow-y-auto p-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Campo de título con borde rojo */}
+                <div className="space-y-2">
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Tarea"
+                    className="text-lg font-medium border-2 border-destructive rounded-lg p-4 bg-transparent"
+                    required
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Hora</Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="time"
-                  value={dueTime}
-                  onChange={(e) => setDueTime(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Hora y recordatorios */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-              <div className="flex items-center gap-3">
-                <Bell className="h-5 w-5 text-destructive" />
-                <span className="font-medium">Hora y recordatorios</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{reminders}</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-          </div>
-
-          {/* Sub-items */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-              <div className="flex items-center gap-3">
-                <CheckSquare className="h-5 w-5 text-destructive" />
-                <div>
-                  <div className="font-medium">Sub-ítems</div>
-                  <div className="text-xs text-destructive">Funcionalidad premium</div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">0</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-          </div>
 
-          {/* Prioridad - Updated to match design */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-              <div className="flex items-center gap-3">
-                <div className="h-5 w-5 flex items-center justify-center">
-                  <div className="w-3 h-3 bg-destructive rounded"></div>
+                {/* Categoría */}
+                <div className="space-y-2">
+                  <div 
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                    onClick={() => setShowCategorySelector(true)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="h-8 w-8 rounded-lg flex items-center justify-center text-lg"
+                        style={{ backgroundColor: selectedCategory?.color || "#ec4899" }}
+                      >
+                        {selectedCategory?.icon || "⏰"}
+                      </div>
+                      <span className="font-medium text-lg">Categoría</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-destructive font-medium bg-destructive/10 px-3 py-1 rounded-full">
+                        {selectedCategory?.label || "Tarea"}
+                      </span>
+                      <div className="w-8 h-8 rounded-full bg-destructive flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-white" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <span className="font-medium">Prioridad</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {priority === 1 ? "Baja" : priority === 3 ? "Normal" : priority === 5 ? "Alta" : "Urgente"}
-                </span>
-              </div>
-            </div>
-          </div>
 
-          {/* Nota */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <MessageSquare className="h-5 w-5 text-destructive" />
-              <span className="font-medium">Nota</span>
-            </div>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Añadir nota..."
-              rows={2}
-              className="resize-none"
-            />
-          </div>
-
-          {/* Tarea pendiente - Recurring toggle */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <CalendarIcon className="h-5 w-5 text-destructive" />
-                <div>
-                  <div className="font-medium">Tarea pendiente</div>
-                  <div className="text-xs text-muted-foreground">Se mostrará todos los días hasta que se complete.</div>
+                {/* Fecha */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <CalendarIcon className="h-8 w-8 text-destructive" />
+                      <span className="font-medium text-lg">Fecha</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" className="text-destructive font-medium bg-destructive/10 px-3 py-1 rounded-full">
+                            {dueDate ? format(dueDate, "dd/MM/yyyy", { locale: es }) : "Hoy"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={dueDate}
+                            onSelect={setDueDate}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch 
-                  checked={isRecurring} 
-                  onCheckedChange={setIsRecurring}
-                />
+
+                {/* Hora y recordatorios */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <Bell className="h-8 w-8 text-destructive" />
+                      <span className="font-medium text-lg">Hora y recordatorios</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-destructive font-medium bg-destructive/10 px-3 py-1 rounded-full">
+                        {reminders}
+                      </span>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Prioridad */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-destructive flex items-center justify-center">
+                        <div className="w-3 h-3 bg-white rounded"></div>
+                      </div>
+                      <span className="font-medium text-lg">Prioridad</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-destructive font-medium bg-destructive/10 px-3 py-1 rounded-full">
+                        {priority === 1 ? "Baja" : priority === 3 ? "Normal" : priority === 5 ? "Alta" : "Urgente"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Nota */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-4 border rounded-lg">
+                    <MessageSquare className="h-8 w-8 text-destructive" />
+                    <span className="font-medium text-lg">Nota</span>
+                  </div>
+                  {notes && (
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Añadir nota..."
+                      rows={3}
+                      className="resize-none"
+                    />
+                  )}
+                </div>
+
+                {/* Tarea pendiente */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CalendarIcon className="h-8 w-8 text-destructive" />
+                      <div>
+                        <div className="font-medium text-lg">Tarea pendiente</div>
+                        <div className="text-sm text-muted-foreground">
+                          Se mostrará todos los días hasta que se complete.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-destructive flex items-center justify-center">
+                        <Switch 
+                          checked={isRecurring} 
+                          onCheckedChange={setIsRecurring}
+                          className="scale-75"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Botones fijos en la parte inferior */}
+            <div className="p-6 border-t bg-background">
+              <div className="flex gap-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setOpen(false)} 
+                  className="flex-1 h-12 text-lg font-semibold"
+                >
+                  CANCELAR
+                </Button>
+                <Button 
+                  onClick={handleSubmit}
+                  disabled={!title.trim() || createTask.isPending} 
+                  className="flex-1 h-12 text-lg font-semibold bg-destructive hover:bg-destructive/90"
+                >
+                  CONFIRMAR
+                </Button>
               </div>
             </div>
           </div>
+        </SheetContent>
+      </Sheet>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={!title.trim() || createTask.isPending} className="flex-1">
-              {createTask.isPending ? "Creando..." : "Crear Tarea"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <CategorySelector 
+        isOpen={showCategorySelector}
+        onClose={() => setShowCategorySelector(false)}
+        onSelectCategory={handleCategorySelect}
+      />
+    </>
   );
 };
