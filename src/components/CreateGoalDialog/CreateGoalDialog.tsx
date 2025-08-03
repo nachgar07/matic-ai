@@ -15,12 +15,12 @@ import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const categories = [
-  { value: "deportes", label: "Deportes", icon: "🏃" },
-  { value: "salud", label: "Salud", icon: "💊" },
-  { value: "trabajo", label: "Trabajo", icon: "💼" },
-  { value: "personal", label: "Personal", icon: "👤" },
-  { value: "educacion", label: "Educación", icon: "📚" },
-  { value: "familia", label: "Familia", icon: "👨‍👩‍👧‍👦" },
+  { value: "deportes", label: "Deportes", icon: "🏃", color: "#ef4444" },
+  { value: "salud", label: "Salud", icon: "💊", color: "#10b981" },
+  { value: "trabajo", label: "Trabajo", icon: "💼", color: "#3b82f6" },
+  { value: "personal", label: "Personal", icon: "👤", color: "#8b5cf6" },
+  { value: "educacion", label: "Educación", icon: "📚", color: "#f59e0b" },
+  { value: "familia", label: "Familia", icon: "👨‍👩‍👧‍👦", color: "#ec4899" },
 ];
 
 const frequencies = [
@@ -84,7 +84,7 @@ export const CreateGoalDialog = ({ children }: CreateGoalDialogProps) => {
       description,
       category,
       icon: selectedCategory?.icon || "🎯",
-      color: priorities.find(p => p.value === priority)?.color || "#6366f1",
+      color: selectedCategory?.color || priorities.find(p => p.value === priority)?.color || "#6366f1",
       priority,
       frequency: frequency as "daily" | "weekly" | "monthly" | "custom",
       frequency_days: frequency === "custom" ? selectedDays : null,
@@ -138,25 +138,34 @@ export const CreateGoalDialog = ({ children }: CreateGoalDialogProps) => {
           </div>
 
           {/* Categoría */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="flex items-center gap-2 text-muted-foreground">
               🎯 Categoría
             </Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar categoría" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    <div className="flex items-center gap-2">
-                      <span>{cat.icon}</span>
-                      <span>{cat.label}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-3 gap-3">
+              {categories.map((cat) => (
+                <Button
+                  key={cat.value}
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCategory(cat.value)}
+                  className={cn(
+                    "h-20 flex flex-col gap-1 border-2 transition-all",
+                    category === cat.value 
+                      ? "border-primary bg-primary/5" 
+                      : "border-border hover:border-primary/30"
+                  )}
+                >
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-lg"
+                    style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+                  >
+                    {cat.icon}
+                  </div>
+                  <span className="text-xs font-medium">{cat.label}</span>
+                </Button>
+              ))}
+            </div>
           </div>
 
           {/* Descripción */}
