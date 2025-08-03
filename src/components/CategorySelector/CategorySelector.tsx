@@ -57,14 +57,14 @@ export const CategorySelector = ({ isOpen, onClose, onSelectCategory }: Category
                 <Button
                   key={category.value}
                   variant="ghost"
-                  className="h-20 p-4 text-left hover:bg-muted/50 border border-border/50 rounded-xl flex items-center justify-between"
+                  className="min-h-20 p-4 text-left hover:bg-muted/50 border border-border/50 rounded-xl flex items-center justify-between"
                   onClick={() => handleCategorySelect(category.value)}
                 >
-                  <span className="text-foreground font-medium text-sm truncate pr-2 flex-1">
+                  <span className="text-foreground font-medium text-sm pr-2 flex-1 leading-tight">
                     {category.label}
                   </span>
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-base flex-shrink-0"
                     style={{ backgroundColor: category.color }}
                   >
                     {category.icon}
