@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 const categories = [
-  { value: "bad_habit", label: "Dejar un mal há...", icon: "🚫", color: "#ef4444" },
+  { value: "bad_habit", label: "Dejar un\nmal hábito", icon: "🚫", color: "#ef4444" },
   { value: "arte", label: "Arte", icon: "🎨", color: "#ec4899" },
   { value: "tarea", label: "Tarea", icon: "⏰", color: "#ec4899" },
   { value: "meditacion", label: "Meditación", icon: "🧘", color: "#a855f7" },
@@ -60,9 +60,9 @@ export const CategorySelector = ({ isOpen, onClose, onSelectCategory }: Category
                   className="h-24 p-4 text-left hover:bg-muted/50 border border-border/50 rounded-xl flex items-center justify-between"
                   onClick={() => handleCategorySelect(category.value)}
                 >
-                  <span className="text-foreground font-medium text-sm pr-3 flex-1 leading-tight break-words">
-                    {category.label}
-                  </span>
+                   <span className="text-foreground font-medium text-sm pr-3 flex-1 leading-tight break-words whitespace-pre-line">
+                     {category.label}
+                   </span>
                   <div 
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
                     style={{ backgroundColor: category.color }}
