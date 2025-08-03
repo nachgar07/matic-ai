@@ -39,7 +39,6 @@ export const CreateOptionsSheet = ({ children }: CreateOptionsSheetProps) => {
               <Button 
                 variant="outline" 
                 className="w-full h-16 flex items-center justify-start gap-4 text-left"
-                onClick={handleClose}
               >
                 <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                   <CheckSquare className="text-primary" size={20} />
