@@ -41,14 +41,6 @@ export const CategorySelector = ({ isOpen, onClose, onSelectCategory }: Category
             <SheetTitle className="text-xl font-bold text-foreground">
               Selecciona una categoría
             </SheetTitle>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={onClose}
-              className="text-muted-foreground"
-            >
-              ✕
-            </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
