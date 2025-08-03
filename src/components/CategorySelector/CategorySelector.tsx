@@ -67,7 +67,9 @@ export const CategorySelector = ({ isOpen, onClose, onSelectCategory }: Category
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
                     style={{ backgroundColor: category.color }}
                   >
-                    {category.icon}
+                    <span className="flex items-center justify-center w-full h-full">
+                      {category.icon}
+                    </span>
                   </div>
                 </Button>
               ))}
