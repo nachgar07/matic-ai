@@ -3,7 +3,7 @@ import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar/WeeklyCalendar";
 import { Button } from "@/components/ui/button";
-import { CreateTaskDialog } from "@/components/CreateTaskDialog/CreateTaskDialog";
+import { CreateOptionsSheet } from "@/components/CreateOptionsSheet/CreateOptionsSheet";
 import { useGoals, useTasks } from "@/hooks/useGoals";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Calendar, Filter, Search, Settings } from "lucide-react";
@@ -115,11 +115,11 @@ export const Objetivos = () => {
 
       {/* Botón flotante para agregar */}
       <div className="fixed bottom-24 right-4">
-        <CreateTaskDialog>
+        <CreateOptionsSheet>
           <Button size="lg" className="rounded-full shadow-lg h-14 w-14">
             <Plus size={24} />
           </Button>
-        </CreateTaskDialog>
+        </CreateOptionsSheet>
       </div>
 
       <BottomNavigation />
