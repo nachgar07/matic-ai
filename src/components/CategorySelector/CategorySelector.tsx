@@ -52,17 +52,14 @@ export const CategorySelector = ({ isOpen, onClose, onSelectCategory }: Category
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {categories.map((category) => (
                 <Button
                   key={category.value}
                   variant="ghost"
-                  className="h-24 p-4 text-left hover:bg-muted/50 border border-border/50 rounded-xl flex items-center justify-between"
+                  className="h-28 p-3 text-left hover:bg-muted/50 border border-border/50 rounded-xl flex flex-col items-center justify-center gap-2"
                   onClick={() => handleCategorySelect(category.value)}
                 >
-                   <span className="text-foreground font-medium text-sm pr-3 flex-1 leading-tight break-words whitespace-pre-line">
-                     {category.label}
-                   </span>
                   <div 
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
                     style={{ backgroundColor: category.color }}
@@ -71,24 +68,26 @@ export const CategorySelector = ({ isOpen, onClose, onSelectCategory }: Category
                       {category.icon}
                     </span>
                   </div>
+                  <span className="text-foreground font-medium text-xs text-center leading-tight whitespace-pre-line px-1">
+                    {category.label}
+                  </span>
                 </Button>
               ))}
               
               <Button
                 variant="ghost"
-                className="h-20 justify-between p-4 text-left hover:bg-muted/50 border border-border/50 rounded-xl"
+                className="h-28 p-3 text-left hover:bg-muted/50 border border-border/50 rounded-xl flex flex-col items-center justify-center gap-2"
                 onClick={() => {
                   // TODO: Implementar crear categoría personalizada
                   console.log("Crear categoría personalizada");
                 }}
               >
-                <div>
-                  <div className="text-foreground font-medium text-sm">Crear categoría</div>
-                  <div className="text-xs text-muted-foreground">5 disponibles</div>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 ml-2">
+                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
                   <Plus className="w-6 h-6 text-muted-foreground" />
                 </div>
+                <span className="text-foreground font-medium text-xs text-center leading-tight px-1">
+                  Crear categoría
+                </span>
               </Button>
             </div>
           </div>
