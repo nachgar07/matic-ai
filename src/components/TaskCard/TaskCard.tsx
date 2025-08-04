@@ -98,85 +98,48 @@ export const TaskCard = ({ task }: TaskCardProps) => {
   };
 
   return (
-    <Card className="p-3 transition-all hover:shadow-md">
-      <div className="flex items-center gap-3">
-        {/* Icono de la izquierda */}
-        <div 
-          className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg"
-          style={{ 
-            backgroundColor: getCategoryColor(task.category),
-          }}
-        >
-          <Clock className="w-6 h-6 text-white" />
-        </div>
-
-        {/* Contenido central */}
-        <div className="flex-1 min-w-0">
-          <h3 className={`font-medium text-lg ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-            {task.title}
-          </h3>
-          
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-primary capitalize">
-              {task.category}
-            </span>
-            
-            {task.due_time && (
-              <>
-                <Bell className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{task.due_time}</span>
-              </>
-            )}
-          </div>
-
-          {task.description && (
-            <p className={`text-sm mt-1 ${task.is_completed ? 'line-through text-muted-foreground' : 'text-muted-foreground'}`}>
-              {task.description}
-            </p>
-          )}
-        </div>
-
-        {/* Botón de check a la derecha */}
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="p-1 h-auto">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleEdit}>
-                <Edit2 className="w-4 h-4 mr-2" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Eliminar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleComplete}
-            disabled={isUpdating}
-            className="p-2 h-auto"
-          >
-            {task.is_completed ? (
-              <CheckCircle2 className="w-6 h-6 text-green-500" />
-            ) : (
-              <Circle className="w-6 h-6 text-muted-foreground" />
-            )}
-          </Button>
-        </div>
+    <div className="flex items-center gap-4 p-4 bg-card rounded-2xl transition-all hover:bg-card/80">
+      {/* Icono de la izquierda */}
+      <div 
+        className="w-12 h-12 rounded-2xl flex items-center justify-center"
+        style={{ 
+          backgroundColor: getCategoryColor(task.category),
+        }}
+      >
+        <Clock className="w-6 h-6 text-white" />
       </div>
+
+      {/* Contenido central */}
+      <div className="flex-1 min-w-0">
+        <h3 className={`font-medium text-base ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+          {task.title}
+        </h3>
+        
+        <span className="text-sm capitalize" style={{ color: getCategoryColor(task.category) }}>
+          {task.category === 'personal' ? 'Hábito' : 'Tarea'}
+        </span>
+      </div>
+
+      {/* Botón de check a la derecha */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleToggleComplete}
+        disabled={isUpdating}
+        className="p-2 h-auto"
+      >
+        {task.is_completed ? (
+          <CheckCircle2 className="w-6 h-6 text-green-500" />
+        ) : (
+          <Circle className="w-6 h-6 text-muted-foreground" />
+        )}
+      </Button>
       
       <EditTaskDialog 
         task={task}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
       />
-    </Card>
+    </div>
   );
 };
