@@ -53,45 +53,19 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     }
   }, [nutritionGoals]);
 
-  // Handle percentage changes while keeping other macros' grams fixed
+  // Handle percentage changes while keeping other percentages fixed
   const handlePercentageChange = (macro: 'protein' | 'carbs' | 'fat', newPercentage: number) => {
-    // Keep current grams of other macros fixed
-    const otherMacros = {
-      protein: macro !== 'protein' ? proteinGrams : null,
-      carbs: macro !== 'carbs' ? carbsGrams : null,
-      fat: macro !== 'fat' ? fatGrams : null
-    };
-
-    // Calculate new grams for the changed macro based on current calories
-    const newGrams = calculateGrams(newPercentage, calories, macro === 'fat' ? 9 : 4);
-    
-    // Calculate total calories needed to maintain other macros' grams
-    let requiredCalories = 0;
-    
-    if (otherMacros.protein !== null) {
-      requiredCalories += otherMacros.protein * 4;
-    }
-    if (otherMacros.carbs !== null) {
-      requiredCalories += otherMacros.carbs * 4;
-    }
-    if (otherMacros.fat !== null) {
-      requiredCalories += otherMacros.fat * 9;
-    }
-    
-    // Add calories from the new macro
-    requiredCalories += newGrams * (macro === 'fat' ? 9 : 4);
-    
-    // Update calories and percentages
-    setCalories(requiredCalories);
-    
-    // Recalculate all percentages based on new total calories
-    const newPercentages = {
-      protein: Math.round((((macro === 'protein' ? newGrams : otherMacros.protein!) * 4) / requiredCalories) * 100),
-      carbs: Math.round((((macro === 'carbs' ? newGrams : otherMacros.carbs!) * 4) / requiredCalories) * 100),
-      fat: Math.round((((macro === 'fat' ? newGrams : otherMacros.fat!) * 9) / requiredCalories) * 100)
-    };
-    
+    // Update only the changed macro's percentage, keep others fixed
+    const newPercentages = { ...percentages, [macro]: newPercentage };
     setPercentages(newPercentages);
+    
+    // Calculate new total calories based on all current grams
+    const newProteinGrams = calculateGrams(newPercentages.protein, calories, 4);
+    const newCarbsGrams = calculateGrams(newPercentages.carbs, calories, 4);
+    const newFatGrams = calculateGrams(newPercentages.fat, calories, 9);
+    
+    const totalCalories = (newProteinGrams * 4) + (newCarbsGrams * 4) + (newFatGrams * 9);
+    setCalories(totalCalories);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
