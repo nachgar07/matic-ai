@@ -89,6 +89,69 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     setGrams(newGrams);
   };
 
+  const nutritionPresets = [
+    {
+      name: "🔥 Pérdida de Peso",
+      description: "Déficit calórico preservando músculo",
+      protein: 35,
+      carbs: 30,
+      fat: 35
+    },
+    {
+      name: "💪 Ganancia Muscular", 
+      description: "Volumen para crecimiento muscular",
+      protein: 30,
+      carbs: 40,
+      fat: 30
+    },
+    {
+      name: "⚖️ Mantenimiento",
+      description: "Balanceado para mantener peso",
+      protein: 25,
+      carbs: 45,
+      fat: 30
+    },
+    {
+      name: "🥑 Ketogénica",
+      description: "Muy baja en carbohidratos",
+      protein: 20,
+      carbs: 10,
+      fat: 70
+    },
+    {
+      name: "🏃‍♂️ Alto Rendimiento",
+      description: "Para atletas y deportistas",
+      protein: 25,
+      carbs: 50,
+      fat: 25
+    },
+    {
+      name: "🩺 Diabético",
+      description: "Control glucémico optimizado",
+      protein: 30,
+      carbs: 35,
+      fat: 35
+    }
+  ];
+
+  const applyPreset = (preset: typeof nutritionPresets[0]) => {
+    const newPercentages = {
+      protein: preset.protein,
+      carbs: preset.carbs,
+      fat: preset.fat
+    };
+    
+    // Calculate grams based on current calories and new percentages
+    const newGrams = {
+      protein: Math.round((calories * preset.protein / 100) / 4),
+      carbs: Math.round((calories * preset.carbs / 100) / 4),
+      fat: Math.round((calories * preset.fat / 100) / 9)
+    };
+    
+    setPercentages(newPercentages);
+    setGrams(newGrams);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -130,6 +193,26 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Presets nutricionales */}
+          <div className="space-y-3">
+            <Label>Presets Nutricionales</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {nutritionPresets.map((preset) => (
+                <Button
+                  key={preset.name}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => applyPreset(preset)}
+                  className="h-auto p-2 text-left flex flex-col items-start"
+                >
+                  <span className="text-xs font-medium">{preset.name}</span>
+                  <span className="text-xs text-muted-foreground">{preset.description}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+
           {/* Calorías totales */}
           <div className="space-y-2">
             <Label htmlFor="calories">Calorías diarias objetivo</Label>
