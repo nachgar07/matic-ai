@@ -77,36 +77,44 @@ export const TaskCard = ({ task }: TaskCardProps) => {
     return "text-green-500";
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'trabajo': return '💼';
-      case 'personal': return '👤';
-      case 'salud': return '🏃';
-      case 'compras': return '🛒';
-      default: return '📝';
-    }
+  const categories = [
+    { value: "bad_habit", label: "Dejar un mal hábito", icon: "🚫", color: "#ef4444" },
+    { value: "arte", label: "Arte", icon: "🎨", color: "#ec4899" },
+    { value: "tarea", label: "Tarea", icon: "⏰", color: "#ec4899" },
+    { value: "meditacion", label: "Meditación", icon: "🧘", color: "#a855f7" },
+    { value: "estudio", label: "Estudio", icon: "🎓", color: "#8b5cf6" },
+    { value: "deportes", label: "Deportes", icon: "🚴", color: "#3b82f6" },
+    { value: "entretenimiento", label: "Entretenimiento", icon: "⭐", color: "#06b6d4" },
+    { value: "social", label: "Social", icon: "💬", color: "#10b981" },
+    { value: "finanzas", label: "Finanzas", icon: "$", color: "#22c55e" },
+    { value: "salud", label: "Salud", icon: "➕", color: "#84cc16" },
+    { value: "trabajo", label: "Trabajo", icon: "💼", color: "#a3a3a3" },
+    { value: "nutricion", label: "Nutrición", icon: "🍽️", color: "#f59e0b" },
+    { value: "hogar", label: "Hogar", icon: "🏠", color: "#f97316" },
+    { value: "aire_libre", label: "Aire libre", icon: "⛰️", color: "#f97316" },
+    { value: "otros", label: "Otros", icon: "🔲", color: "#ef4444" },
+    // Categorías legacy
+    { value: "personal", label: "Personal", icon: "👤", color: "#ec4899" },
+    { value: "compras", label: "Compras", icon: "🛒", color: "#f59e0b" },
+  ];
+
+  const getCategoryData = (category: string) => {
+    const categoryData = categories.find(cat => cat.value === category);
+    return categoryData || { icon: "📝", color: "#6b7280", label: "Otros" };
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'trabajo': return '#6366f1';
-      case 'personal': return '#ec4899';
-      case 'salud': return '#10b981';
-      case 'compras': return '#f59e0b';
-      default: return '#6b7280';
-    }
-  };
+  const categoryData = getCategoryData(task.category);
 
   return (
     <div className="flex items-center gap-4 p-4 bg-card rounded-2xl transition-all hover:bg-card/80">
       {/* Icono de la izquierda */}
       <div 
-        className="w-12 h-12 rounded-2xl flex items-center justify-center"
+        className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl"
         style={{ 
-          backgroundColor: getCategoryColor(task.category),
+          backgroundColor: categoryData.color,
         }}
       >
-        <Clock className="w-6 h-6 text-white" />
+        {categoryData.icon}
       </div>
 
       {/* Contenido central */}
@@ -115,8 +123,8 @@ export const TaskCard = ({ task }: TaskCardProps) => {
           {task.title}
         </h3>
         
-        <span className="text-sm capitalize" style={{ color: getCategoryColor(task.category) }}>
-          {task.category === 'personal' ? 'Hábito' : 'Tarea'}
+        <span className="text-sm capitalize" style={{ color: categoryData.color }}>
+          {categoryData.label}
         </span>
       </div>
 
