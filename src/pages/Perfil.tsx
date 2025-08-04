@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
@@ -5,9 +6,20 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { User, Settings, Target, TrendingDown, Scale, Activity, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useNutritionGoals } from "@/hooks/useFatSecret";
+import { EditNutritionGoalsDialog } from "@/components/EditNutritionGoalsDialog/EditNutritionGoalsDialog";
 
 export const Perfil = () => {
   const { theme, setTheme } = useTheme();
+  const { data: nutritionGoals } = useNutritionGoals();
+  const [editGoalsOpen, setEditGoalsOpen] = useState(false);
+
+  const goals = {
+    calories: nutritionGoals?.daily_calories || 2000,
+    protein: nutritionGoals?.daily_protein || 150,
+    carbs: nutritionGoals?.daily_carbs || 250,
+    fat: nutritionGoals?.daily_fat || 67
+  };
   
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -56,20 +68,28 @@ export const Perfil = () => {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span>Calorías objetivo</span>
-              <span className="font-medium">2586 kcal</span>
+              <span className="font-medium">{goals.calories} kcal</span>
             </div>
             <div className="flex justify-between items-center">
               <span>Proteína</span>
-              <span className="font-medium">129 g</span>
+              <span className="font-medium">{goals.protein} g</span>
             </div>
             <div className="flex justify-between items-center">
               <span>Carbohidratos</span>
-              <span className="font-medium">323 g</span>
+              <span className="font-medium">{goals.carbs} g</span>
             </div>
             <div className="flex justify-between items-center">
               <span>Grasas</span>
-              <span className="font-medium">86 g</span>
+              <span className="font-medium">{goals.fat} g</span>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-3"
+              onClick={() => setEditGoalsOpen(true)}
+            >
+              Editar objetivos
+            </Button>
           </div>
         </Card>
 
@@ -132,6 +152,11 @@ export const Perfil = () => {
           </div>
         </Card>
       </div>
+
+      <EditNutritionGoalsDialog 
+        open={editGoalsOpen}
+        onOpenChange={setEditGoalsOpen}
+      />
 
       <BottomNavigation />
     </div>
