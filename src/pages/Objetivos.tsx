@@ -4,6 +4,7 @@ import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar/WeeklyCalendar";
 import { Button } from "@/components/ui/button";
 import { CreateOptionsSheet } from "@/components/CreateOptionsSheet/CreateOptionsSheet";
+import { TaskCard } from "@/components/TaskCard/TaskCard";
 import { useGoals, useTasks } from "@/hooks/useGoals";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Calendar, Filter, Search, Settings } from "lucide-react";
@@ -71,30 +72,7 @@ export const Objetivos = () => {
               Tareas para {format(selectedDate, "dd 'de' MMMM", { locale: es })}
             </h3>
             {tasks.map((task) => (
-              <div key={task.id} className="bg-card p-3 rounded-lg border">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      task.is_completed 
-                        ? 'bg-primary border-primary' 
-                        : 'border-muted-foreground'
-                    }`} />
-                    <span className={task.is_completed ? 'line-through text-muted-foreground' : ''}>
-                      {task.title}
-                    </span>
-                  </div>
-                  {task.due_time && (
-                    <span className="text-xs text-muted-foreground">
-                      {task.due_time}
-                    </span>
-                  )}
-                </div>
-                {task.description && (
-                  <p className="text-sm text-muted-foreground mt-2 ml-7">
-                    {task.description}
-                  </p>
-                )}
-              </div>
+              <TaskCard key={task.id} task={task} />
             ))}
           </div>
         ) : (
