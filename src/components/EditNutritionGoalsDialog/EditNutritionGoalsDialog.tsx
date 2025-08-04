@@ -53,25 +53,22 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     }
   }, [nutritionGoals]);
 
-  // Handle percentage changes while keeping other macros' grams fixed
+  // Handle percentage changes while keeping other macros' grams absolutely fixed
   const handlePercentageChange = (macro: 'protein' | 'carbs' | 'fat', newPercentage: number) => {
-    // Calculate new grams for the changed macro
+    // Calculate new grams for the changed macro only
     const newGrams = calculateGrams(newPercentage, calories, macro === 'fat' ? 9 : 4);
     
-    // Keep current grams of other macros fixed
-    const fixedProteinGrams = macro === 'protein' ? newGrams : proteinGrams;
-    const fixedCarbsGrams = macro === 'carbs' ? newGrams : carbsGrams;
-    const fixedFatGrams = macro === 'fat' ? newGrams : fatGrams;
+    // Keep the EXACT same grams for other macros (don't recalculate them)
+    const finalProteinGrams = macro === 'protein' ? newGrams : proteinGrams;
+    const finalCarbsGrams = macro === 'carbs' ? newGrams : carbsGrams;
+    const finalFatGrams = macro === 'fat' ? newGrams : fatGrams;
     
-    // Calculate new total calories based on fixed grams
-    const newTotalCalories = (fixedProteinGrams * 4) + (fixedCarbsGrams * 4) + (fixedFatGrams * 9);
+    // Calculate new total calories based on the actual grams
+    const newTotalCalories = (finalProteinGrams * 4) + (finalCarbsGrams * 4) + (finalFatGrams * 9);
     
-    // Calculate new percentages based on new total calories
-    const newPercentages = {
-      protein: Math.round((fixedProteinGrams * 4 / newTotalCalories) * 100),
-      carbs: Math.round((fixedCarbsGrams * 4 / newTotalCalories) * 100),
-      fat: Math.round((fixedFatGrams * 9 / newTotalCalories) * 100)
-    };
+    // Only update the percentage of the macro that changed, keep others as they were
+    const newPercentages = { ...percentages };
+    newPercentages[macro] = newPercentage;
     
     setCalories(newTotalCalories);
     setPercentages(newPercentages);
