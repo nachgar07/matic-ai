@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 const categories = [
   { value: "bad_habit", label: "Dejar un\nmal hábito", icon: "🚫", color: "#ef4444" },
@@ -41,6 +41,14 @@ export const CategorySelector = ({ isOpen, onClose, onSelectCategory }: Category
             <SheetTitle className="text-xl font-bold text-foreground">
               Selecciona una categoría
             </SheetTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
