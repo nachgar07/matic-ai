@@ -1,18 +1,95 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { User, Settings, Target, TrendingDown, Scale, Activity, Moon, Sun } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { User, Settings, Target, TrendingDown, Scale, Activity, Moon, Sun, Camera } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNutritionGoals } from "@/hooks/useFatSecret";
 import { EditNutritionGoalsDialog } from "@/components/EditNutritionGoalsDialog/EditNutritionGoalsDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const Perfil = () => {
   const { theme, setTheme } = useTheme();
   const { data: nutritionGoals } = useNutritionGoals();
   const [editGoalsOpen, setEditGoalsOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        setProfile(profile);
+      }
+    };
+    
+    getUser();
+  }, []);
+
+  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      
+      if (!event.target.files || event.target.files.length === 0) {
+        throw new Error('Debes seleccionar una imagen');
+      }
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({ 
+          id: user.id, 
+          avatar_url: data.publicUrl,
+          display_name: profile?.display_name || user.user_metadata?.display_name
+        });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setProfile({ ...profile, avatar_url: data.publicUrl });
+      toast({
+        title: "Éxito",
+        description: "Imagen de perfil actualizada correctamente",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const goals = {
     calories: nutritionGoals?.daily_calories || 2000,
@@ -28,11 +105,40 @@ export const Perfil = () => {
       <div className="p-4 space-y-6">
         {/* User Info */}
         <Card className="p-6 text-center">
-          <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-            <User className="text-primary-foreground" size={32} />
+          <div className="relative w-20 h-20 mx-auto mb-4">
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt="Avatar"
+                className="w-20 h-20 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
+                <User className="text-primary-foreground" size={32} />
+              </div>
+            )}
+            <label
+              htmlFor="avatar-upload"
+              className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1.5 cursor-pointer hover:bg-primary/90 transition-colors"
+            >
+              <Camera size={14} />
+            </label>
+            <Input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              onChange={uploadAvatar}
+              disabled={uploading}
+              className="hidden"
+            />
           </div>
-          <h2 className="text-xl font-semibold">Usuario</h2>
-          <p className="text-muted-foreground">usuario@email.com</p>
+          <h2 className="text-xl font-semibold">
+            {profile?.display_name || user?.user_metadata?.display_name || "Usuario"}
+          </h2>
+          <p className="text-muted-foreground">{user?.email || "Cargando..."}</p>
+          {uploading && (
+            <p className="text-sm text-muted-foreground mt-2">Subiendo imagen...</p>
+          )}
         </Card>
 
         {/* Current Goals */}
