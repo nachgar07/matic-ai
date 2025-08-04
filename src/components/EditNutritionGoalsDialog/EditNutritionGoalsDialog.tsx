@@ -79,14 +79,24 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
   const handleCaloriesChange = (newCalories: number) => {
     setCalories(newCalories);
     
-    // Recalculate percentages based on existing grams and new calories
-    const newPercentages = {
-      protein: Math.round((grams.protein * 4 / newCalories) * 100),
-      carbs: Math.round((grams.carbs * 4 / newCalories) * 100),
-      fat: Math.round((grams.fat * 9 / newCalories) * 100)
+    // Calculate raw percentages based on existing grams and new calories
+    const rawPercentages = {
+      protein: (grams.protein * 4 / newCalories) * 100,
+      carbs: (grams.carbs * 4 / newCalories) * 100,
+      fat: (grams.fat * 9 / newCalories) * 100
     };
     
-    setPercentages(newPercentages);
+    // Calculate total to normalize to 100%
+    const total = rawPercentages.protein + rawPercentages.carbs + rawPercentages.fat;
+    
+    // Normalize to exactly 100%
+    const normalizedPercentages = {
+      protein: Math.round((rawPercentages.protein / total) * 100),
+      carbs: Math.round((rawPercentages.carbs / total) * 100),
+      fat: Math.round((rawPercentages.fat / total) * 100)
+    };
+    
+    setPercentages(normalizedPercentages);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
