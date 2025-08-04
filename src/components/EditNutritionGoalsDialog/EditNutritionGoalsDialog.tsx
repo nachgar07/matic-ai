@@ -20,35 +20,26 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
   const queryClient = useQueryClient();
 
   const [calories, setCalories] = useState(2000);
-  const [percentages, setPercentages] = useState({
-    protein: 25,
-    carbs: 45,
-    fat: 30
+  const [grams, setGrams] = useState({
+    protein: 125,
+    carbs: 225,
+    fat: 67
   });
 
-  // Calculate grams from percentages and calories
-  const calculateGrams = (percentage: number, calories: number, factor: number) => {
-    return Math.round((calories * percentage / 100) / factor);
+  // Calculate percentages from grams and calories
+  const percentages = {
+    protein: Math.round((grams.protein * 4 / calories) * 100),
+    carbs: Math.round((grams.carbs * 4 / calories) * 100),
+    fat: Math.round((grams.fat * 9 / calories) * 100)
   };
-
-  const proteinGrams = calculateGrams(percentages.protein, calories, 4);
-  const carbsGrams = calculateGrams(percentages.carbs, calories, 4);
-  const fatGrams = calculateGrams(percentages.fat, calories, 9);
 
   useEffect(() => {
     if (nutritionGoals) {
       setCalories(nutritionGoals.daily_calories);
-      
-      // Calculate percentages from existing grams
-      const totalCalories = nutritionGoals.daily_calories;
-      const proteinPercent = Math.round((nutritionGoals.daily_protein * 4 / totalCalories) * 100);
-      const carbsPercent = Math.round((nutritionGoals.daily_carbs * 4 / totalCalories) * 100);
-      const fatPercent = Math.round((nutritionGoals.daily_fat * 9 / totalCalories) * 100);
-      
-      setPercentages({
-        protein: proteinPercent,
-        carbs: carbsPercent,
-        fat: fatPercent
+      setGrams({
+        protein: nutritionGoals.daily_protein,
+        carbs: nutritionGoals.daily_carbs,
+        fat: nutritionGoals.daily_fat
       });
     }
   }, [nutritionGoals]);
@@ -56,22 +47,18 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
   // Handle percentage changes while keeping other macros' grams absolutely fixed
   const handlePercentageChange = (macro: 'protein' | 'carbs' | 'fat', newPercentage: number) => {
     // Calculate new grams for the changed macro only
-    const newGrams = calculateGrams(newPercentage, calories, macro === 'fat' ? 9 : 4);
+    const caloriesPerGram = macro === 'fat' ? 9 : 4;
+    const newGramsForMacro = Math.round((calories * newPercentage / 100) / caloriesPerGram);
     
-    // Keep the EXACT same grams for other macros (don't recalculate them)
-    const finalProteinGrams = macro === 'protein' ? newGrams : proteinGrams;
-    const finalCarbsGrams = macro === 'carbs' ? newGrams : carbsGrams;
-    const finalFatGrams = macro === 'fat' ? newGrams : fatGrams;
+    // Update only the changed macro's grams, keep others exactly the same
+    const newGrams = { ...grams };
+    newGrams[macro] = newGramsForMacro;
     
     // Calculate new total calories based on the actual grams
-    const newTotalCalories = (finalProteinGrams * 4) + (finalCarbsGrams * 4) + (finalFatGrams * 9);
+    const newTotalCalories = (newGrams.protein * 4) + (newGrams.carbs * 4) + (newGrams.fat * 9);
     
-    // Only update the percentage of the macro that changed, keep others as they were
-    const newPercentages = { ...percentages };
-    newPercentages[macro] = newPercentage;
-    
+    setGrams(newGrams);
     setCalories(newTotalCalories);
-    setPercentages(newPercentages);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,9 +66,9 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     
     const formData = {
       daily_calories: calories,
-      daily_protein: proteinGrams,
-      daily_carbs: carbsGrams,
-      daily_fat: fatGrams
+      daily_protein: grams.protein,
+      daily_carbs: grams.carbs,
+      daily_fat: grams.fat
     };
     
     try {
@@ -136,7 +123,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
           {/* Slider de Proteína */}
           <div className="space-y-3">
             <Label className="flex items-center justify-between">
-              <span style={{ color: '#3b82f6' }}>Proteína ({percentages.protein}%) - {proteinGrams}g</span>
+              <span style={{ color: '#3b82f6' }}>Proteína ({percentages.protein}%) - {grams.protein}g</span>
             </Label>
             <Slider
               value={[percentages.protein]}
@@ -151,7 +138,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
           {/* Slider de Carbohidratos */}
           <div className="space-y-3">
             <Label className="flex items-center justify-between">
-              <span style={{ color: '#10b981' }}>Carbohidratos ({percentages.carbs}%) - {carbsGrams}g</span>
+              <span style={{ color: '#10b981' }}>Carbohidratos ({percentages.carbs}%) - {grams.carbs}g</span>
             </Label>
             <Slider
               value={[percentages.carbs]}
@@ -166,7 +153,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
           {/* Slider de Grasas */}
           <div className="space-y-3">
             <Label className="flex items-center justify-between">
-              <span style={{ color: '#f59e0b' }}>Grasas ({percentages.fat}%) - {fatGrams}g</span>
+              <span style={{ color: '#f59e0b' }}>Grasas ({percentages.fat}%) - {grams.fat}g</span>
             </Label>
             <Slider
               value={[percentages.fat]}
