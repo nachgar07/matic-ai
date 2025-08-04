@@ -75,6 +75,20 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     setCalories(newTotalCalories);
   };
 
+  // Handle calories change - recalculate percentages while keeping grams fixed
+  const handleCaloriesChange = (newCalories: number) => {
+    setCalories(newCalories);
+    
+    // Recalculate percentages based on existing grams and new calories
+    const newPercentages = {
+      protein: Math.round((grams.protein * 4 / newCalories) * 100),
+      carbs: Math.round((grams.carbs * 4 / newCalories) * 100),
+      fat: Math.round((grams.fat * 9 / newCalories) * 100)
+    };
+    
+    setPercentages(newPercentages);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -125,8 +139,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
               value={calories}
               onChange={(e) => {
                 const newCalories = parseInt(e.target.value) || 2000;
-                setCalories(newCalories);
-                // Los porcentajes se mantienen, solo se recalculan los gramos automáticamente
+                handleCaloriesChange(newCalories);
               }}
               min="1000"
               max="5000"
