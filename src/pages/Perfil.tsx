@@ -2,9 +2,13 @@ import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { User, Settings, Target, TrendingDown, Scale, Activity } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { User, Settings, Target, TrendingDown, Scale, Activity, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 
 export const Perfil = () => {
+  const { theme, setTheme } = useTheme();
+  
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header title="Perfil" />
@@ -88,6 +92,20 @@ export const Perfil = () => {
             <Button variant="ghost" className="w-full justify-start">
               Exportar datos
             </Button>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center">
+                {theme === 'dark' ? (
+                  <Moon className="mr-3" size={20} />
+                ) : (
+                  <Sun className="mr-3" size={20} />
+                )}
+                <span>Tema oscuro</span>
+              </div>
+              <Switch 
+                checked={theme === 'dark'} 
+                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+              />
+            </div>
           </div>
         </Card>
 
