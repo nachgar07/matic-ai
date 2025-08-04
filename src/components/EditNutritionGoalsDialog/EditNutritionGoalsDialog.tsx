@@ -187,7 +187,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Objetivos Nutricionales</DialogTitle>
         </DialogHeader>
@@ -196,7 +196,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
           {/* Presets nutricionales */}
           <div className="space-y-3">
             <Label>Presets Nutricionales</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {nutritionPresets.map((preset) => (
                 <Button
                   key={preset.name}
@@ -204,10 +204,10 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                   variant="outline"
                   size="sm"
                   onClick={() => applyPreset(preset)}
-                  className="h-auto p-2 text-left flex flex-col items-start"
+                  className="h-auto p-3 text-left flex flex-col items-start min-h-[60px] w-full"
                 >
-                  <span className="text-xs font-medium">{preset.name}</span>
-                  <span className="text-xs text-muted-foreground">{preset.description}</span>
+                  <span className="text-sm font-medium leading-tight">{preset.name}</span>
+                  <span className="text-xs text-muted-foreground mt-1 leading-tight">{preset.description}</span>
                 </Button>
               ))}
             </div>
