@@ -184,7 +184,10 @@ export const useSetNutritionGoals = () => {
 
       const { data, error } = await supabase
         .from('nutrition_goals')
-        .upsert({ ...goals, user_id: user.id })
+        .upsert({ ...goals, user_id: user.id }, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: false 
+        })
         .select()
         .single();
 
