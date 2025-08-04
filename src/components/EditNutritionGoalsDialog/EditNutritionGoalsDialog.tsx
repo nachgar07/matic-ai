@@ -134,7 +134,11 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
               id="calories"
               type="number"
               value={calories}
-              onChange={(e) => setCalories(parseInt(e.target.value) || 2000)}
+              onChange={(e) => {
+                const newCalories = parseInt(e.target.value) || 2000;
+                setCalories(newCalories);
+                // Los porcentajes se mantienen, solo se recalculan los gramos automáticamente
+              }}
               min="1000"
               max="5000"
               step="1"
