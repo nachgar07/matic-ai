@@ -53,35 +53,43 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     }
   }, [nutritionGoals]);
 
-  // Handle percentage changes while maintaining 100% total
-  const handlePercentageChange = (macro: 'protein' | 'carbs' | 'fat', newValue: number) => {
-    const otherMacros = Object.keys(percentages).filter(key => key !== macro) as ('protein' | 'carbs' | 'fat')[];
-    const remainingPercentage = 100 - newValue;
+  // Handle percentage changes while keeping other macros' grams fixed
+  const handlePercentageChange = (macro: 'protein' | 'carbs' | 'fat', newPercentage: number) => {
+    // Keep current grams of other macros fixed
+    const otherMacros = {
+      protein: macro !== 'protein' ? proteinGrams : null,
+      carbs: macro !== 'carbs' ? carbsGrams : null,
+      fat: macro !== 'fat' ? fatGrams : null
+    };
+
+    // Calculate new grams for the changed macro based on current calories
+    const newGrams = calculateGrams(newPercentage, calories, macro === 'fat' ? 9 : 4);
     
-    // Calculate current total of other macros
-    const currentOtherTotal = otherMacros.reduce((sum, key) => sum + percentages[key], 0);
+    // Calculate total calories needed to maintain other macros' grams
+    let requiredCalories = 0;
     
-    // Distribute remaining percentage proportionally
-    const newPercentages = { ...percentages, [macro]: newValue };
-    
-    if (currentOtherTotal > 0) {
-      otherMacros.forEach(key => {
-        newPercentages[key] = Math.round((percentages[key] / currentOtherTotal) * remainingPercentage);
-      });
-    } else {
-      // If other macros are 0, distribute equally
-      const equalShare = Math.round(remainingPercentage / otherMacros.length);
-      otherMacros.forEach(key => {
-        newPercentages[key] = equalShare;
-      });
+    if (otherMacros.protein !== null) {
+      requiredCalories += otherMacros.protein * 4;
+    }
+    if (otherMacros.carbs !== null) {
+      requiredCalories += otherMacros.carbs * 4;
+    }
+    if (otherMacros.fat !== null) {
+      requiredCalories += otherMacros.fat * 9;
     }
     
-    // Ensure total is exactly 100% by adjusting the last macro if needed
-    const total = newPercentages.protein + newPercentages.carbs + newPercentages.fat;
-    if (total !== 100) {
-      const lastMacro = otherMacros[otherMacros.length - 1];
-      newPercentages[lastMacro] += 100 - total;
-    }
+    // Add calories from the new macro
+    requiredCalories += newGrams * (macro === 'fat' ? 9 : 4);
+    
+    // Update calories and percentages
+    setCalories(requiredCalories);
+    
+    // Recalculate all percentages based on new total calories
+    const newPercentages = {
+      protein: Math.round((((macro === 'protein' ? newGrams : otherMacros.protein!) * 4) / requiredCalories) * 100),
+      carbs: Math.round((((macro === 'carbs' ? newGrams : otherMacros.carbs!) * 4) / requiredCalories) * 100),
+      fat: Math.round((((macro === 'fat' ? newGrams : otherMacros.fat!) * 9) / requiredCalories) * 100)
+    };
     
     setPercentages(newPercentages);
   };
