@@ -20,18 +20,16 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
   const queryClient = useQueryClient();
 
   const [calories, setCalories] = useState(2000);
+  const [percentages, setPercentages] = useState({
+    protein: 25,
+    carbs: 45,
+    fat: 30
+  });
   const [grams, setGrams] = useState({
     protein: 125,
     carbs: 225,
     fat: 67
   });
-
-  // Calculate percentages from grams and calories
-  const percentages = {
-    protein: Math.round((grams.protein * 4 / calories) * 100),
-    carbs: Math.round((grams.carbs * 4 / calories) * 100),
-    fat: Math.round((grams.fat * 9 / calories) * 100)
-  };
 
   useEffect(() => {
     if (nutritionGoals) {
@@ -41,23 +39,39 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
         carbs: nutritionGoals.daily_carbs,
         fat: nutritionGoals.daily_fat
       });
+      
+      // Calculate percentages from existing grams
+      const totalCalories = nutritionGoals.daily_calories;
+      const proteinPercent = Math.round((nutritionGoals.daily_protein * 4 / totalCalories) * 100);
+      const carbsPercent = Math.round((nutritionGoals.daily_carbs * 4 / totalCalories) * 100);
+      const fatPercent = Math.round((nutritionGoals.daily_fat * 9 / totalCalories) * 100);
+      
+      setPercentages({
+        protein: proteinPercent,
+        carbs: carbsPercent,
+        fat: fatPercent
+      });
     }
   }, [nutritionGoals]);
 
-  // Handle percentage changes while keeping other macros' grams absolutely fixed
+  // Handle percentage changes while keeping other macros' grams and percentages fixed
   const handlePercentageChange = (macro: 'protein' | 'carbs' | 'fat', newPercentage: number) => {
     // Calculate new grams for the changed macro only
     const caloriesPerGram = macro === 'fat' ? 9 : 4;
     const newGramsForMacro = Math.round((calories * newPercentage / 100) / caloriesPerGram);
     
-    // Update only the changed macro's grams, keep others exactly the same
+    // Update only the changed macro's grams and percentage, keep others exactly the same
     const newGrams = { ...grams };
     newGrams[macro] = newGramsForMacro;
+    
+    const newPercentages = { ...percentages };
+    newPercentages[macro] = newPercentage;
     
     // Calculate new total calories based on the actual grams
     const newTotalCalories = (newGrams.protein * 4) + (newGrams.carbs * 4) + (newGrams.fat * 9);
     
     setGrams(newGrams);
+    setPercentages(newPercentages);
     setCalories(newTotalCalories);
   };
 
