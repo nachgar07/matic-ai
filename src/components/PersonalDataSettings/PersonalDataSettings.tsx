@@ -39,9 +39,9 @@ const ACTIVITY_FACTORS = {
 };
 
 const PROGRESS_SPEED_ADJUSTMENTS = {
-  slow: { lose: -275, gain: 275 },    // 0.25 kg/week ≈ 275 cal deficit/surplus
-  moderate: { lose: -550, gain: 550 }, // 0.5 kg/week ≈ 550 cal deficit/surplus 
-  fast: { lose: -825, gain: 825 }      // 0.75 kg/week ≈ 825 cal deficit/surplus
+  slow: { lose: -300, gain: 300 },      // 0.25 kg/week ≈ 300 cal deficit/surplus
+  moderate: { lose: -500, gain: 500 },  // 0.5 kg/week ≈ 500 cal deficit/surplus 
+  fast: { lose: -750, gain: 750 }       // 0.75 kg/week ≈ 750 cal deficit/surplus
 };
 
 export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ userId, onDataUpdate, open, onOpenChange }) => {
@@ -77,7 +77,7 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
   };
 
   const calculateTDEE = () => {
-    const { age, gender, weight, height, activity_level, goal, progress_speed, target_weight } = data;
+    const { age, gender, weight, height, activity_level, goal, progress_speed } = data;
     
     if (!age || !gender || !weight || !height || !activity_level) {
       return;
@@ -95,27 +95,8 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
     
     let goalAdjustment = 0;
     if (goal && goal !== 'maintain' && progress_speed) {
-      // Ajuste base por velocidad del progreso
-      const baseAdjustment = PROGRESS_SPEED_ADJUSTMENTS[progress_speed][goal];
-      
-      // Si hay peso objetivo, calcular ajuste adicional basado en la diferencia de peso
-      if (target_weight) {
-        const weightDifference = target_weight - weight;
-        
-        if (goal === 'lose' && weightDifference < 0) {
-          // Necesita perder peso: mayor déficit para mayor diferencia
-          const additionalDeficit = Math.abs(weightDifference) * 50; // 50 cal por kg adicional
-          goalAdjustment = baseAdjustment - additionalDeficit;
-        } else if (goal === 'gain' && weightDifference > 0) {
-          // Necesita ganar peso: mayor superávit para mayor diferencia
-          const additionalSurplus = weightDifference * 50; // 50 cal por kg adicional
-          goalAdjustment = baseAdjustment + additionalSurplus;
-        } else {
-          goalAdjustment = baseAdjustment;
-        }
-      } else {
-        goalAdjustment = baseAdjustment;
-      }
+      // Usar solo el ajuste estándar por velocidad (ya incluye todo lo necesario)
+      goalAdjustment = PROGRESS_SPEED_ADJUSTMENTS[progress_speed][goal];
     }
     
     const targetCalories = Math.round(tdee + goalAdjustment);
@@ -396,8 +377,8 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
                           const weeklyRate = data.progress_speed === 'slow' ? 0.25 : 
                                            data.progress_speed === 'moderate' ? 0.5 : 0.75;
                           const weeks = Math.ceil(weightDiff / weeklyRate);
-                          const months = Math.floor(weeks / 4);
-                          const remainingWeeks = weeks % 4;
+                          const months = Math.floor(weeks / 4.33); // 4.33 semanas por mes
+                          const remainingWeeks = Math.ceil(weeks % 4.33);
                           
                           if (months > 0) {
                             return remainingWeeks > 0 ? `${months}m ${remainingWeeks}s` : `${months} meses`;
@@ -412,19 +393,15 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
               )}
 
               <div className="text-xs text-muted-foreground">
-                <p>Fórmula: Mifflin-St Jeor + Ajuste por objetivo</p>
+                <p>Fórmula: Mifflin-St Jeor + Ajuste saludable</p>
                 {data.goal && data.goal !== 'maintain' && data.progress_speed && (
                   <p>
-                    Ajuste base: {data.goal === 'lose' ? '-' : '+'}{Math.abs(PROGRESS_SPEED_ADJUSTMENTS[data.progress_speed][data.goal as 'lose' | 'gain'])} cal
-                    ({data.progress_speed === 'slow' ? '0.25' : data.progress_speed === 'moderate' ? '0.5' : '0.75-1'} kg/semana)
-                  </p>
-                )}
-                {data.target_weight && data.weight && data.goal && data.goal !== 'maintain' && (
-                  <p>
-                    Ajuste por diferencia de peso: +{Math.abs(data.target_weight - data.weight) * 50} cal extra
+                    Ajuste por velocidad: {data.goal === 'lose' ? '-' : '+'}{Math.abs(PROGRESS_SPEED_ADJUSTMENTS[data.progress_speed][data.goal as 'lose' | 'gain'])} cal/día
+                    ({data.progress_speed === 'slow' ? '0.25' : data.progress_speed === 'moderate' ? '0.5' : '0.75'} kg/semana)
                   </p>
                 )}
                 {data.goal === 'maintain' && <p>Sin ajuste calórico (mantenimiento)</p>}
+                <p className="text-xs opacity-75">Basado en 1kg = 7,700 calorías</p>
               </div>
             </div>
           </Card>
