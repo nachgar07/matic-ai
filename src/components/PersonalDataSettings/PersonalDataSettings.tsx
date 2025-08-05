@@ -77,7 +77,7 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
   };
 
   const calculateTDEE = () => {
-    const { age, gender, weight, height, activity_level, goal, progress_speed } = data;
+    const { age, gender, weight, height, activity_level, goal, progress_speed, target_weight } = data;
     
     if (!age || !gender || !weight || !height || !activity_level) {
       return;
@@ -95,7 +95,27 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
     
     let goalAdjustment = 0;
     if (goal && goal !== 'maintain' && progress_speed) {
-      goalAdjustment = PROGRESS_SPEED_ADJUSTMENTS[progress_speed][goal];
+      // Ajuste base por velocidad del progreso
+      const baseAdjustment = PROGRESS_SPEED_ADJUSTMENTS[progress_speed][goal];
+      
+      // Si hay peso objetivo, calcular ajuste adicional basado en la diferencia de peso
+      if (target_weight) {
+        const weightDifference = target_weight - weight;
+        
+        if (goal === 'lose' && weightDifference < 0) {
+          // Necesita perder peso: mayor déficit para mayor diferencia
+          const additionalDeficit = Math.abs(weightDifference) * 50; // 50 cal por kg adicional
+          goalAdjustment = baseAdjustment - additionalDeficit;
+        } else if (goal === 'gain' && weightDifference > 0) {
+          // Necesita ganar peso: mayor superávit para mayor diferencia
+          const additionalSurplus = weightDifference * 50; // 50 cal por kg adicional
+          goalAdjustment = baseAdjustment + additionalSurplus;
+        } else {
+          goalAdjustment = baseAdjustment;
+        }
+      } else {
+        goalAdjustment = baseAdjustment;
+      }
     }
     
     const targetCalories = Math.round(tdee + goalAdjustment);
@@ -349,11 +369,11 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">TDEE (Gasto Energético Total)</p>
-                  <p className="text-2xl font-bold text-primary">{data.calculated_tdee} cal</p>
+                  <p className="text-2xl font-bold text-foreground">{data.calculated_tdee} cal</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Objetivo Calórico Diario</p>
-                  <p className="text-2xl font-bold text-secondary">{data.calculated_calories} cal</p>
+                  <p className="text-2xl font-bold text-foreground">{data.calculated_calories} cal</p>
                 </div>
               </div>
 
@@ -364,13 +384,13 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Peso a {data.goal === 'lose' ? 'perder' : 'ganar'}</p>
-                      <p className="text-lg font-bold text-accent">
+                      <p className="text-lg font-bold text-foreground">
                         {Math.abs(data.target_weight - data.weight).toFixed(1)} kg
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Tiempo estimado</p>
-                      <p className="text-lg font-bold text-accent">
+                      <p className="text-lg font-bold text-foreground">
                         {(() => {
                           const weightDiff = Math.abs(data.target_weight - data.weight);
                           const weeklyRate = data.progress_speed === 'slow' ? 0.25 : 
@@ -392,11 +412,16 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
               )}
 
               <div className="text-xs text-muted-foreground">
-                <p>Fórmula: Mifflin-St Jeor</p>
+                <p>Fórmula: Mifflin-St Jeor + Ajuste por objetivo</p>
                 {data.goal && data.goal !== 'maintain' && data.progress_speed && (
                   <p>
-                    Ajuste por objetivo: {data.goal === 'lose' ? '-' : '+'}{Math.abs(PROGRESS_SPEED_ADJUSTMENTS[data.progress_speed][data.goal as 'lose' | 'gain'])} cal
+                    Ajuste base: {data.goal === 'lose' ? '-' : '+'}{Math.abs(PROGRESS_SPEED_ADJUSTMENTS[data.progress_speed][data.goal as 'lose' | 'gain'])} cal
                     ({data.progress_speed === 'slow' ? '0.25' : data.progress_speed === 'moderate' ? '0.5' : '0.75-1'} kg/semana)
+                  </p>
+                )}
+                {data.target_weight && data.weight && data.goal && data.goal !== 'maintain' && (
+                  <p>
+                    Ajuste por diferencia de peso: +{Math.abs(data.target_weight - data.weight) * 50} cal extra
                   </p>
                 )}
                 {data.goal === 'maintain' && <p>Sin ajuste calórico (mantenimiento)</p>}
