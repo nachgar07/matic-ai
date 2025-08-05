@@ -153,15 +153,27 @@ export const Perfil = () => {
             <div className="flex items-center">
               <TrendingDown className="mr-3 text-success" size={20} />
               <div>
-                <div className="font-medium">Perder peso</div>
-                <div className="text-sm text-muted-foreground">0.5 kg por semana</div>
+                <div className="font-medium">
+                  {profile?.goal === 'lose' ? 'Perder peso' : 
+                   profile?.goal === 'gain' ? 'Ganar peso' : 'Mantener peso'}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {profile?.progress_speed === 'slow' ? '0.25 kg por semana' :
+                   profile?.progress_speed === 'normal' ? '0.5 kg por semana' :
+                   profile?.progress_speed === 'fast' ? '1 kg por semana' :
+                   '0.5 kg por semana'}
+                </div>
               </div>
             </div>
             <div className="flex items-center">
               <Scale className="mr-3 text-muted-foreground" size={20} />
               <div>
-                <div className="font-medium">Peso objetivo: 75 kg</div>
-                <div className="text-sm text-muted-foreground">Altura: 178 cm</div>
+                <div className="font-medium">
+                  Peso objetivo: {profile?.target_weight || 'No definido'} kg
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Altura: {profile?.height || 'No definida'} cm
+                </div>
               </div>
             </div>
           </div>
