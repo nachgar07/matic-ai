@@ -380,17 +380,19 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
                           
                           console.log('Tiempo estimado:', { weightDiff, weeklyRate, weeks, progress_speed: data.progress_speed });
                           
-                          if (weeks >= 4.33) {
+                          if (weeks <= 3) {
+                            return `${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`;
+                          } else {
                             const months = Math.floor(weeks / 4.33);
                             const remainingWeeks = Math.round(weeks % 4.33);
                             
-                            if (remainingWeeks > 0) {
-                              return `${months}m ${remainingWeeks}s`;
-                            } else {
+                            if (months === 0) {
+                              return `${weeks} semanas`;
+                            } else if (remainingWeeks === 0) {
                               return `${months} ${months === 1 ? 'mes' : 'meses'}`;
+                            } else {
+                              return `${months}m ${remainingWeeks}s`;
                             }
-                          } else {
-                            return `${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`;
                           }
                         })()}
                       </p>
