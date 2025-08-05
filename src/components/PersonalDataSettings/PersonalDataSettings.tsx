@@ -164,6 +164,8 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
     return <div className="text-center py-8">Cargando datos personales...</div>;
   }
 
+  console.log('PersonalDataSettings render:', { open, loading, data });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

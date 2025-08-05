@@ -215,7 +215,10 @@ export const Perfil = () => {
             <Button 
               variant="ghost" 
               className="w-full justify-start"
-              onClick={() => setPersonalDataOpen(true)}
+              onClick={() => {
+                console.log('Opening personal data dialog');
+                setPersonalDataOpen(true);
+              }}
             >
               Ajustar datos personales
             </Button>
