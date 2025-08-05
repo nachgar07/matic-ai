@@ -9,6 +9,7 @@ import { User, Settings, Target, TrendingDown, Scale, Activity, Moon, Sun, Camer
 import { useTheme } from "next-themes";
 import { useNutritionGoals } from "@/hooks/useFatSecret";
 import { EditNutritionGoalsDialog } from "@/components/EditNutritionGoalsDialog/EditNutritionGoalsDialog";
+import { PersonalDataSettings } from "@/components/PersonalDataSettings/PersonalDataSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -198,6 +199,17 @@ export const Perfil = () => {
             </Button>
           </div>
         </Card>
+
+        {/* Personal Data Settings */}
+        {user && (
+          <PersonalDataSettings 
+            userId={user.id} 
+            onDataUpdate={(data) => {
+              // Optionally refresh goals when personal data is updated
+              console.log('Personal data updated:', data);
+            }}
+          />
+        )}
 
         {/* Settings */}
         <Card className="p-4">

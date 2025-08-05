@@ -494,25 +494,49 @@ export type Database = {
       }
       profiles: {
         Row: {
+          activity_level: string | null
+          age: number | null
           avatar_url: string | null
+          calculated_calories: number | null
+          calculated_tdee: number | null
           created_at: string
           display_name: string | null
+          gender: string | null
+          goal: string | null
+          height: number | null
           id: string
           updated_at: string
+          weight: number | null
         }
         Insert: {
+          activity_level?: string | null
+          age?: number | null
           avatar_url?: string | null
+          calculated_calories?: number | null
+          calculated_tdee?: number | null
           created_at?: string
           display_name?: string | null
+          gender?: string | null
+          goal?: string | null
+          height?: number | null
           id: string
           updated_at?: string
+          weight?: number | null
         }
         Update: {
+          activity_level?: string | null
+          age?: number | null
           avatar_url?: string | null
+          calculated_calories?: number | null
+          calculated_tdee?: number | null
           created_at?: string
           display_name?: string | null
+          gender?: string | null
+          goal?: string | null
+          height?: number | null
           id?: string
           updated_at?: string
+          weight?: number | null
         }
         Relationships: []
       }
