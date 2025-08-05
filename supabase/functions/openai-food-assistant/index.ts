@@ -12,9 +12,15 @@ interface FoodAnalysisResult {
     name: string;
     estimated_portion: string;
     estimated_calories: number;
+    estimated_protein: number;
+    estimated_carbs: number;
+    estimated_fat: number;
     confidence: number;
   }>;
   total_estimated_calories: number;
+  total_estimated_protein: number;
+  total_estimated_carbs: number;
+  total_estimated_fat: number;
   suggestions: string[];
 }
 
@@ -54,7 +60,7 @@ serve(async (req) => {
 async function analyzeFoodImage(imageBase64: string, apiKey: string) {
   console.log('Analyzing food image with OpenAI GPT-4 Vision...');
   
-  const prompt = `Analiza esta imagen de comida y proporciona la siguiente información en formato JSON exacto:
+  const prompt = `Analiza esta imagen de comida y proporciona información nutricional completa en formato JSON exacto:
 
 {
   "foods": [
@@ -62,17 +68,23 @@ async function analyzeFoodImage(imageBase64: string, apiKey: string) {
       "name": "nombre del alimento en español",
       "estimated_portion": "descripción de la porción (ej: 1 taza, 150g, 1 pieza mediana)",
       "estimated_calories": número_estimado_de_calorías,
+      "estimated_protein": gramos_de_proteína,
+      "estimated_carbs": gramos_de_carbohidratos,
+      "estimated_fat": gramos_de_grasa,
       "confidence": nivel_de_confianza_del_0_al_1
     }
   ],
   "total_estimated_calories": total_de_calorías_estimadas,
+  "total_estimated_protein": total_de_proteína_en_gramos,
+  "total_estimated_carbs": total_de_carbohidratos_en_gramos,
+  "total_estimated_fat": total_de_grasa_en_gramos,
   "suggestions": ["consejos nutricionales breves en español"]
 }
 
 Instrucciones importantes:
 - Identifica TODOS los alimentos visibles en la imagen
 - Estima las porciones de manera realista basándote en el tamaño visual
-- Proporciona estimaciones calóricas conservadoras pero precisas
+- Proporciona información nutricional completa (calorías, proteínas, carbohidratos, grasas) basada en tu conocimiento nutricional
 - Si hay múltiples elementos del mismo alimento, agrégalos como elementos separados
 - Incluye 2-3 consejos nutricionales relevantes
 - Responde SOLO con el JSON, sin texto adicional`;
@@ -142,26 +154,9 @@ Instrucciones importantes:
       
       const analysis: FoodAnalysisResult = JSON.parse(jsonMatch[0]);
       
-      // Search for detailed nutritional info using FatSecret
-      const enrichedFoods = await Promise.all(
-        analysis.foods.map(async (food) => {
-          try {
-            const searchResult = await searchFoodInFatSecret(food.name);
-            return {
-              ...food,
-              fatsecret_data: searchResult
-            };
-          } catch (error) {
-            console.error(`Error searching ${food.name} in FatSecret:`, error);
-            return food;
-          }
-        })
-      );
-
       return new Response(
         JSON.stringify({
           ...analysis,
-          foods: enrichedFoods,
           processing_time: new Date().toISOString(),
           provider: 'openai'
         }),
@@ -180,34 +175,6 @@ Instrucciones importantes:
   }
 }
 
-async function searchFoodInFatSecret(foodName: string) {
-  console.log(`Searching for "${foodName}" in FatSecret...`);
-  
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
-
-  try {
-    const { data, error } = await supabase.functions.invoke('fatsecret-search', {
-      body: { searchQuery: foodName }
-    });
-
-    if (error) {
-      console.error('FatSecret search error:', error);
-      return null;
-    }
-
-    if (data?.foods && data.foods.length > 0) {
-      return data.foods[0];
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error calling FatSecret search:', error);
-    return null;
-  }
-}
 
 async function handleConversation(text: string, conversationHistory: any[], apiKey: string, userContext: any) {
   console.log('Handling conversation with OpenAI GPT-4...');
@@ -243,20 +210,19 @@ IMPORTANTE:
 - EVITA nombres complejos como "quinoa cocida", "salmón a la plancha" - usa "quinoa" y "salmón"
 
 REGLAS PARA SUGERENCIAS DE COMIDAS:
-- SIEMPRE usa la función search_foods ANTES de sugerir cualquier comida
-- Esto te dará información nutricional exacta de la base de datos FatSecret
-- Calcula las porciones precisas basándote en los datos reales, no en estimaciones
-- Solo después de tener los datos exactos, sugiere la comida con porciones calculadas
+- Usa tu conocimiento nutricional para crear sugerencias de comidas balanceadas
+- Calcula las porciones basándote en tu conocimiento de valores nutricionales
+- Proporciona estimaciones nutricionales precisas basadas en tu base de conocimiento
+- Crea comidas equilibradas que se ajusten a los objetivos del usuario
 
 REGLAS PARA MÚLTIPLES COMIDAS:
-- Cuando el usuario pida crear MÚLTIPLES comidas (desayuno, almuerzo, cena), NO uses la función create_meal inmediatamente
-- PRIMERO busca los alimentos con search_foods para obtener información nutricional exacta
-- LUEGO presenta una sugerencia completa con las tres comidas calculadas exactamente para las calorías restantes
+- Cuando el usuario pida crear MÚLTIPLES comidas (desayuno, almuerzo, cena), presenta sugerencias completas calculadas para las calorías restantes
 - SOLO usa create_meal DESPUÉS de que el usuario confirme explícitamente que quiere registrar las comidas sugeridas
+- Usa tu conocimiento nutricional para calcular porciones exactas
 
 🎯 REGLAS PARA CÁLCULOS PRECISOS:
-- SIEMPRE busca primero los alimentos con search_foods para obtener valores nutricionales exactos
-- Usa los datos reales de la base de datos, no estimaciones
+- Usa tu amplio conocimiento nutricional para calcular valores precisos
+- Proporciona estimaciones basadas en tu base de conocimiento de alimentos
 - Calcula las porciones exactas para llegar a los valores restantes
 - Verifica que la suma coincida exactamente con lo que le falta al usuario`;
 
@@ -386,26 +352,8 @@ REGLA CRÍTICA PARA LÍMITES NUTRICIONALES:
           {
             type: 'function',
             function: {
-              name: 'search_foods',
-              description: 'Busca alimentos en la base de datos de FatSecret para obtener información nutricional exacta ANTES de hacer sugerencias de comidas. Úsalo SIEMPRE antes de sugerir comidas para asegurar que los alimentos existan y obtener valores nutricionales precisos.',
-              parameters: {
-                type: 'object',
-                properties: {
-                  search_queries: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Lista de nombres de alimentos a buscar (ej: ["salmon", "brown rice", "broccoli"])'
-                  }
-                },
-                required: ['search_queries']
-              }
-            }
-          },
-          {
-            type: 'function',
-            function: {
               name: 'create_meal',
-              description: 'Registra alimentos en el diario nutricional del usuario. USA esta función cuando: 1) El usuario diga que YA COMIÓ algo (ej: "desayuné 2 huevos", "comí una ensalada", "ya cené"), 2) El usuario pida registrar UNA comida específica, 3) El usuario confirme explícitamente que quiere registrar comidas sugeridas. NO uses esta función cuando el usuario solo pida SUGERENCIAS de múltiples comidas futuras.',
+              description: 'Registra alimentos en el diario nutricional del usuario usando tu conocimiento nutricional. USA esta función cuando: 1) El usuario diga que YA COMIÓ algo (ej: "desayuné 2 huevos", "comí una ensalada", "ya cené"), 2) El usuario pida registrar UNA comida específica, 3) El usuario confirme explícitamente que quiere registrar comidas sugeridas. NO uses esta función cuando el usuario solo pida SUGERENCIAS de múltiples comidas futuras.',
               parameters: {
                 type: 'object',
                 properties: {
@@ -471,91 +419,7 @@ REGLA CRÍTICA PARA LÍMITES NUTRICIONALES:
       console.log('OpenAI wants to call tool:', toolCall.function.name);
       console.log('Tool arguments:', toolCall.function.arguments);
       
-      if (toolCall.function.name === 'search_foods') {
-        console.log('OpenAI requested food search:', toolCall.function.arguments);
-        
-        try {
-          const args = JSON.parse(toolCall.function.arguments);
-          const searchResult = await executeSearchFoods(args);
-          
-          // Continue conversation with search results
-          const searchPrompt = `Resultados de búsqueda de alimentos:\n${JSON.stringify(searchResult, null, 2)}\n\nAhora que tienes la información nutricional exacta de estos alimentos, sugiere una comida usando estas calorías y valores nutricionales reales para completar exactamente lo que le falta al usuario.`;
-          
-          // Make another call to OpenAI with the search results
-          const followUpMessages = [
-            ...messages,
-            { role: 'assistant', content: `Buscando información nutricional de los alimentos...` },
-            { role: 'system', content: searchPrompt }
-          ];
-          
-          const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o',
-              messages: followUpMessages,
-              max_tokens: 800,
-              temperature: 0.7,
-              tools: [{
-                type: 'function',
-                function: {
-                  name: 'create_meal',
-                  description: 'Registra alimentos en el diario nutricional del usuario cuando confirme explícitamente.',
-                  parameters: {
-                    type: 'object',
-                    properties: {
-                      foods: {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: {
-                            name: { type: 'string' },
-                            servings: { type: 'number' }
-                          },
-                          required: ['name', 'servings']
-                        }
-                      },
-                      meal_type: {
-                        type: 'string',
-                        enum: ['breakfast', 'lunch', 'dinner', 'snack']
-                      }
-                    },
-                    required: ['foods', 'meal_type']
-                  }
-                }
-              }]
-            })
-          });
-          
-          const followUpResult = await followUpResponse.json();
-          const followUpMessage = followUpResult.choices[0].message;
-          
-          return new Response(
-            JSON.stringify({
-              response: followUpMessage.content,
-              search_results: searchResult,
-              timestamp: new Date().toISOString(),
-              provider: 'openai'
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-          
-        } catch (error) {
-          console.error('Error executing food search:', error);
-          return new Response(
-            JSON.stringify({
-              response: `Hubo un error al buscar los alimentos: ${error.message}. Puedo sugerir comidas basándome en alimentos comunes.`,
-              timestamp: new Date().toISOString(),
-              provider: 'openai'
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-      } else if (toolCall.function.name === 'create_meal') {
+      if (toolCall.function.name === 'create_meal') {
         console.log('OpenAI requested meal creation:', toolCall.function.arguments);
         
         try {
@@ -703,55 +567,6 @@ async function executeCreateMeal(args: any, userContext: any) {
       error: error.message,
       timestamp: new Date().toISOString(),
       provider: 'openai'
-    };
-  }
-}
-
-async function executeSearchFoods(args: any) {
-  console.log('Executing search_foods function with args:', args);
-  
-  try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    const searchPromises = args.search_queries.map(async (query: string) => {
-      try {
-        const { data, error } = await supabase.functions.invoke('fatsecret-search', {
-          body: { searchQuery: query, limit: 3 }
-        });
-
-        if (error) {
-          console.error(`Error searching for ${query}:`, error);
-          return { query, foods: [], error: error.message };
-        }
-
-        return { 
-          query, 
-          foods: data?.foods?.slice(0, 3) || [],
-          found: data?.foods?.length > 0
-        };
-      } catch (error) {
-        console.error(`Error searching for ${query}:`, error);
-        return { query, foods: [], error: error.message };
-      }
-    });
-
-    const searchResults = await Promise.all(searchPromises);
-    
-    return {
-      success: true,
-      results: searchResults,
-      timestamp: new Date().toISOString()
-    };
-
-  } catch (error) {
-    console.error('Error in executeSearchFoods:', error);
-    return {
-      success: false,
-      error: error.message,
-      timestamp: new Date().toISOString()
     };
   }
 }
