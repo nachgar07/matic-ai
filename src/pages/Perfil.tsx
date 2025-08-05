@@ -17,6 +17,7 @@ export const Perfil = () => {
   const { theme, setTheme } = useTheme();
   const { data: nutritionGoals } = useNutritionGoals();
   const [editGoalsOpen, setEditGoalsOpen] = useState(false);
+  const [personalDataOpen, setPersonalDataOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
@@ -200,16 +201,6 @@ export const Perfil = () => {
           </div>
         </Card>
 
-        {/* Personal Data Settings */}
-        {user && (
-          <PersonalDataSettings 
-            userId={user.id} 
-            onDataUpdate={(data) => {
-              // Optionally refresh goals when personal data is updated
-              console.log('Personal data updated:', data);
-            }}
-          />
-        )}
 
         {/* Settings */}
         <Card className="p-4">
@@ -221,7 +212,11 @@ export const Perfil = () => {
             <Button variant="ghost" className="w-full justify-start">
               Cambiar objetivo de peso
             </Button>
-            <Button variant="ghost" className="w-full justify-start">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start"
+              onClick={() => setPersonalDataOpen(true)}
+            >
               Ajustar datos personales
             </Button>
             <Button variant="ghost" className="w-full justify-start">
@@ -275,6 +270,18 @@ export const Perfil = () => {
         open={editGoalsOpen}
         onOpenChange={setEditGoalsOpen}
       />
+
+      {user && (
+        <PersonalDataSettings 
+          userId={user.id} 
+          open={personalDataOpen}
+          onOpenChange={setPersonalDataOpen}
+          onDataUpdate={(data) => {
+            // Refresh profile when personal data is updated
+            setProfile({ ...profile, ...data });
+          }}
+        />
+      )}
 
       <BottomNavigation />
     </div>

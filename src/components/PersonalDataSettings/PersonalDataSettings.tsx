@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Calculator, User, Target, Activity } from "lucide-react";
+import { Calculator, User, Target, Activity, TrendingDown, TrendingUp, Minus } from "lucide-react";
 
 interface PersonalData {
   age?: number;
@@ -18,11 +19,15 @@ interface PersonalData {
   activity_level?: 'sedentary' | 'lightly_active' | 'moderately_active' | 'active' | 'very_active';
   calculated_tdee?: number;
   calculated_calories?: number;
+  target_weight?: number;
+  progress_speed?: 'slow' | 'moderate' | 'fast';
 }
 
 interface PersonalDataSettingsProps {
   userId: string;
   onDataUpdate?: (data: PersonalData & { calculated_calories: number }) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const ACTIVITY_FACTORS = {
@@ -33,13 +38,13 @@ const ACTIVITY_FACTORS = {
   very_active: 1.9
 };
 
-const GOAL_ADJUSTMENTS = {
-  lose: -400,
-  maintain: 0,
-  gain: 400
+const PROGRESS_SPEED_ADJUSTMENTS = {
+  slow: { lose: -275, gain: 275 },    // 0.25 kg/week ≈ 275 cal deficit/surplus
+  moderate: { lose: -550, gain: 550 }, // 0.5 kg/week ≈ 550 cal deficit/surplus 
+  fast: { lose: -825, gain: 825 }      // 0.75 kg/week ≈ 825 cal deficit/surplus
 };
 
-export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ userId, onDataUpdate }) => {
+export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ userId, onDataUpdate, open, onOpenChange }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -51,14 +56,14 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
 
   useEffect(() => {
     calculateTDEE();
-  }, [data.age, data.gender, data.weight, data.height, data.activity_level, data.goal]);
+  }, [data.age, data.gender, data.weight, data.height, data.activity_level, data.goal, data.progress_speed]);
 
   const loadPersonalData = async () => {
     setLoading(true);
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('age, gender, weight, height, goal, activity_level, calculated_tdee, calculated_calories')
+        .select('age, gender, weight, height, goal, activity_level, calculated_tdee, calculated_calories, target_weight, progress_speed')
         .eq('id', userId)
         .single();
 
@@ -72,7 +77,7 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
   };
 
   const calculateTDEE = () => {
-    const { age, gender, weight, height, activity_level, goal } = data;
+    const { age, gender, weight, height, activity_level, goal, progress_speed } = data;
     
     if (!age || !gender || !weight || !height || !activity_level) {
       return;
@@ -87,7 +92,12 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
     }
 
     const tdee = bmr * ACTIVITY_FACTORS[activity_level];
-    const goalAdjustment = goal ? GOAL_ADJUSTMENTS[goal] : 0;
+    
+    let goalAdjustment = 0;
+    if (goal && goal !== 'maintain' && progress_speed) {
+      goalAdjustment = PROGRESS_SPEED_ADJUSTMENTS[progress_speed][goal];
+    }
+    
     const targetCalories = Math.round(tdee + goalAdjustment);
 
     setData(prev => ({
@@ -110,7 +120,9 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
           goal: data.goal,
           activity_level: data.activity_level,
           calculated_tdee: data.calculated_tdee,
-          calculated_calories: data.calculated_calories
+          calculated_calories: data.calculated_calories,
+          target_weight: data.target_weight,
+          progress_speed: data.progress_speed
         })
         .eq('id', userId);
 
@@ -153,17 +165,19 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <User className="h-5 w-5" />
-          Datos Personales
-        </CardTitle>
-        <CardDescription>
-          Configura tus datos para calcular automáticamente tus necesidades calóricas
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Datos Personales
+          </DialogTitle>
+          <DialogDescription>
+            Configura tus datos para calcular automáticamente tus necesidades calóricas
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-6 py-4">
         {/* Información básica */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -229,12 +243,76 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
               <SelectValue placeholder="Selecciona tu objetivo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="lose">Perder peso</SelectItem>
-              <SelectItem value="maintain">Mantener peso</SelectItem>
-              <SelectItem value="gain">Ganar peso</SelectItem>
+              <SelectItem value="lose">
+                <div className="flex items-center gap-2">
+                  <TrendingDown className="h-4 w-4" />
+                  Perder peso
+                </div>
+              </SelectItem>
+              <SelectItem value="maintain">
+                <div className="flex items-center gap-2">
+                  <Minus className="h-4 w-4" />
+                  Mantener peso
+                </div>
+              </SelectItem>
+              <SelectItem value="gain">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Ganar peso
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        {/* Peso objetivo - solo si el objetivo no es mantener */}
+        {data.goal && data.goal !== 'maintain' && (
+          <div className="space-y-2">
+            <Label htmlFor="target_weight">
+              Peso objetivo (kg)
+            </Label>
+            <Input
+              id="target_weight"
+              type="number"
+              step="0.1"
+              value={data.target_weight || ''}
+              onChange={(e) => updateData('target_weight', parseFloat(e.target.value) || undefined)}
+              placeholder={data.goal === 'lose' ? 'Ej: 65.0' : 'Ej: 80.0'}
+            />
+          </div>
+        )}
+
+        {/* Velocidad del progreso - solo si el objetivo no es mantener */}
+        {data.goal && data.goal !== 'maintain' && (
+          <div className="space-y-2">
+            <Label>Velocidad del progreso</Label>
+            <Select value={data.progress_speed || ''} onValueChange={(value) => updateData('progress_speed', value as 'slow' | 'moderate' | 'fast')}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona la velocidad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="slow">
+                  <div>
+                    <div className="font-medium">Lenta</div>
+                    <div className="text-sm text-muted-foreground">0.25 kg por semana</div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="moderate">
+                  <div>
+                    <div className="font-medium">Moderada</div>
+                    <div className="text-sm text-muted-foreground">0.5 kg por semana</div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="fast">
+                  <div>
+                    <div className="font-medium">Rápida</div>
+                    <div className="text-sm text-muted-foreground">0.75-1 kg por semana</div>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Nivel de actividad */}
         <div className="space-y-2">
@@ -259,13 +337,13 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
         {/* Calculadora TDEE */}
         {data.calculated_tdee && data.calculated_calories && (
           <Card className="bg-primary/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="p-4 border-b">
+              <h4 className="flex items-center gap-2 text-lg font-semibold">
                 <Calculator className="h-5 w-5" />
                 Cálculo Automático de Calorías
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+              </h4>
+            </div>
+            <div className="space-y-3 p-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">TDEE (Gasto Energético Total)</p>
@@ -278,18 +356,28 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
               </div>
               <div className="text-xs text-muted-foreground">
                 <p>Fórmula: Mifflin-St Jeor</p>
-                <p>
-                  Ajuste por objetivo: {data.goal === 'lose' ? '-400 cal' : data.goal === 'gain' ? '+400 cal' : '0 cal'}
-                </p>
+                {data.goal && data.goal !== 'maintain' && data.progress_speed && (
+                  <p>
+                    Ajuste por objetivo: {data.goal === 'lose' ? '-' : '+'}{Math.abs(PROGRESS_SPEED_ADJUSTMENTS[data.progress_speed][data.goal as 'lose' | 'gain'])} cal
+                    ({data.progress_speed === 'slow' ? '0.25' : data.progress_speed === 'moderate' ? '0.5' : '0.75-1'} kg/semana)
+                  </p>
+                )}
+                {data.goal === 'maintain' && <p>Sin ajuste calórico (mantenimiento)</p>}
               </div>
-            </CardContent>
+            </div>
           </Card>
         )}
 
-        <Button onClick={handleSave} disabled={saving} className="w-full">
-          {saving ? 'Guardando...' : 'Guardar Datos Personales'}
-        </Button>
-      </CardContent>
-    </Card>
+        <div className="flex gap-3 pt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+            Cancelar
+          </Button>
+          <Button onClick={handleSave} disabled={saving} className="flex-1">
+            {saving ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
