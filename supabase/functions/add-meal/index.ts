@@ -58,10 +58,18 @@ serve(async (req) => {
       .from('foods')
       .select('id')
       .eq('food_id', foodId)
-      .single();
+      .maybeSingle();
 
-    if (foodError || !foodData) {
+    if (foodError) {
       console.error('Error finding food:', foodError);
+      return new Response(
+        JSON.stringify({ error: 'Database error when finding food' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!foodData) {
+      console.error('Food not found with food_id:', foodId);
       return new Response(
         JSON.stringify({ error: 'Food not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
