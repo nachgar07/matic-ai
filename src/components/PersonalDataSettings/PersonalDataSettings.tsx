@@ -77,7 +77,7 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
   };
 
   const calculateTDEE = () => {
-    const { age, gender, weight, height, activity_level, goal, progress_speed } = data;
+    const { age, gender, weight, height, activity_level, goal, progress_speed, target_weight } = data;
     
     if (!age || !gender || !weight || !height || !activity_level) {
       return;
@@ -95,11 +95,22 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
     
     let goalAdjustment = 0;
     if (goal && goal !== 'maintain' && progress_speed) {
-      // Usar solo el ajuste estándar por velocidad (ya incluye todo lo necesario)
       goalAdjustment = PROGRESS_SPEED_ADJUSTMENTS[progress_speed][goal];
     }
     
-    const targetCalories = Math.round(tdee + goalAdjustment);
+    // Ajuste adicional basado en la diferencia de peso objetivo
+    let weightDifferenceAdjustment = 0;
+    if (goal && goal !== 'maintain' && target_weight && weight) {
+      const weightDiff = Math.abs(target_weight - weight);
+      // Agregar 50 calorías por kg de diferencia para que el proceso sea más eficiente
+      if (goal === 'gain' && target_weight > weight) {
+        weightDifferenceAdjustment = weightDiff * 50;
+      } else if (goal === 'lose' && target_weight < weight) {
+        weightDifferenceAdjustment = -(weightDiff * 50);
+      }
+    }
+    
+    const targetCalories = Math.round(tdee + goalAdjustment + weightDifferenceAdjustment);
 
     setData(prev => ({
       ...prev,
@@ -391,7 +402,7 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
                             } else if (remainingWeeks === 0) {
                               return `${months} ${months === 1 ? 'mes' : 'meses'}`;
                             } else {
-                              return `${months}m ${remainingWeeks}s`;
+                              return `${months} ${months === 1 ? 'mes' : 'meses'} ${remainingWeeks} ${remainingWeeks === 1 ? 'semana' : 'semanas'}`;
                             }
                           }
                         })()}
