@@ -90,7 +90,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
         });
 
         if (foodError) throw foodError;
-        foodIdToUse = insertedFood.id;
+        foodIdToUse = insertedFood.food_id;
       }
 
       await addMealMutation.mutateAsync({
