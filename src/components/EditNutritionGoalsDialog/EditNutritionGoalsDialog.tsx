@@ -75,6 +75,26 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     setCalories(newTotalCalories);
   };
 
+  // Handle grams changes - recalculate percentage and total calories
+  const handleGramsChange = (macro: 'protein' | 'carbs' | 'fat', newGrams: number) => {
+    const updatedGrams = { ...grams };
+    updatedGrams[macro] = newGrams;
+    
+    // Calculate new total calories based on the actual grams
+    const newTotalCalories = (updatedGrams.protein * 4) + (updatedGrams.carbs * 4) + (updatedGrams.fat * 9);
+    
+    // Calculate new percentage for the changed macro
+    const caloriesPerGram = macro === 'fat' ? 9 : 4;
+    const newPercentage = Math.round((newGrams * caloriesPerGram / newTotalCalories) * 100);
+    
+    const updatedPercentages = { ...percentages };
+    updatedPercentages[macro] = newPercentage;
+    
+    setGrams(updatedGrams);
+    setPercentages(updatedPercentages);
+    setCalories(newTotalCalories);
+  };
+
   // Handle calories change - recalculate grams while keeping percentages fixed
   const handleCaloriesChange = (newCalories: number) => {
     setCalories(newCalories);
@@ -233,46 +253,94 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
           {/* Slider de Proteína */}
           <div className="space-y-3">
             <Label className="flex items-center justify-between">
-              <span style={{ color: '#3b82f6' }}>Proteína ({percentages.protein}%) - {grams.protein}g</span>
+              <span style={{ color: '#3b82f6' }}>Proteína ({percentages.protein}%)</span>
             </Label>
-            <Slider
-              value={[percentages.protein]}
-              onValueChange={(value) => handlePercentageChange('protein', value[0])}
-              max={100}
-              min={10}
-              step={1}
-              className="w-full"
-            />
+            <div className="flex items-center gap-3">
+              <Slider
+                value={[percentages.protein]}
+                onValueChange={(value) => handlePercentageChange('protein', value[0])}
+                max={100}
+                min={10}
+                step={1}
+                className="flex-1"
+              />
+              <div className="flex items-center gap-1 min-w-[80px]">
+                <Input
+                  type="number"
+                  value={grams.protein}
+                  onChange={(e) => {
+                    const newGrams = parseInt(e.target.value) || 0;
+                    handleGramsChange('protein', newGrams);
+                  }}
+                  min="0"
+                  max="500"
+                  className="w-16 h-8 text-sm"
+                />
+                <span className="text-sm text-muted-foreground">g</span>
+              </div>
+            </div>
           </div>
 
           {/* Slider de Carbohidratos */}
           <div className="space-y-3">
             <Label className="flex items-center justify-between">
-              <span style={{ color: '#10b981' }}>Carbohidratos ({percentages.carbs}%) - {grams.carbs}g</span>
+              <span style={{ color: '#10b981' }}>Carbohidratos ({percentages.carbs}%)</span>
             </Label>
-            <Slider
-              value={[percentages.carbs]}
-              onValueChange={(value) => handlePercentageChange('carbs', value[0])}
-              max={100}
-              min={10}
-              step={1}
-              className="w-full"
-            />
+            <div className="flex items-center gap-3">
+              <Slider
+                value={[percentages.carbs]}
+                onValueChange={(value) => handlePercentageChange('carbs', value[0])}
+                max={100}
+                min={10}
+                step={1}
+                className="flex-1"
+              />
+              <div className="flex items-center gap-1 min-w-[80px]">
+                <Input
+                  type="number"
+                  value={grams.carbs}
+                  onChange={(e) => {
+                    const newGrams = parseInt(e.target.value) || 0;
+                    handleGramsChange('carbs', newGrams);
+                  }}
+                  min="0"
+                  max="500"
+                  className="w-16 h-8 text-sm"
+                />
+                <span className="text-sm text-muted-foreground">g</span>
+              </div>
+            </div>
           </div>
 
           {/* Slider de Grasas */}
           <div className="space-y-3">
             <Label className="flex items-center justify-between">
-              <span style={{ color: '#f59e0b' }}>Grasas ({percentages.fat}%) - {grams.fat}g</span>
+              <span style={{ color: '#f59e0b' }}>Grasas ({percentages.fat}%)</span>
             </Label>
-            <Slider
-              value={[percentages.fat]}
-              onValueChange={(value) => handlePercentageChange('fat', value[0])}
-              max={100}
-              min={10}
-              step={1}
-              className="w-full"
-            />
+            <div className="flex items-center gap-3">
+              <Slider
+                value={[percentages.fat]}
+                onValueChange={(value) => handlePercentageChange('fat', value[0])}
+                max={100}
+                min={10}
+                step={1}
+                className="flex-1"
+              />
+              <div className="flex items-center gap-1 min-w-[80px]">
+                <Input
+                  type="number"
+                  value={grams.fat}
+                  onChange={(e) => {
+                    const newGrams = parseInt(e.target.value) || 0;
+                    handleGramsChange('fat', newGrams);
+                  }}
+                  min="0"
+                  max="200"
+                  className="w-16 h-8 text-sm"
+                />
+                <span className="text-sm text-muted-foreground">g</span>
+              </div>
+            </div>
           </div>
 
           {/* Verificación de porcentajes */}
