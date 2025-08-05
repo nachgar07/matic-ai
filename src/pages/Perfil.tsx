@@ -174,6 +174,11 @@ export const Perfil = () => {
                 <div className="text-sm text-muted-foreground">
                   Altura: {profile?.height || 'No definida'} cm
                 </div>
+                {profile?.nationality && (
+                  <div className="text-sm text-muted-foreground">
+                    País: {profile.nationality} ({profile.currency || 'USD'})
+                  </div>
+                )}
               </div>
             </div>
           </div>

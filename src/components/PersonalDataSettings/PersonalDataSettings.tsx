@@ -21,6 +21,8 @@ interface PersonalData {
   calculated_calories?: number;
   target_weight?: number;
   progress_speed?: 'slow' | 'moderate' | 'fast';
+  nationality?: string;
+  currency?: string;
 }
 
 interface PersonalDataSettingsProps {
@@ -44,6 +46,27 @@ const PROGRESS_SPEED_ADJUSTMENTS = {
   fast: { lose: -750, gain: 750 }       // 0.75 kg/week ≈ 750 cal deficit/surplus
 };
 
+const COUNTRIES_CURRENCIES = {
+  'Argentina': 'ARS',
+  'México': 'MXN', 
+  'España': 'EUR',
+  'Colombia': 'COP',
+  'Chile': 'CLP',
+  'Perú': 'PEN',
+  'Venezuela': 'VES',
+  'Ecuador': 'USD',
+  'Bolivia': 'BOB',
+  'Paraguay': 'PYG',
+  'Uruguay': 'UYU',
+  'Estados Unidos': 'USD',
+  'Canadá': 'CAD',
+  'Brasil': 'BRL',
+  'Reino Unido': 'GBP',
+  'Francia': 'EUR',
+  'Italia': 'EUR',
+  'Alemania': 'EUR'
+};
+
 export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ userId, onDataUpdate, open, onOpenChange }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -63,7 +86,7 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('age, gender, weight, height, goal, activity_level, calculated_tdee, calculated_calories, target_weight, progress_speed')
+        .select('age, gender, weight, height, goal, activity_level, calculated_tdee, calculated_calories, target_weight, progress_speed, nationality, currency')
         .eq('id', userId)
         .single();
 
@@ -134,7 +157,9 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
           calculated_tdee: data.calculated_tdee,
           calculated_calories: data.calculated_calories,
           target_weight: data.target_weight,
-          progress_speed: data.progress_speed
+          progress_speed: data.progress_speed,
+          nationality: data.nationality,
+          currency: data.currency
         })
         .eq('id', userId);
 
@@ -169,7 +194,14 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
   };
 
   const updateData = (key: keyof PersonalData, value: any) => {
-    setData(prev => ({ ...prev, [key]: value }));
+    const updates: Partial<PersonalData> = { [key]: value };
+    
+    // Auto-update currency when nationality changes
+    if (key === 'nationality' && COUNTRIES_CURRENCIES[value as keyof typeof COUNTRIES_CURRENCIES]) {
+      updates.currency = COUNTRIES_CURRENCIES[value as keyof typeof COUNTRIES_CURRENCIES];
+    }
+    
+    setData(prev => ({ ...prev, ...updates }));
   };
 
   if (loading) {
@@ -226,6 +258,21 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
             onChange={(e) => updateData('height', parseInt(e.target.value) || undefined)}
             placeholder="Ej: 175"
           />
+        </div>
+
+        {/* Nacionalidad */}
+        <div className="space-y-2">
+          <Label htmlFor="nationality">País/Nacionalidad</Label>
+          <Select value={data.nationality || ''} onValueChange={(value) => updateData('nationality', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecciona tu país" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(COUNTRIES_CURRENCIES).map((country) => (
+                <SelectItem key={country} value={country}>{country}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Sexo */}

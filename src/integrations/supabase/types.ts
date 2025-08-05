@@ -500,11 +500,13 @@ export type Database = {
           calculated_calories: number | null
           calculated_tdee: number | null
           created_at: string
+          currency: string | null
           display_name: string | null
           gender: string | null
           goal: string | null
           height: number | null
           id: string
+          nationality: string | null
           progress_speed: string | null
           target_weight: number | null
           updated_at: string
@@ -517,11 +519,13 @@ export type Database = {
           calculated_calories?: number | null
           calculated_tdee?: number | null
           created_at?: string
+          currency?: string | null
           display_name?: string | null
           gender?: string | null
           goal?: string | null
           height?: number | null
           id: string
+          nationality?: string | null
           progress_speed?: string | null
           target_weight?: number | null
           updated_at?: string
@@ -534,11 +538,13 @@ export type Database = {
           calculated_calories?: number | null
           calculated_tdee?: number | null
           created_at?: string
+          currency?: string | null
           display_name?: string | null
           gender?: string | null
           goal?: string | null
           height?: number | null
           id?: string
+          nationality?: string | null
           progress_speed?: string | null
           target_weight?: number | null
           updated_at?: string
