@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useNutritionGoals, useSetNutritionGoals } from "@/hooks/useFatSecret";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EditNutritionGoalsDialogProps {
   open: boolean;
@@ -18,6 +21,10 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
   const setNutritionGoals = useSetNutritionGoals();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  
+  const [showAlert, setShowAlert] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
 
   const [calories, setCalories] = useState(2000);
   const [percentages, setPercentages] = useState({
@@ -53,6 +60,40 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
       });
     }
   }, [nutritionGoals]);
+
+  // Fetch user profile for calculated calories
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        setProfile(data);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleRecommendedCalories = () => {
+    if (profile?.calculated_calories) {
+      handleCaloriesChange(profile.calculated_calories);
+      toast({
+        title: "Calorías aplicadas",
+        description: `Se aplicaron ${profile.calculated_calories} calorías recomendadas.`
+      });
+    } else {
+      setShowAlert(true);
+    }
+  };
+
+  const handleNavigateToSettings = () => {
+    setShowAlert(false);
+    onOpenChange(false);
+    navigate('/perfil');
+  };
 
   // Handle percentage changes while keeping other macros' grams and percentages fixed
   const handlePercentageChange = (macro: 'protein' | 'carbs' | 'fat', newPercentage: number) => {
@@ -236,18 +277,30 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
           {/* Calorías totales */}
           <div className="space-y-2">
             <Label htmlFor="calories">Calorías diarias objetivo</Label>
-            <Input
-              id="calories"
-              type="number"
-              value={calories}
-              onChange={(e) => {
-                const newCalories = parseInt(e.target.value) || 2000;
-                handleCaloriesChange(newCalories);
-              }}
-              min="1000"
-              max="5000"
-              step="1"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="calories"
+                type="number"
+                value={calories}
+                onChange={(e) => {
+                  const newCalories = parseInt(e.target.value) || 2000;
+                  handleCaloriesChange(newCalories);
+                }}
+                min="1000"
+                max="5000"
+                step="1"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRecommendedCalories}
+                className="px-3"
+              >
+                Recomendado
+              </Button>
+            </div>
           </div>
 
           {/* Slider de Proteína */}
@@ -376,6 +429,24 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
           </div>
         </form>
       </DialogContent>
+
+      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Calcular Calorías Recomendadas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Para obtener las calorías recomendadas, primero debes completar la calculadora de datos personales.
+              Esto incluye tu edad, peso, altura, nivel de actividad y objetivos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleNavigateToSettings}>
+              Ir a Ajustes Personales
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };
