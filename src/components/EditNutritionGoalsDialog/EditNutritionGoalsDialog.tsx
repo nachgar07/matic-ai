@@ -394,7 +394,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                     handleGramsChange('fat', newGrams);
                   }}
                   min="0"
-                  max="200"
+                  max="500"
                   className="w-16 h-8 text-sm"
                 />
                 <span className="text-sm text-muted-foreground">g</span>
