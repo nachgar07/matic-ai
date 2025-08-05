@@ -279,6 +279,9 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                 <span className="text-sm text-muted-foreground">g</span>
               </div>
             </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              1g = 4 calorías
+            </div>
           </div>
 
           {/* Slider de Carbohidratos */}
@@ -310,6 +313,9 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                 <span className="text-sm text-muted-foreground">g</span>
               </div>
             </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              1g = 4 calorías
+            </div>
           </div>
 
           {/* Slider de Grasas */}
@@ -340,6 +346,9 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                 />
                 <span className="text-sm text-muted-foreground">g</span>
               </div>
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              1g = 9 calorías
             </div>
           </div>
 
