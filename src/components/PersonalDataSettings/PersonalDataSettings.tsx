@@ -117,23 +117,21 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
     const tdee = bmr * ACTIVITY_FACTORS[activity_level];
     
     let goalAdjustment = 0;
-    if (goal && goal !== 'maintain' && progress_speed) {
+    // Solo aplicar ajuste de calorías si hay peso objetivo definido
+    if (goal && goal !== 'maintain' && progress_speed && target_weight && weight) {
       goalAdjustment = PROGRESS_SPEED_ADJUSTMENTS[progress_speed][goal];
-    }
-    
-    // Ajuste adicional basado en la diferencia de peso objetivo
-    let weightDifferenceAdjustment = 0;
-    if (goal && goal !== 'maintain' && target_weight && weight) {
+      
+      // Ajuste adicional basado en la diferencia de peso objetivo
       const weightDiff = Math.abs(target_weight - weight);
       // Agregar 50 calorías por kg de diferencia para que el proceso sea más eficiente
       if (goal === 'gain' && target_weight > weight) {
-        weightDifferenceAdjustment = weightDiff * 50;
+        goalAdjustment += weightDiff * 50;
       } else if (goal === 'lose' && target_weight < weight) {
-        weightDifferenceAdjustment = -(weightDiff * 50);
+        goalAdjustment -= weightDiff * 50;
       }
     }
     
-    const targetCalories = Math.round(tdee + goalAdjustment + weightDifferenceAdjustment);
+    const targetCalories = Math.round(tdee + goalAdjustment);
 
     setData(prev => ({
       ...prev,
