@@ -56,7 +56,7 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
 
   useEffect(() => {
     calculateTDEE();
-  }, [data.age, data.gender, data.weight, data.height, data.activity_level, data.goal, data.progress_speed]);
+  }, [data.age, data.gender, data.weight, data.height, data.activity_level, data.goal, data.progress_speed, data.target_weight]);
 
   const loadPersonalData = async () => {
     setLoading(true);
@@ -356,6 +356,41 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
                   <p className="text-2xl font-bold text-secondary">{data.calculated_calories} cal</p>
                 </div>
               </div>
+
+              {/* Información de progreso si hay peso objetivo */}
+              {data.target_weight && data.weight && data.goal && data.goal !== 'maintain' && data.progress_speed && (
+                <div className="mt-4 p-3 bg-background rounded-lg border">
+                  <h5 className="font-medium mb-2">Proyección de Progreso</h5>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Peso a {data.goal === 'lose' ? 'perder' : 'ganar'}</p>
+                      <p className="text-lg font-bold text-accent">
+                        {Math.abs(data.target_weight - data.weight).toFixed(1)} kg
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Tiempo estimado</p>
+                      <p className="text-lg font-bold text-accent">
+                        {(() => {
+                          const weightDiff = Math.abs(data.target_weight - data.weight);
+                          const weeklyRate = data.progress_speed === 'slow' ? 0.25 : 
+                                           data.progress_speed === 'moderate' ? 0.5 : 0.75;
+                          const weeks = Math.ceil(weightDiff / weeklyRate);
+                          const months = Math.floor(weeks / 4);
+                          const remainingWeeks = weeks % 4;
+                          
+                          if (months > 0) {
+                            return remainingWeeks > 0 ? `${months}m ${remainingWeeks}s` : `${months} meses`;
+                          } else {
+                            return `${weeks} semanas`;
+                          }
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="text-xs text-muted-foreground">
                 <p>Fórmula: Mifflin-St Jeor</p>
                 {data.goal && data.goal !== 'maintain' && data.progress_speed && (
