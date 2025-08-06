@@ -327,22 +327,20 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
           </Select>
         </div>
 
-        {/* Peso objetivo - solo si el objetivo no es mantener */}
-        {data.goal && data.goal !== 'maintain' && (
-          <div className="space-y-2">
-            <Label htmlFor="target_weight">
-              Peso objetivo (kg)
-            </Label>
-            <Input
-              id="target_weight"
-              type="number"
-              step="0.1"
-              value={data.target_weight || ''}
-              onChange={(e) => updateData('target_weight', parseFloat(e.target.value) || undefined)}
-              placeholder={data.goal === 'lose' ? 'Ej: 65.0' : 'Ej: 80.0'}
-            />
-          </div>
-        )}
+        {/* Peso objetivo */}
+        <div className="space-y-2">
+          <Label htmlFor="target_weight">
+            Peso objetivo (kg)
+          </Label>
+          <Input
+            id="target_weight"
+            type="number"
+            step="0.1"
+            value={data.target_weight || ''}
+            onChange={(e) => updateData('target_weight', parseFloat(e.target.value) || undefined)}
+            placeholder={data.goal === 'lose' ? 'Ej: 65.0' : data.goal === 'gain' ? 'Ej: 80.0' : 'Ej: 70.0'}
+          />
+        </div>
 
         {/* Velocidad del progreso - solo si el objetivo no es mantener */}
         {data.goal && data.goal !== 'maintain' && (
