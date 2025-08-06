@@ -263,9 +263,6 @@ export const Perfil = () => {
             Configuración
           </h3>
           <div className="space-y-3">
-            <Button variant="ghost" className="w-full justify-start">
-              Cambiar objetivo de peso
-            </Button>
             <Button 
               variant="ghost" 
               className="w-full justify-start"
@@ -275,9 +272,6 @@ export const Perfil = () => {
               }}
             >
               Ajustar datos personales
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              Preferencias de notificaciones
             </Button>
             <Button variant="ghost" className="w-full justify-start">
               Exportar datos
@@ -295,29 +289,6 @@ export const Perfil = () => {
                 checked={theme === 'dark'} 
                 onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
               />
-            </div>
-          </div>
-        </Card>
-
-        {/* Progress Summary */}
-        <Card className="p-4">
-          <h3 className="font-semibold mb-4">Resumen de Progreso</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">0</div>
-              <div className="text-sm text-muted-foreground">Días registrados</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-success">0</div>
-              <div className="text-sm text-muted-foreground">Objetivos cumplidos</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-warning">0</div>
-              <div className="text-sm text-muted-foreground">Archivos creados</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-accent">0</div>
-              <div className="text-sm text-muted-foreground">Racha actual</div>
             </div>
           </div>
         </Card>
