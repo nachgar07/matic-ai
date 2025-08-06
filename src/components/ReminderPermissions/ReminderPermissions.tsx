@@ -3,6 +3,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bell, Plus, Clock, Check, X } from "lucide-react";
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { toast } from "sonner";
 
 interface ReminderPermissionsProps {
   isOpen: boolean;
@@ -16,15 +18,60 @@ export const ReminderPermissions = ({ isOpen, onClose, onReminderCreated }: Remi
   const [reminderType, setReminderType] = useState("notification");
   const [reminderSchedule, setReminderSchedule] = useState("always");
 
-  const handleCreateReminder = () => {
-    const reminderData = {
-      time: reminderTime,
-      type: reminderType,
-      schedule: reminderSchedule
-    };
-    onReminderCreated(reminderData);
-    setShowNewReminder(false);
-    onClose();
+  const handleCreateReminder = async () => {
+    try {
+      // Request permissions for notifications
+      const permission = await LocalNotifications.requestPermissions();
+      
+      if (permission.display === 'granted') {
+        const reminderData = {
+          time: reminderTime,
+          type: reminderType,
+          schedule: reminderSchedule
+        };
+
+        // Schedule the notification if type is not 'none'
+        if (reminderType !== 'none') {
+          await scheduleNotification(reminderData);
+        }
+
+        onReminderCreated(reminderData);
+        setShowNewReminder(false);
+        onClose();
+        toast.success("Recordatorio creado exitosamente");
+      } else {
+        toast.error("Se necesitan permisos de notificación para crear recordatorios");
+      }
+    } catch (error) {
+      console.error('Error creating reminder:', error);
+      toast.error("Error al crear el recordatorio");
+    }
+  };
+
+  const scheduleNotification = async (reminderData: any) => {
+    const [hours, minutes] = reminderData.time.split(':').map(Number);
+    const now = new Date();
+    const scheduledDate = new Date();
+    scheduledDate.setHours(hours, minutes, 0, 0);
+    
+    // If the time has passed today, schedule for tomorrow
+    if (scheduledDate <= now) {
+      scheduledDate.setDate(scheduledDate.getDate() + 1);
+    }
+
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          title: "Recordatorio de Tarea",
+          body: "Es hora de completar tu tarea",
+          id: Date.now(),
+          schedule: { at: scheduledDate },
+          sound: reminderData.type === 'alarm' ? 'default' : undefined,
+          actionTypeId: "",
+          extra: null
+        }
+      ]
+    });
   };
 
   if (showNewReminder) {
@@ -57,7 +104,12 @@ export const ReminderPermissions = ({ isOpen, onClose, onReminderCreated }: Remi
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <Clock className="h-8 w-8 text-destructive" />
-                    <span className="font-medium text-lg">12:00</span>
+                    <Input
+                      type="time"
+                      value={reminderTime}
+                      onChange={(e) => setReminderTime(e.target.value)}
+                      className="font-medium text-lg border-none bg-transparent p-0 h-auto focus-visible:ring-0"
+                    />
                   </div>
                 </div>
                 <div className="text-center text-destructive font-medium">
