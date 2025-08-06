@@ -105,40 +105,6 @@ export const Perfil = () => {
       <Header title="Perfil" />
       
       <div className="p-4 space-y-6">
-        {/* Country and Currency Info */}
-        {profile?.nationality && (
-          <Card className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="text-3xl">
-                {profile.nationality === 'Argentina' ? '🇦🇷' :
-                 profile.nationality === 'México' ? '🇲🇽' :
-                 profile.nationality === 'España' ? '🇪🇸' :
-                 profile.nationality === 'Colombia' ? '🇨🇴' :
-                 profile.nationality === 'Chile' ? '🇨🇱' :
-                 profile.nationality === 'Perú' ? '🇵🇪' :
-                 profile.nationality === 'Venezuela' ? '🇻🇪' :
-                 profile.nationality === 'Ecuador' ? '🇪🇨' :
-                 profile.nationality === 'Bolivia' ? '🇧🇴' :
-                 profile.nationality === 'Paraguay' ? '🇵🇾' :
-                 profile.nationality === 'Uruguay' ? '🇺🇾' :
-                 profile.nationality === 'Estados Unidos' ? '🇺🇸' :
-                 profile.nationality === 'Canadá' ? '🇨🇦' :
-                 profile.nationality === 'Brasil' ? '🇧🇷' :
-                 profile.nationality === 'Reino Unido' ? '🇬🇧' :
-                 profile.nationality === 'Francia' ? '🇫🇷' :
-                 profile.nationality === 'Italia' ? '🇮🇹' :
-                 profile.nationality === 'Alemania' ? '🇩🇪' : '🌍'}
-              </div>
-              <div>
-                <div className="font-semibold">{profile.nationality}</div>
-                <div className="text-sm text-muted-foreground">
-                  Moneda: {profile.currency || 'USD'}
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
-
         {/* User Info */}
         <Card className="p-6 text-center">
           <div className="relative w-20 h-20 mx-auto mb-4">
@@ -174,6 +140,38 @@ export const Perfil = () => {
           <p className="text-muted-foreground">{user?.email || "Cargando..."}</p>
           {uploading && (
             <p className="text-sm text-muted-foreground mt-2">Subiendo imagen...</p>
+          )}
+          
+          {/* Country and Currency Info */}
+          {profile?.nationality && (
+            <div className="flex items-center justify-center space-x-3 mt-4 p-3 bg-muted/50 rounded-lg">
+              <div className="text-2xl">
+                {profile.nationality === 'Argentina' ? '🇦🇷' :
+                 profile.nationality === 'México' ? '🇲🇽' :
+                 profile.nationality === 'España' ? '🇪🇸' :
+                 profile.nationality === 'Colombia' ? '🇨🇴' :
+                 profile.nationality === 'Chile' ? '🇨🇱' :
+                 profile.nationality === 'Perú' ? '🇵🇪' :
+                 profile.nationality === 'Venezuela' ? '🇻🇪' :
+                 profile.nationality === 'Ecuador' ? '🇪🇨' :
+                 profile.nationality === 'Bolivia' ? '🇧🇴' :
+                 profile.nationality === 'Paraguay' ? '🇵🇾' :
+                 profile.nationality === 'Uruguay' ? '🇺🇾' :
+                 profile.nationality === 'Estados Unidos' ? '🇺🇸' :
+                 profile.nationality === 'Canadá' ? '🇨🇦' :
+                 profile.nationality === 'Brasil' ? '🇧🇷' :
+                 profile.nationality === 'Reino Unido' ? '🇬🇧' :
+                 profile.nationality === 'Francia' ? '🇫🇷' :
+                 profile.nationality === 'Italia' ? '🇮🇹' :
+                 profile.nationality === 'Alemania' ? '🇩🇪' : '🌍'}
+              </div>
+              <div className="text-left">
+                <div className="font-medium text-sm">{profile.nationality}</div>
+                <div className="text-xs text-muted-foreground">
+                  Moneda: {profile.currency || 'USD'}
+                </div>
+              </div>
+            </div>
           )}
         </Card>
 
