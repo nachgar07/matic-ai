@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bell, Plus, Clock, Check, X } from "lucide-react";
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
 import { toast } from "sonner";
 
 interface ReminderPermissionsProps {
@@ -20,31 +21,54 @@ export const ReminderPermissions = ({ isOpen, onClose, onReminderCreated }: Remi
 
   const handleCreateReminder = async () => {
     try {
-      // Request permissions for notifications
-      const permission = await LocalNotifications.requestPermissions();
+      console.log('Creating reminder with data:', { reminderTime, reminderType, reminderSchedule });
       
-      if (permission.display === 'granted') {
-        const reminderData = {
-          time: reminderTime,
-          type: reminderType,
-          schedule: reminderSchedule
-        };
+      const reminderData = {
+        time: reminderTime,
+        type: reminderType,
+        schedule: reminderSchedule
+      };
 
-        // Schedule the notification if type is not 'none'
-        if (reminderType !== 'none') {
-          await scheduleNotification(reminderData);
+      // Try to request permissions and schedule notification if type is not 'none'
+      if (reminderType !== 'none') {
+        try {
+          // Check if we're in a Capacitor environment
+          if (Capacitor.isNativePlatform()) {
+            const permission = await LocalNotifications.requestPermissions();
+            console.log('Permission result:', permission);
+            
+            if (permission.display === 'granted') {
+              await scheduleNotification(reminderData);
+              console.log('Notification scheduled successfully');
+            } else {
+              console.warn('Notification permission not granted');
+              toast.error("Se necesitan permisos de notificación para crear recordatorios");
+              return;
+            }
+          } else {
+            // Web environment - show browser notification
+            console.log('Web environment - using browser notifications');
+            if ('Notification' in window) {
+              const permission = await Notification.requestPermission();
+              if (permission === 'granted') {
+                console.log('Browser notification permission granted');
+              }
+            }
+          }
+        } catch (permissionError) {
+          console.error('Error requesting permissions:', permissionError);
+          toast.error("Error al solicitar permisos de notificación");
+          return;
         }
-
-        onReminderCreated(reminderData);
-        setShowNewReminder(false);
-        onClose();
-        toast.success("Recordatorio creado exitosamente");
-      } else {
-        toast.error("Se necesitan permisos de notificación para crear recordatorios");
       }
+
+      onReminderCreated(reminderData);
+      setShowNewReminder(false);
+      onClose();
+      toast.success("Recordatorio creado exitosamente");
     } catch (error) {
       console.error('Error creating reminder:', error);
-      toast.error("Error al crear el recordatorio");
+      toast.error("Error al crear el recordatorio: " + (error as Error).message);
     }
   };
 
