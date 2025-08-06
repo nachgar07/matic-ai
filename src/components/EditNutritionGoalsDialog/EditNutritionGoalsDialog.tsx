@@ -26,7 +26,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
   const [showAlert, setShowAlert] = useState(false);
   const [profile, setProfile] = useState<any>(null);
 
-  const [calories, setCalories] = useState(2000);
+  const [calories, setCalories] = useState(0);
   const [percentages, setPercentages] = useState({
     protein: 25,
     carbs: 45,
@@ -283,10 +283,10 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                 type="number"
                 value={calories}
                 onChange={(e) => {
-                  const newCalories = parseInt(e.target.value) || 2000;
+                  const newCalories = parseInt(e.target.value) || 0;
                   handleCaloriesChange(newCalories);
                 }}
-                min="1000"
+                min="0"
                 max="5000"
                 step="1"
                 className="flex-1"
