@@ -34,30 +34,30 @@ export const ReminderPermissions = ({ isOpen, onClose, onReminderCreated }: Remi
         try {
           // Check if we're in a Capacitor environment
           if (Capacitor.isNativePlatform()) {
+            console.log('Native platform detected - requesting permissions...');
             const permission = await LocalNotifications.requestPermissions();
             console.log('Permission result:', permission);
             
             if (permission.display === 'granted') {
               await scheduleNotification(reminderData);
-              console.log('Notification scheduled successfully');
+              console.log('Notification scheduled successfully on native platform');
+              toast.success("Recordatorio programado correctamente");
             } else {
               console.warn('Notification permission not granted');
               toast.error("Se necesitan permisos de notificación para crear recordatorios");
               return;
             }
           } else {
-            // Web environment - show browser notification
-            console.log('Web environment - using browser notifications');
-            if ('Notification' in window) {
-              const permission = await Notification.requestPermission();
-              if (permission === 'granted') {
-                console.log('Browser notification permission granted');
-              }
-            }
+            // Web environment - limitations warning
+            console.log('Web environment detected - notifications have limitations');
+            toast.error("Las notificaciones programadas solo funcionan en dispositivos móviles. Para probar la funcionalidad completa, compila la app para móvil con 'npx cap sync' y 'npx cap run android/ios'");
+            
+            // Still create the reminder data for testing purposes
+            console.log('Reminder data saved for mobile testing:', reminderData);
           }
         } catch (permissionError) {
           console.error('Error requesting permissions:', permissionError);
-          toast.error("Error al solicitar permisos de notificación");
+          toast.error("Error al solicitar permisos de notificación: " + (permissionError as Error).message);
           return;
         }
       }
@@ -65,7 +65,10 @@ export const ReminderPermissions = ({ isOpen, onClose, onReminderCreated }: Remi
       onReminderCreated(reminderData);
       setShowNewReminder(false);
       onClose();
-      toast.success("Recordatorio creado exitosamente");
+      
+      if (reminderType === 'none') {
+        toast.success("Recordatorio creado sin notificaciones");
+      }
     } catch (error) {
       console.error('Error creating reminder:', error);
       toast.error("Error al crear el recordatorio: " + (error as Error).message);
