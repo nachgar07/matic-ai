@@ -43,6 +43,7 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showReminderPermissions, setShowReminderPermissions] = useState(false);
   const [prioritySelectorOpen, setPrioritySelectorOpen] = useState(false);
+  const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("tarea");
@@ -230,19 +231,21 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
 
                 {/* Nota */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-3 p-4 border rounded-lg">
-                    <MessageSquare className="h-8 w-8 text-destructive" />
-                    <span className="font-medium text-lg">Nota</span>
+                  <div 
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                    onClick={() => setShowNoteDialog(true)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <MessageSquare className="h-8 w-8 text-destructive" />
+                      <span className="font-medium text-lg">Nota</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-destructive font-medium bg-destructive/10 px-3 py-1 rounded-full">
+                        {notes ? "Añadida" : "Añadir"}
+                      </span>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
                   </div>
-                  {notes && (
-                    <Textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Añadir nota..."
-                      rows={3}
-                      className="resize-none"
-                    />
-                  )}
                 </div>
 
                 {/* Tarea pendiente */}
@@ -313,6 +316,54 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
         value={priority}
         onValueChange={setPriority}
       />
+
+      <Sheet open={showNoteDialog} onOpenChange={setShowNoteDialog}>
+        <SheetContent side="bottom" className="h-[50vh] p-0 border-none">
+          <div className="flex flex-col h-full bg-background">
+            <SheetHeader className="flex flex-row items-center justify-between p-6 border-b">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                Nota
+              </SheetTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowNoteDialog(false)}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </SheetHeader>
+
+            <div className="flex-1 p-6">
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Añadir nota..."
+                className="h-full resize-none border-2 border-destructive/20"
+              />
+            </div>
+
+            <div className="p-6 border-t bg-background">
+              <div className="flex gap-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowNoteDialog(false)} 
+                  className="flex-1 h-12 text-lg font-semibold"
+                >
+                  CANCELAR
+                </Button>
+                <Button 
+                  onClick={() => setShowNoteDialog(false)}
+                  className="flex-1 h-12 text-lg font-semibold bg-destructive hover:bg-destructive/90"
+                >
+                  ACEPTAR
+                </Button>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };
