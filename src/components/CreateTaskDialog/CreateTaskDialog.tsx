@@ -13,6 +13,7 @@ import { es } from "date-fns/locale";
 import { useCreateTask } from "@/hooks/useGoals";
 import { cn } from "@/lib/utils";
 import { CategorySelector } from "@/components/CategorySelector/CategorySelector";
+import { ReminderPermissions } from "@/components/ReminderPermissions/ReminderPermissions";
 
 interface CreateTaskDialogProps {
   children: React.ReactNode;
@@ -39,6 +40,7 @@ const categories = [
 export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
   const [open, setOpen] = useState(false);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [showReminderPermissions, setShowReminderPermissions] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("tarea");
@@ -48,6 +50,7 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
   const [reminders, setReminders] = useState(0);
   const [notes, setNotes] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
+  const [reminderData, setReminderData] = useState<any>(null);
 
   const createTask = useCreateTask();
 
@@ -86,6 +89,12 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
   const handleCategorySelect = (categoryValue: string) => {
     setCategory(categoryValue);
     setShowCategorySelector(false);
+  };
+
+  const handleReminderCreated = (reminder: any) => {
+    setReminderData(reminder);
+    setReminders(1);
+    setShowReminderPermissions(false);
   };
 
   const selectedCategory = categories.find(cat => cat.value === category);
@@ -180,7 +189,10 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
 
                 {/* Hora y recordatorios */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
+                  <div 
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                    onClick={() => setShowReminderPermissions(true)}
+                  >
                     <div className="flex items-center gap-3">
                       <Bell className="h-8 w-8 text-destructive" />
                       <span className="font-medium text-lg">Hora y recordatorios</span>
@@ -282,6 +294,12 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
         isOpen={showCategorySelector}
         onClose={() => setShowCategorySelector(false)}
         onSelectCategory={handleCategorySelect}
+      />
+
+      <ReminderPermissions
+        isOpen={showReminderPermissions}
+        onClose={() => setShowReminderPermissions(false)}
+        onReminderCreated={handleReminderCreated}
       />
     </>
   );
