@@ -179,6 +179,9 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
         title: "Datos guardados",
         description: "Tus datos personales y objetivos calóricos han sido actualizados."
       });
+      
+      // Close dialog after successful save
+      onOpenChange(false);
     } catch (error) {
       console.error('Error saving personal data:', error);
       toast({
