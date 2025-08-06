@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PrioritySelector } from "@/components/PrioritySelector/PrioritySelector";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Clock } from "lucide-react";
@@ -30,6 +31,7 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
   const [dueDate, setDueDate] = useState<Date>();
   const [dueTime, setDueTime] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [prioritySelectorOpen, setPrioritySelectorOpen] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -148,17 +150,16 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
 
             <div className="space-y-2">
               <Label>Prioridad</Label>
-              <Select value={priority.toString()} onValueChange={(value) => setPriority(parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">🔵 Baja</SelectItem>
-                  <SelectItem value="3">🟡 Media</SelectItem>
-                  <SelectItem value="5">🟠 Alta</SelectItem>
-                  <SelectItem value="8">🔴 Urgente</SelectItem>
-                </SelectContent>
-              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPrioritySelectorOpen(true)}
+                className="w-full justify-start"
+              >
+                {priority >= 8 ? "🔴 Urgente" : 
+                 priority >= 5 ? "🟠 Alta" : 
+                 priority >= 3 ? "🟡 Normal" : "🔵 Baja"} - {priority}
+              </Button>
             </div>
           </div>
 
@@ -212,6 +213,13 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
             </Button>
           </div>
         </form>
+        
+        <PrioritySelector
+          open={prioritySelectorOpen}
+          onOpenChange={setPrioritySelectorOpen}
+          value={priority}
+          onValueChange={setPriority}
+        />
       </DialogContent>
     </Dialog>
   );
