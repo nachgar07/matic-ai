@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { User, Settings, Target, TrendingDown, Scale, Activity, Moon, Sun, Camera } from "lucide-react";
+import { User, Settings, Target, TrendingDown, Scale, Activity, Moon, Sun, Camera, Flag } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNutritionGoals } from "@/hooks/useFatSecret";
 import { EditNutritionGoalsDialog } from "@/components/EditNutritionGoalsDialog/EditNutritionGoalsDialog";
@@ -141,39 +141,24 @@ export const Perfil = () => {
           {uploading && (
             <p className="text-sm text-muted-foreground mt-2">Subiendo imagen...</p>
           )}
-          
-          {/* Country and Currency Info */}
-          {profile?.nationality && (
-            <div className="flex items-center justify-center space-x-3 mt-4 p-3 bg-muted/50 rounded-lg">
-              <div className="text-2xl">
-                {profile.nationality === 'Argentina' ? '🇦🇷' :
-                 profile.nationality === 'México' ? '🇲🇽' :
-                 profile.nationality === 'España' ? '🇪🇸' :
-                 profile.nationality === 'Colombia' ? '🇨🇴' :
-                 profile.nationality === 'Chile' ? '🇨🇱' :
-                 profile.nationality === 'Perú' ? '🇵🇪' :
-                 profile.nationality === 'Venezuela' ? '🇻🇪' :
-                 profile.nationality === 'Ecuador' ? '🇪🇨' :
-                 profile.nationality === 'Bolivia' ? '🇧🇴' :
-                 profile.nationality === 'Paraguay' ? '🇵🇾' :
-                 profile.nationality === 'Uruguay' ? '🇺🇾' :
-                 profile.nationality === 'Estados Unidos' ? '🇺🇸' :
-                 profile.nationality === 'Canadá' ? '🇨🇦' :
-                 profile.nationality === 'Brasil' ? '🇧🇷' :
-                 profile.nationality === 'Reino Unido' ? '🇬🇧' :
-                 profile.nationality === 'Francia' ? '🇫🇷' :
-                 profile.nationality === 'Italia' ? '🇮🇹' :
-                 profile.nationality === 'Alemania' ? '🇩🇪' : '🌍'}
+        </Card>
+
+        {/* Country and Currency Info */}
+        {profile?.nationality && (
+          <Card className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
+                <Flag className="text-primary" size={20} />
               </div>
-              <div className="text-left">
-                <div className="font-medium text-sm">{profile.nationality}</div>
-                <div className="text-xs text-muted-foreground">
+              <div>
+                <div className="font-medium">{profile.nationality}</div>
+                <div className="text-sm text-muted-foreground">
                   Moneda: {profile.currency || 'USD'}
                 </div>
               </div>
             </div>
-          )}
-        </Card>
+          </Card>
+        )}
 
         {/* Current Goals */}
         <Card className="p-4">
