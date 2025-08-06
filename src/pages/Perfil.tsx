@@ -147,8 +147,25 @@ export const Perfil = () => {
         {profile?.nationality && (
           <Card className="p-4">
             <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
-                <Flag className="text-primary" size={20} />
+              <div className="text-3xl">
+                {profile.nationality === 'Argentina' ? '🇦🇷' :
+                 profile.nationality === 'México' ? '🇲🇽' :
+                 profile.nationality === 'España' ? '🇪🇸' :
+                 profile.nationality === 'Colombia' ? '🇨🇴' :
+                 profile.nationality === 'Chile' ? '🇨🇱' :
+                 profile.nationality === 'Perú' ? '🇵🇪' :
+                 profile.nationality === 'Venezuela' ? '🇻🇪' :
+                 profile.nationality === 'Ecuador' ? '🇪🇨' :
+                 profile.nationality === 'Bolivia' ? '🇧🇴' :
+                 profile.nationality === 'Paraguay' ? '🇵🇾' :
+                 profile.nationality === 'Uruguay' ? '🇺🇾' :
+                 profile.nationality === 'Estados Unidos' ? '🇺🇸' :
+                 profile.nationality === 'Canadá' ? '🇨🇦' :
+                 profile.nationality === 'Brasil' ? '🇧🇷' :
+                 profile.nationality === 'Reino Unido' ? '🇬🇧' :
+                 profile.nationality === 'Francia' ? '🇫🇷' :
+                 profile.nationality === 'Italia' ? '🇮🇹' :
+                 profile.nationality === 'Alemania' ? '🇩🇪' : '🌍'}
               </div>
               <div>
                 <div className="font-medium">{profile.nationality}</div>
