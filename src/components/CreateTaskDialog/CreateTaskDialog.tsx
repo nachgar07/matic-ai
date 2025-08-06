@@ -14,6 +14,7 @@ import { useCreateTask } from "@/hooks/useGoals";
 import { cn } from "@/lib/utils";
 import { CategorySelector } from "@/components/CategorySelector/CategorySelector";
 import { ReminderPermissions } from "@/components/ReminderPermissions/ReminderPermissions";
+import { PrioritySelector } from "@/components/PrioritySelector/PrioritySelector";
 
 interface CreateTaskDialogProps {
   children: React.ReactNode;
@@ -41,6 +42,7 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
   const [open, setOpen] = useState(false);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showReminderPermissions, setShowReminderPermissions] = useState(false);
+  const [prioritySelectorOpen, setPrioritySelectorOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("tarea");
@@ -208,7 +210,10 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
 
                 {/* Prioridad */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+                  <div 
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                    onClick={() => setPrioritySelectorOpen(true)}
+                  >
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-lg bg-destructive flex items-center justify-center">
                         <div className="w-3 h-3 bg-white rounded"></div>
@@ -217,7 +222,7 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-destructive font-medium bg-destructive/10 px-3 py-1 rounded-full">
-                        {priority === 1 ? "Baja" : priority === 3 ? "Normal" : priority === 5 ? "Alta" : "Urgente"}
+                        {priority >= 8 ? "Urgente" : priority >= 5 ? "Alta" : priority >= 3 ? "Normal" : "Baja"} - {priority}
                       </span>
                     </div>
                   </div>
@@ -300,6 +305,13 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
         isOpen={showReminderPermissions}
         onClose={() => setShowReminderPermissions(false)}
         onReminderCreated={handleReminderCreated}
+      />
+      
+      <PrioritySelector
+        open={prioritySelectorOpen}
+        onOpenChange={setPrioritySelectorOpen}
+        value={priority}
+        onValueChange={setPriority}
       />
     </>
   );
