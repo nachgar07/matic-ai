@@ -314,24 +314,15 @@ export const ReminderPermissions = ({ isOpen, onClose, onReminderCreated }: Remi
             </div>
           </div>
 
-          {/* Botones fijos en la parte inferior */}
-          <div className="p-6 border-t bg-background">
-            <div className="flex gap-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose} 
-                className="flex-1 h-12 text-lg font-semibold"
-              >
-                CANCELAR
-              </Button>
-              <Button 
-                onClick={onClose}
-                className="flex-1 h-12 text-lg font-semibold bg-destructive hover:bg-destructive/90"
-              >
-                CONFIRMAR
-              </Button>
-            </div>
+          {/* Botón cerrar en la parte inferior */}
+          <div className="p-6 bg-background">
+            <Button 
+              onClick={onClose}
+              variant="outline"
+              className="w-full h-12 text-lg font-semibold"
+            >
+              CERRAR
+            </Button>
           </div>
         </div>
       </SheetContent>
