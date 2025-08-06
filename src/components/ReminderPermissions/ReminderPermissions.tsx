@@ -22,6 +22,10 @@ export const ReminderPermissions = ({ isOpen, onClose, onReminderCreated }: Remi
   const handleCreateReminder = async () => {
     try {
       console.log('Creating reminder with data:', { reminderTime, reminderType, reminderSchedule });
+      console.log('Capacitor platform info:', {
+        isNativePlatform: Capacitor.isNativePlatform(),
+        platform: Capacitor.getPlatform()
+      });
       
       const reminderData = {
         time: reminderTime,
@@ -32,28 +36,19 @@ export const ReminderPermissions = ({ isOpen, onClose, onReminderCreated }: Remi
       // Try to request permissions and schedule notification if type is not 'none'
       if (reminderType !== 'none') {
         try {
-          // Check if we're in a Capacitor environment
-          if (Capacitor.isNativePlatform()) {
-            console.log('Native platform detected - requesting permissions...');
-            const permission = await LocalNotifications.requestPermissions();
-            console.log('Permission result:', permission);
-            
-            if (permission.display === 'granted') {
-              await scheduleNotification(reminderData);
-              console.log('Notification scheduled successfully on native platform');
-              toast.success("Recordatorio programado correctamente");
-            } else {
-              console.warn('Notification permission not granted');
-              toast.error("Se necesitan permisos de notificación para crear recordatorios");
-              return;
-            }
+          // Always try to request permissions and schedule notifications
+          console.log('Requesting notification permissions...');
+          const permission = await LocalNotifications.requestPermissions();
+          console.log('Permission result:', permission);
+          
+          if (permission.display === 'granted') {
+            await scheduleNotification(reminderData);
+            console.log('Notification scheduled successfully');
+            toast.success("Recordatorio programado correctamente");
           } else {
-            // Web environment - limitations warning
-            console.log('Web environment detected - notifications have limitations');
-            toast.error("Las notificaciones programadas solo funcionan en dispositivos móviles. Para probar la funcionalidad completa, compila la app para móvil con 'npx cap sync' y 'npx cap run android/ios'");
-            
-            // Still create the reminder data for testing purposes
-            console.log('Reminder data saved for mobile testing:', reminderData);
+            console.warn('Notification permission not granted');
+            toast.error("Se necesitan permisos de notificación para crear recordatorios");
+            return;
           }
         } catch (permissionError) {
           console.error('Error requesting permissions:', permissionError);
