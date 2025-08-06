@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { User, Settings, Target, TrendingDown, Scale, Activity, Moon, Sun, Camera, Flag } from "lucide-react";
+import { User, Settings, Target, TrendingDown, TrendingUp, Scale, Activity, Moon, Sun, Camera, Flag } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNutritionGoals } from "@/hooks/useFatSecret";
 import { EditNutritionGoalsDialog } from "@/components/EditNutritionGoalsDialog/EditNutritionGoalsDialog";
@@ -185,7 +185,13 @@ export const Perfil = () => {
           </h3>
           <div className="space-y-3">
             <div className="flex items-center">
-              <TrendingDown className="mr-3 text-success" size={20} />
+              {profile?.goal === 'lose' ? (
+                <TrendingDown className="mr-3 text-destructive" size={20} />
+              ) : profile?.goal === 'gain' ? (
+                <TrendingUp className="mr-3 text-success" size={20} />
+              ) : (
+                <Scale className="mr-3 text-muted-foreground" size={20} />
+              )}
               <div>
                 <div className="font-medium">
                   {profile?.goal === 'lose' ? 'Perder peso' : 
