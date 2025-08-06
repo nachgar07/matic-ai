@@ -221,41 +221,6 @@ export const Perfil = () => {
           </div>
         </Card>
 
-        {/* Daily Targets */}
-        <Card className="p-4">
-          <h3 className="font-semibold mb-4 flex items-center">
-            <Activity className="mr-2" size={20} />
-            Objetivos Diarios
-          </h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span>Calorías objetivo</span>
-              <span className="font-medium">{goals.calories} kcal</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Proteína</span>
-              <span className="font-medium">{goals.protein} g</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Carbohidratos</span>
-              <span className="font-medium">{goals.carbs} g</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Grasas</span>
-              <span className="font-medium">{goals.fat} g</span>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full mt-3"
-              onClick={() => setEditGoalsOpen(true)}
-            >
-              Editar objetivos
-            </Button>
-          </div>
-        </Card>
-
-
         {/* Settings */}
         <Card className="p-4">
           <h3 className="font-semibold mb-4 flex items-center">
@@ -290,6 +255,40 @@ export const Perfil = () => {
                 onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
               />
             </div>
+          </div>
+        </Card>
+
+        {/* Daily Targets */}
+        <Card className="p-4">
+          <h3 className="font-semibold mb-4 flex items-center">
+            <Activity className="mr-2" size={20} />
+            Objetivos Diarios
+          </h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span>Calorías objetivo</span>
+              <span className="font-medium">{goals.calories} kcal</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>Proteína</span>
+              <span className="font-medium">{goals.protein} g</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>Carbohidratos</span>
+              <span className="font-medium">{goals.carbs} g</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>Grasas</span>
+              <span className="font-medium">{goals.fat} g</span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-3"
+              onClick={() => setEditGoalsOpen(true)}
+            >
+              Editar objetivos
+            </Button>
           </div>
         </Card>
       </div>
