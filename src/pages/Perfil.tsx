@@ -191,12 +191,14 @@ export const Perfil = () => {
                   {profile?.goal === 'lose' ? 'Perder peso' : 
                    profile?.goal === 'gain' ? 'Ganar peso' : 'Mantener peso'}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {profile?.progress_speed === 'slow' ? '0.25 kg por semana' :
-                   profile?.progress_speed === 'normal' ? '0.5 kg por semana' :
-                   profile?.progress_speed === 'fast' ? '1 kg por semana' :
-                   '0.5 kg por semana'}
-                </div>
+                {profile?.goal && profile?.goal !== 'maintain' && (
+                  <div className="text-sm text-muted-foreground">
+                    {profile?.progress_speed === 'slow' ? '0.25 kg por semana' :
+                     profile?.progress_speed === 'moderate' ? '0.5 kg por semana' :
+                     profile?.progress_speed === 'fast' ? '1 kg por semana' :
+                     '0.5 kg por semana'}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center">
