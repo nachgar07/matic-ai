@@ -471,6 +471,11 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
 
   // Format assistant messages to remove markdown and add icons
   const formatAssistantMessage = (content: string) => {
+    // Handle undefined or null content
+    if (!content) {
+      return '';
+    }
+    
     let formatted = content;
     
     // Remove markdown bold
