@@ -327,10 +327,13 @@ REGLAS PARA MÚLTIPLES COMIDAS:
 - Usa tu conocimiento nutricional para calcular porciones exactas
 
 🎯 REGLAS PARA CÁLCULOS PRECISOS:
+- CRÍTICO: SIEMPRE verifica matemáticamente que la suma de todos los valores nutricionales individuales coincida EXACTAMENTE con los totales mostrados
 - Usa tu amplio conocimiento nutricional para calcular valores precisos
 - Proporciona estimaciones basadas en tu base de conocimiento de alimentos
 - Calcula las porciones exactas para llegar a los valores restantes
-- Verifica que la suma coincida exactamente con lo que le falta al usuario`;
+- OBLIGATORIO: Antes de mostrar cualquier plan, suma manualmente cada valor nutricional y verifica que coincida con los totales declarados
+- Si los cálculos no coinciden, ajusta las porciones hasta que los números sean exactos
+- Los totales deben ser la suma matemática exacta de todos los alimentos individuales`;
 
   // Add user context if available
   if (userContext) {
