@@ -71,6 +71,7 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
         due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined,
         due_time: dueTime || undefined,
         is_completed: false,
+        is_recurring: isRecurring,
       });
 
       // Resetear formulario

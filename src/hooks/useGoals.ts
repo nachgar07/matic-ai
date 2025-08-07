@@ -45,6 +45,7 @@ export interface Task {
   priority: number;
   category: string;
   reminder_time?: string;
+  is_recurring: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -130,7 +131,7 @@ export const useTasks = (date?: string) => {
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
-        .or(`due_date.eq.${targetDate},due_date.is.null,due_date.gte.${targetDate}`)
+        .or(`due_date.eq.${targetDate},due_date.is.null,is_recurring.eq.true`)
         .order('priority', { ascending: false })
         .order('created_at', { ascending: false });
       

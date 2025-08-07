@@ -561,6 +561,7 @@ export type Database = {
           due_time: string | null
           id: string
           is_completed: boolean
+          is_recurring: boolean
           priority: number
           reminder_time: string | null
           title: string
@@ -575,6 +576,7 @@ export type Database = {
           due_time?: string | null
           id?: string
           is_completed?: boolean
+          is_recurring?: boolean
           priority?: number
           reminder_time?: string | null
           title: string
@@ -589,6 +591,7 @@ export type Database = {
           due_time?: string | null
           id?: string
           is_completed?: boolean
+          is_recurring?: boolean
           priority?: number
           reminder_time?: string | null
           title?: string
