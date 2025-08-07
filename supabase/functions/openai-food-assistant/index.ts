@@ -11,21 +11,19 @@ const corsHeaders = {
 interface FoodAnalysisResult {
   foods: Array<{
     name: string;
-    servings: number;
-    nutrition: {
-      calories: number;
-      protein: number;
-      carbs: number;
-      fat: number;
-    };
+    estimated_portion: string;
+    estimated_calories: number;
+    estimated_protein: number;
+    estimated_carbs: number;
+    estimated_fat: number;
+    confidence: number;
+    source?: string;
   }>;
-  totalNutrition: {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  };
-  suggestions: string;
+  total_estimated_calories: number;
+  total_estimated_protein: number;
+  total_estimated_carbs: number;
+  total_estimated_fat: number;
+  suggestions: string[];
 }
 
 serve(async (req) => {
@@ -51,7 +49,14 @@ serve(async (req) => {
 
     if (action === 'analyze-food') {
       console.log('Analyzing food image...');
+      
+      if (!image) {
+        throw new Error('No image data provided');
+      }
+      
       const result = await analyzeFoodImage(image, openAIApiKey);
+      console.log('Analysis completed successfully:', result);
+      
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -74,8 +79,15 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in openai-food-assistant function:', error);
+    console.error('Error stack:', error.stack);
+    
+    const errorMessage = error.message || 'Error desconocido al procesar la imagen';
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: errorMessage,
+        details: error.stack ? error.stack.split('\n').slice(0, 5) : 'No stack trace available'
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -180,13 +192,22 @@ Instrucciones importantes:
     const analysisText = result.choices[0].message.content;
     
     try {
+      console.log('Raw OpenAI response content:', analysisText);
+      
       // Clean the response to extract JSON
       const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No se encontro JSON en la respuesta');
+        console.error('No JSON found in OpenAI response:', analysisText);
+        throw new Error('No se encontró JSON válido en la respuesta de OpenAI');
       }
       
+      console.log('Extracted JSON:', jsonMatch[0]);
       const initialAnalysis = JSON.parse(jsonMatch[0]);
+      
+      if (!initialAnalysis.foods || !Array.isArray(initialAnalysis.foods)) {
+        console.error('Invalid foods array in response:', initialAnalysis);
+        throw new Error('La respuesta no contiene una lista válida de alimentos');
+      }
       
       // Obtener datos nutricionales precisos de USDA para cada alimento
       const foodNames = initialAnalysis.foods.map((food: any) => food.name);
@@ -301,14 +322,8 @@ Instrucciones importantes:
         suggestions: initialAnalysis.suggestions || []
       };
       
-      return new Response(
-        JSON.stringify({
-          ...finalAnalysis,
-          processing_time: new Date().toISOString(),
-          provider: 'openai_usda'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.log('Final analysis result:', finalAnalysis);
+      return finalAnalysis;
 
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
@@ -320,11 +335,6 @@ Instrucciones importantes:
     console.error('Error in analyzeFoodImage:', error);
     throw error;
   }
-  return {
-    foods: [],
-    totalNutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
-    suggestions: "Análisis de imagen no disponible temporalmente"
-  };
 }
 
 async function handleConversation(text: string, conversationHistory: any[], apiKey: string, userContext: any) {
