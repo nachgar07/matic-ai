@@ -59,8 +59,8 @@ export const CreateOptionsSheet = ({ children }: CreateOptionsSheetProps) => {
                 <Target className="text-secondary-foreground" size={20} />
               </div>
               <div>
-                <p className="font-medium">Crear Meta</p>
-                <p className="text-sm text-muted-foreground">Agregar un nuevo objetivo</p>
+                <p className="font-medium">Crear Hábito</p>
+                <p className="text-sm text-muted-foreground">Agregar un nuevo hábito</p>
               </div>
             </Button>
           </div>
