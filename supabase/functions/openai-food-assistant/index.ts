@@ -338,45 +338,55 @@ REGLAS PARA MÚLTIPLES COMIDAS:
 📊 FORMATO OBLIGATORIO Y CÁLCULOS PRECISOS PARA PLANES DE ALIMENTACIÓN:
 
 ⚠️ REGLAS MATEMÁTICAS ESTRICTAS (SALUD DE PERSONAS):
-- NUNCA aproximes valores nutricionales - usa decimales si es necesario
+- NUNCA aproximes valores nutricionales - usa decimales si es necesario (ej: 199.5g)
 - SIEMPRE verifica TRES VECES cada suma antes de mostrar el plan
 - Si los cálculos no cuadran EXACTAMENTE, recalcula las porciones hasta lograrlo
-- Las calorías objetivo DEBEN coincidir con margen de error máximo de ±10 kcal
-- Ajusta las porciones con precisión decimal (ej: 1.3 tazas, 85.5g)
+- Las calorías objetivo DEBEN coincidir con margen de error máximo de ±5 kcal
+- Ajusta las porciones con precisión decimal (ej: 1.3 tazas, 85.5g, 0.75 cdas)
 
 📐 PROCESO DE VALIDACIÓN OBLIGATORIO:
-1. Calcula cada alimento individualmente
+1. Calcula cada alimento individualmente con precisión
 2. Suma los subtotales de cada comida
-3. Verifica que el gran total coincida con el objetivo
+3. Verifica que el gran total coincida EXACTAMENTE con el objetivo
 4. Si no coincide, ajusta las porciones y recalcula
-5. Repite hasta lograr precisión exacta
+5. Repite hasta lograr precisión matemática exacta
 
-📋 FORMATO VISUAL MEJORADO:
-**DESAYUNO:**
-• Huevos revueltos (3 huevos):
-  🔥 210 kcal
-  💪 18g proteína  
-  🌾 2g carbohidratos
-  🥑 15g grasa
+📋 ESTRUCTURA VISUAL OBLIGATORIA (COPIA EXACTAMENTE ESTE FORMATO):
 
-• Tostada integral (2 rebanadas):
-  🔥 160 kcal
-  💪 6g proteína
-  🌾 28g carbohidratos  
-  🥑 2g grasa
+🎯 Objetivo diario
+🔥 Calorías: [OBJETIVO] kcal
+💪 Proteína: [OBJETIVO] g
+🌾 Carbohidratos: [OBJETIVO] g
+🥑 Grasas: [OBJETIVO] g
 
-**Subtotal Desayuno:**
-🔥 370 kcal | 💪 24g | 🌾 30g | 🥑 17g
+🥣 [NOMBRE DE COMIDA]
+[Descripción breve de la comida]
 
-[Repetir para ALMUERZO, CENA, SNACKS]
+[Alimento 1] ([porción]): 🔥 [cal] kcal, 💪 [prot]g, 🌾 [carbs]g, 🥑 [fat]g
+[Alimento 2] ([porción]): 🔥 [cal] kcal, 💪 [prot]g, 🌾 [carbs]g, 🥑 [fat]g
+[Alimento 3] ([porción]): 🔥 [cal] kcal, 💪 [prot]g, 🌾 [carbs]g, 🥑 [fat]g
 
-**🎯 GRAN TOTAL DEL DÍA:**
+Subtotal [nombre comida]:
+🔥 [total cal] kcal – 💪 [total prot]g – 🌾 [total carbs]g – 🥑 [total fat]g
+
+[REPETIR PARA TODAS LAS COMIDAS]
+
+✅ TOTALES EXACTOS DEL DÍA
 🔥 [TOTAL EXACTO] kcal
-💪 [TOTAL EXACTO]g proteína
-🌾 [TOTAL EXACTO]g carbohidratos  
-🥑 [TOTAL EXACTO]g grasa
+💪 [TOTAL EXACTO] g
+🌾 [TOTAL EXACTO] g
+🥑 [TOTAL EXACTO] g
 
-**✅ VERIFICACIÓN:** Objetivo alcanzado con precisión matemática.
+⚠️ VERIFICACIÓN FINAL OBLIGATORIA:
+- Suma manualmente cada columna (calorías, proteína, carbohidratos, grasas)
+- Los totales DEBEN coincidir EXACTAMENTE con los objetivos del usuario
+- Si no coinciden, NO envíes la respuesta y recalcula todo desde cero
+- Ajusta porciones hasta lograr coincidencia matemática perfecta
+
+🔍 IMPORTANTE SOBRE PORCIONES:
+- Usa porciones precisas: "85.5g", "1.25 tazas", "0.75 cdas"
+- Mejor ser preciso con decimales que aproximar
+- El usuario prefiere exactitud matemática sobre porciones "redondas"
 
   // Add user context if available
   if (userContext) {
