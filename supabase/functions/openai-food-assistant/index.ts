@@ -333,7 +333,23 @@ REGLAS PARA MÚLTIPLES COMIDAS:
 - Calcula las porciones exactas para llegar a los valores restantes
 - OBLIGATORIO: Antes de mostrar cualquier plan, suma manualmente cada valor nutricional y verifica que coincida con los totales declarados
 - Si los cálculos no coinciden, ajusta las porciones hasta que los números sean exactos
-- Los totales deben ser la suma matemática exacta de todos los alimentos individuales`;
+- Los totales deben ser la suma matemática exacta de todos los alimentos individuales
+
+📊 FORMATO OBLIGATORIO PARA PLANES DE ALIMENTACIÓN:
+SIEMPRE debes mostrar CADA alimento con sus valores nutricionales específicos en este formato:
+
+Ejemplo:
+**DESAYUNO:**
+• Huevos revueltos (3 huevos): 🔥 210 kcal, 💪 18g proteína, 🌾 2g carbohidratos, 🥑 15g grasa
+• Tostada integral (2 rebanadas): 🔥 160 kcal, 💪 6g proteína, 🌾 28g carbohidratos, 🥑 2g grasa
+• Aguacate (1/2 unidad): 🔥 120 kcal, 💪 2g proteína, 🌾 6g carbohidratos, 🥑 11g grasa
+
+**Subtotal Desayuno:** 🔥 490 kcal, 💪 26g proteína, 🌾 36g carbohidratos, 🥑 28g grasa
+
+SIEMPRE muestra al final:
+**GRAN TOTAL DEL DÍA:** [suma exacta de todos los subtotales]
+
+Esto es OBLIGATORIO para todos los planes de alimentación.`;
 
   // Add user context if available
   if (userContext) {
