@@ -39,6 +39,7 @@ serve(async (req) => {
 
     // Get authentication header from request
     const authHeader = req.headers.get('Authorization');
+    console.log('Auth header received:', authHeader ? 'Present' : 'Missing');
     
     // Add auth info to userContext for functions that need it
     const enrichedUserContext = {
