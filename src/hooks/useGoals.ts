@@ -131,12 +131,22 @@ export const useTasks = (date?: string) => {
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
-        .or(`due_date.eq.${targetDate},due_date.is.null,is_recurring.eq.true`)
+        .or(`due_date.eq.${targetDate},and(due_date.is.null,is_recurring.eq.true)`)
         .order('priority', { ascending: false })
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Task[];
+      
+      // Filtrar tareas que deben mostrarse: 
+      // 1. Tareas sin fecha (is_recurring = true) se muestran todos los días
+      // 2. Tareas con fecha específica solo se muestran en esa fecha
+      const filteredTasks = data?.filter(task => {
+        if (!task.due_date && task.is_recurring) return true; // Tareas pendientes recurrentes
+        if (task.due_date === targetDate) return true; // Tareas para la fecha específica
+        return false;
+      }) || [];
+      
+      return filteredTasks as Task[];
     },
   });
 };

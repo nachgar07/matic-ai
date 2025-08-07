@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,10 @@ interface TaskCardProps {
 export const TaskCard = ({ task }: TaskCardProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const dragRef = useRef<HTMLDivElement>(null);
   const updateTask = useUpdateTask();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -71,6 +75,59 @@ export const TaskCard = ({ task }: TaskCardProps) => {
     }
   };
 
+  const handleDragStart = (clientX: number) => {
+    setIsDragging(true);
+    setStartX(clientX);
+  };
+
+  const handleDragMove = (clientX: number) => {
+    if (!isDragging) return;
+    
+    const deltaX = clientX - startX;
+    // Solo permitir arrastrar hacia la derecha
+    if (deltaX > 0) {
+      setDragX(Math.min(deltaX, 200));
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (!isDragging) return;
+    
+    setIsDragging(false);
+    
+    // Si se arrastró más de 100px, eliminar la tarea
+    if (dragX > 100) {
+      handleDelete();
+    } else {
+      // Volver a la posición original
+      setDragX(0);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    handleDragStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    handleDragMove(e.clientX);
+  };
+
+  const handleMouseUp = () => {
+    handleDragEnd();
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    handleDragStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    handleDragMove(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    handleDragEnd();
+  };
+
   const getPriorityColor = (priority: number) => {
     if (priority >= 8) return "text-red-500";
     if (priority >= 6) return "text-yellow-500";
@@ -106,42 +163,68 @@ export const TaskCard = ({ task }: TaskCardProps) => {
   const categoryData = getCategoryData(task.category);
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-card rounded-2xl transition-all hover:bg-card/80">
-      {/* Icono de la izquierda */}
+    <div className="relative overflow-hidden">
+      {/* Fondo de eliminación */}
       <div 
-        className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl"
-        style={{ 
-          backgroundColor: categoryData.color,
+        className={`absolute inset-0 bg-destructive flex items-center justify-end pr-6 transition-opacity duration-200 ${
+          dragX > 50 ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        <Trash2 className="w-6 h-6 text-white" />
+      </div>
+      
+      {/* Tarjeta principal */}
+      <div 
+        ref={dragRef}
+        className="flex items-center gap-4 p-4 bg-card rounded-2xl transition-all hover:bg-card/80 cursor-grab active:cursor-grabbing select-none"
+        style={{
+          transform: `translateX(${dragX}px)`,
+          transition: isDragging ? 'none' : 'transform 0.3s ease-out'
         }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={isDragging ? handleMouseMove : undefined}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={isDragging ? handleTouchMove : undefined}
+        onTouchEnd={handleTouchEnd}
       >
-        {categoryData.icon}
-      </div>
+        {/* Icono de la izquierda */}
+        <div 
+          className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl"
+          style={{ 
+            backgroundColor: categoryData.color,
+          }}
+        >
+          {categoryData.icon}
+        </div>
 
-      {/* Contenido central */}
-      <div className="flex-1 min-w-0">
-        <h3 className={`font-medium text-base ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-          {task.title}
-        </h3>
-        
-        <span className="text-sm capitalize" style={{ color: categoryData.color }}>
-          {categoryData.label}
-        </span>
-      </div>
+        {/* Contenido central */}
+        <div className="flex-1 min-w-0">
+          <h3 className={`font-medium text-base ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+            {task.title}
+          </h3>
+          
+          <span className="text-sm capitalize" style={{ color: categoryData.color }}>
+            {categoryData.label}
+          </span>
+        </div>
 
-      {/* Botón de check a la derecha */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleToggleComplete}
-        disabled={isUpdating}
-        className="p-2 h-auto"
-      >
-        {task.is_completed ? (
-          <CheckCircle2 className="w-6 h-6 text-green-500" />
-        ) : (
-          <Circle className="w-6 h-6 text-muted-foreground" />
-        )}
-      </Button>
+        {/* Botón de check a la derecha */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleToggleComplete}
+          disabled={isUpdating}
+          className="p-2 h-auto"
+        >
+          {task.is_completed ? (
+            <CheckCircle2 className="w-6 h-6 text-green-500" />
+          ) : (
+            <Circle className="w-6 h-6 text-muted-foreground" />
+          )}
+        </Button>
+      </div>
       
       <EditTaskDialog 
         task={task}
