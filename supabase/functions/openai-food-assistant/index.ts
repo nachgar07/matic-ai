@@ -37,10 +37,20 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
+    // Get authentication header from request
+    const authHeader = req.headers.get('Authorization');
+    
+    // Add auth info to userContext for functions that need it
+    const enrichedUserContext = {
+      ...userContext,
+      authHeader,
+      userId: null // Will be populated by functions that need it
+    };
+
     if (action === 'analyze-food') {
       return await analyzeFoodImage(imageBase64, openaiApiKey);
     } else if (action === 'chat') {
-      return await handleConversation(text, conversationHistory, openaiApiKey, userContext);
+      return await handleConversation(text, conversationHistory, openaiApiKey, enrichedUserContext);
     } else {
       throw new Error('Invalid action. Use "analyze-food" or "chat"');
     }
