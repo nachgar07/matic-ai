@@ -335,21 +335,48 @@ REGLAS PARA MÚLTIPLES COMIDAS:
 - Si los cálculos no coinciden, ajusta las porciones hasta que los números sean exactos
 - Los totales deben ser la suma matemática exacta de todos los alimentos individuales
 
-📊 FORMATO OBLIGATORIO PARA PLANES DE ALIMENTACIÓN:
-SIEMPRE debes mostrar CADA alimento con sus valores nutricionales específicos en este formato:
+📊 FORMATO OBLIGATORIO Y CÁLCULOS PRECISOS PARA PLANES DE ALIMENTACIÓN:
 
-Ejemplo:
+⚠️ REGLAS MATEMÁTICAS ESTRICTAS (SALUD DE PERSONAS):
+- NUNCA aproximes valores nutricionales - usa decimales si es necesario
+- SIEMPRE verifica TRES VECES cada suma antes de mostrar el plan
+- Si los cálculos no cuadran EXACTAMENTE, recalcula las porciones hasta lograrlo
+- Las calorías objetivo DEBEN coincidir con margen de error máximo de ±10 kcal
+- Ajusta las porciones con precisión decimal (ej: 1.3 tazas, 85.5g)
+
+📐 PROCESO DE VALIDACIÓN OBLIGATORIO:
+1. Calcula cada alimento individualmente
+2. Suma los subtotales de cada comida
+3. Verifica que el gran total coincida con el objetivo
+4. Si no coincide, ajusta las porciones y recalcula
+5. Repite hasta lograr precisión exacta
+
+📋 FORMATO VISUAL MEJORADO:
 **DESAYUNO:**
-• Huevos revueltos (3 huevos): 🔥 210 kcal, 💪 18g proteína, 🌾 2g carbohidratos, 🥑 15g grasa
-• Tostada integral (2 rebanadas): 🔥 160 kcal, 💪 6g proteína, 🌾 28g carbohidratos, 🥑 2g grasa
-• Aguacate (1/2 unidad): 🔥 120 kcal, 💪 2g proteína, 🌾 6g carbohidratos, 🥑 11g grasa
+• Huevos revueltos (3 huevos):
+  🔥 210 kcal
+  💪 18g proteína  
+  🌾 2g carbohidratos
+  🥑 15g grasa
 
-**Subtotal Desayuno:** 🔥 490 kcal, 💪 26g proteína, 🌾 36g carbohidratos, 🥑 28g grasa
+• Tostada integral (2 rebanadas):
+  🔥 160 kcal
+  💪 6g proteína
+  🌾 28g carbohidratos  
+  🥑 2g grasa
 
-SIEMPRE muestra al final:
-**GRAN TOTAL DEL DÍA:** [suma exacta de todos los subtotales]
+**Subtotal Desayuno:**
+🔥 370 kcal | 💪 24g | 🌾 30g | 🥑 17g
 
-Esto es OBLIGATORIO para todos los planes de alimentación.`;
+[Repetir para ALMUERZO, CENA, SNACKS]
+
+**🎯 GRAN TOTAL DEL DÍA:**
+🔥 [TOTAL EXACTO] kcal
+💪 [TOTAL EXACTO]g proteína
+🌾 [TOTAL EXACTO]g carbohidratos  
+🥑 [TOTAL EXACTO]g grasa
+
+**✅ VERIFICACIÓN:** Objetivo alcanzado con precisión matemática.
 
   // Add user context if available
   if (userContext) {
