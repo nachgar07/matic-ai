@@ -147,23 +147,23 @@ function extractMainNutrients(nutrients: USDANutrient[]) {
   nutrients.forEach(nutrient => {
     console.log(`Nutrient ID: ${nutrient.nutrientId}, Name: ${nutrient.nutrientName}, Value: ${nutrient.value}, Unit: ${nutrient.unitName}`);
     
-    // Calorías (Energy)
-    if (nutrient.nutrientId === 1008 && nutrient.unitName === 'kcal') {
+    // Calorías (Energy) - ID 1008 con unidad KCAL
+    if (nutrient.nutrientId === 1008 && nutrient.unitName === 'KCAL') {
       result.calories = nutrient.value;
       console.log(`Found calories: ${nutrient.value}`);
     }
-    // Proteína (Protein)
-    else if (nutrient.nutrientId === 1003 && nutrient.unitName === 'g') {
+    // Proteína (Protein) - ID 1003 con unidad G
+    else if (nutrient.nutrientId === 1003 && nutrient.unitName === 'G') {
       result.protein = nutrient.value;
       console.log(`Found protein: ${nutrient.value}g`);
     }
-    // Carbohidratos totales (Carbohydrate, by difference)
-    else if (nutrient.nutrientId === 1005 && nutrient.unitName === 'g') {
+    // Carbohidratos totales (Carbohydrate, by difference) - ID 1005 con unidad G
+    else if (nutrient.nutrientId === 1005 && nutrient.unitName === 'G') {
       result.carbs = nutrient.value;
       console.log(`Found carbs: ${nutrient.value}g`);
     }
-    // Grasa total (Total lipid (fat))
-    else if (nutrient.nutrientId === 1004 && nutrient.unitName === 'g') {
+    // Grasa total (Total lipid (fat)) - ID 1004 con unidad G
+    else if (nutrient.nutrientId === 1004 && nutrient.unitName === 'G') {
       result.fat = nutrient.value;
       console.log(`Found fat: ${nutrient.value}g`);
     }
