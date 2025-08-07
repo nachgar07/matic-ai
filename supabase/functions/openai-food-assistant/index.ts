@@ -882,59 +882,100 @@ async function executeCreateMultipleMeals(args: any, userContext: any) {
     let totalProtein = 0;
     let totalCarbs = 0;
     let totalFat = 0;
+
+    // Create Supabase client with service role key
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
     
     // Create each meal separately
     for (const meal of args.meals) {
       console.log(`Creating meal: ${meal.food_name} (${meal.meal_type})`);
       
-      const createMealResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/create-meal-from-chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': userContext.authHeader,
-          'x-user-id': userContext.userId
-        },
-        body: JSON.stringify({
+      try {
+        // Create a food entry in the database if it doesn't exist
+        const { data: existingFood, error: searchError } = await supabase
+          .from('foods')
+          .select('*')
+          .eq('food_name', meal.food_name)
+          .limit(1);
+
+        let foodId;
+        if (existingFood && existingFood.length > 0) {
+          foodId = existingFood[0].id;
+          console.log(`Found existing food: ${meal.food_name}`);
+        } else {
+          // Create new food entry
+          const { data: newFood, error: insertError } = await supabase
+            .from('foods')
+            .insert({
+              food_id: `openai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              food_name: meal.food_name,
+              calories_per_serving: meal.calories_per_serving,
+              protein_per_serving: meal.protein_per_serving,
+              carbs_per_serving: meal.carbs_per_serving,
+              fat_per_serving: meal.fat_per_serving,
+              serving_description: meal.description || 'Porción estándar'
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('Error inserting food:', insertError);
+            throw new Error(`Error creating food entry: ${insertError.message}`);
+          }
+
+          foodId = newFood.id;
+          console.log(`Created new food: ${meal.food_name}`);
+        }
+
+        // Create meal entry
+        const { data: mealEntry, error: mealError } = await supabase
+          .from('meal_entries')
+          .insert({
+            user_id: userContext.userId,
+            food_id: foodId,
+            servings: meal.servings,
+            meal_type: meal.meal_type,
+            consumed_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (mealError) {
+          console.error('Error creating meal entry:', mealError);
+          throw new Error(`Error creating meal entry: ${mealError.message}`);
+        }
+
+        console.log(`✅ Successfully created meal entry for ${meal.food_name}`);
+        
+        // Calculate totals for this meal
+        const mealCalories = meal.calories_per_serving * meal.servings;
+        const mealProtein = meal.protein_per_serving * meal.servings;
+        const mealCarbs = meal.carbs_per_serving * meal.servings;
+        const mealFat = meal.fat_per_serving * meal.servings;
+        
+        totalCalories += mealCalories;
+        totalProtein += mealProtein;
+        totalCarbs += mealCarbs;
+        totalFat += mealFat;
+        
+        results.push({
           meal_type: meal.meal_type,
           food_name: meal.food_name,
           servings: meal.servings,
-          calories_per_serving: meal.calories_per_serving,
-          protein_per_serving: meal.protein_per_serving,
-          carbs_per_serving: meal.carbs_per_serving,
-          fat_per_serving: meal.fat_per_serving
-        })
-      });
-
-      if (!createMealResponse.ok) {
-        const errorText = await createMealResponse.text();
-        console.error(`Error creating meal ${meal.food_name}:`, errorText);
+          calories: Math.round(mealCalories),
+          protein: Math.round(mealProtein * 10) / 10,
+          carbs: Math.round(mealCarbs * 10) / 10,
+          fat: Math.round(mealFat * 10) / 10,
+          description: meal.description
+        });
+        
+      } catch (mealError) {
+        console.error(`Error creating meal ${meal.food_name}:`, mealError);
         throw new Error(`Error al guardar ${meal.food_name} en la base de datos`);
       }
-
-      const createMealResult = await createMealResponse.json();
-      console.log(`Meal ${meal.food_name} created successfully`);
-      
-      // Calculate totals
-      const mealCalories = meal.calories_per_serving * meal.servings;
-      const mealProtein = meal.protein_per_serving * meal.servings;
-      const mealCarbs = meal.carbs_per_serving * meal.servings;
-      const mealFat = meal.fat_per_serving * meal.servings;
-      
-      totalCalories += mealCalories;
-      totalProtein += mealProtein;
-      totalCarbs += mealCarbs;
-      totalFat += mealFat;
-      
-      results.push({
-        meal_type: meal.meal_type,
-        food_name: meal.food_name,
-        servings: meal.servings,
-        calories: Math.round(mealCalories),
-        protein: Math.round(mealProtein * 10) / 10,
-        carbs: Math.round(mealCarbs * 10) / 10,
-        fat: Math.round(mealFat * 10) / 10,
-        description: meal.description
-      });
     }
 
     // Format a comprehensive response for the user
