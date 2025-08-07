@@ -355,6 +355,18 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
       // Get auth session to pass to edge function
       const { data: { session } } = await supabase.auth.getSession();
       
+      console.log('💡 Session check:', {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        tokenLength: session?.access_token?.length,
+        expiresAt: session?.expires_at,
+        isExpired: session?.expires_at ? new Date(session.expires_at * 1000) < new Date() : 'no-expiry-info'
+      });
+
+      if (!session?.access_token) {
+        throw new Error('No hay sesión de usuario válida. Por favor, recarga la página o inicia sesión nuevamente.');
+      }
+      
       const { data, error } = await supabase.functions.invoke('openai-food-assistant', {
         body: {
           action: 'chat',
@@ -367,7 +379,7 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
           }
         },
         headers: {
-          Authorization: `Bearer ${session?.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
 
