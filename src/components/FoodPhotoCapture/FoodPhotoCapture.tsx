@@ -114,12 +114,17 @@ export const FoodPhotoCapture = ({ onAnalysisComplete, onClose }: FoodPhotoCaptu
       });
 
       if (error) {
-        throw error;
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Error en el servicio de análisis');
+      }
+
+      if (!data || !data.foods || data.foods.length === 0) {
+        throw new Error('No se pudieron identificar alimentos en la imagen. Intenta con una imagen más clara.');
       }
 
       toast({
         title: "Análisis completado",
-        description: `Se identificaron ingredientes en la imagen.`
+        description: `Se identificaron ${data.foods.length} ingrediente(s) en la imagen.`
       });
 
       onAnalysisComplete({
