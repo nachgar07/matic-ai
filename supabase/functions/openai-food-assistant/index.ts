@@ -488,7 +488,7 @@ INFORMACION DEL USUARIO:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'o3-2025-04-16',
         messages: messages,
         functions: functions,
         function_call: "auto",
