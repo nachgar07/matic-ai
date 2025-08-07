@@ -344,6 +344,8 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
     await saveMessageToDb(messageText, 'user');
 
     try {
+      console.log('🚀 Starting message send...', { messageText });
+
       const conversationHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -351,11 +353,12 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
 
       // Get user context from frontend
       const userContext = await getUserNutritionContext();
+      console.log('👤 User context loaded:', !!userContext);
 
       // Get auth session to pass to edge function
       const { data: { session } } = await supabase.auth.getSession();
       
-      console.log('💡 Session check:', {
+      console.log('🔐 Session check:', {
         hasSession: !!session,
         hasAccessToken: !!session?.access_token,
         tokenLength: session?.access_token?.length,
@@ -367,6 +370,7 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
         throw new Error('No hay sesión de usuario válida. Por favor, recarga la página o inicia sesión nuevamente.');
       }
       
+      console.log('📤 Invoking OpenAI assistant...');
       const { data, error } = await supabase.functions.invoke('openai-food-assistant', {
         body: {
           action: 'chat',
@@ -374,8 +378,8 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
           conversationHistory,
           userContext: {
             ...userContext,
-            originalUserMessage: messageText, // Add original message for target extraction
-            selectedDate: selectedDate?.toISOString() // Add selected date
+            originalUserMessage: messageText,
+            selectedDate: selectedDate?.toISOString()
           }
         },
         headers: {
@@ -383,8 +387,16 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
         }
       });
 
+      console.log('📥 Function response:', { data, error });
+
       if (error) {
+        console.error('Function error:', error);
         throw error;
+      }
+
+      if (!data || !data.response) {
+        console.error('No response data:', data);
+        throw new Error('La IA no devolvió una respuesta válida');
       }
 
       const assistantMessage: Message = {
@@ -393,6 +405,7 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
         timestamp: new Date()
       };
 
+      console.log('✅ Adding assistant message:', assistantMessage.content.substring(0, 100) + '...');
       setMessages(prev => [...prev, assistantMessage]);
 
       // Save assistant message to database
@@ -410,20 +423,26 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
       }
 
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('❌ Error sending message:', error);
       
       // Try to provide a more helpful error message
-      let errorMessage = "Disculpa, tengo problemas de conexión en este momento. Por favor intenta de nuevo.";
-      let toastMessage = "No se pudo enviar el mensaje. Verifica tu conexión e intenta de nuevo.";
+      let errorMessage = "Disculpa, tengo problemas técnicos en este momento. ¿Puedes intentar de nuevo?";
+      let toastMessage = "Error de comunicación";
       
-      if (error.message?.includes('non-2xx')) {
-        errorMessage = "El servicio de IA está temporalmente sobrecargado. Mientras tanto, puedes usar el botón 'Buscar comida' para agregar alimentos manualmente. ¿Hay algo específico sobre nutrición en lo que pueda ayudarte?";
-        toastMessage = "Servicio temporalmente sobrecargado. Intenta de nuevo en unos segundos.";
+      if (error.message?.includes('non-2xx') || error.message?.includes('500')) {
+        errorMessage = "El servicio de IA está temporalmente sobrecargado. Mientras tanto, puedes usar el botón 'Buscar comida' para agregar alimentos manualmente.";
+        toastMessage = "Servicio temporalmente sobrecargado";
+      } else if (error.message?.includes('sesión')) {
+        errorMessage = "Tu sesión ha expirado. Por favor recarga la página e intenta nuevamente.";
+        toastMessage = "Sesión expirada";
+      } else if (error.message?.includes('respuesta válida')) {
+        errorMessage = "Hubo un problema con la respuesta del asistente. ¿Puedes reformular tu pregunta?";
+        toastMessage = "Error en la respuesta";
       }
 
       toast({
-        title: "Problema temporal",
-        description: toastMessage,
+        title: toastMessage,
+        description: "Intenta de nuevo en unos segundos",
         variant: "destructive"
       });
 
