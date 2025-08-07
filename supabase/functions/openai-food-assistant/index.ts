@@ -804,8 +804,14 @@ async function executeCreateMeal(args: any, userContext: any) {
   console.log('Executing create_meal with args:', args);
   
   try {
-    // Create Supabase client using the user's auth token
+    // Create Supabase client using service role key for database operations
     const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get user ID from auth header using anon client
+    const anonClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { 
@@ -817,8 +823,7 @@ async function executeCreateMeal(args: any, userContext: any) {
       }
     );
 
-    // Verify user authentication
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await anonClient.auth.getUser();
     if (userError || !user) {
       console.error('User authentication failed:', userError);
       throw new Error('User not authenticated');
