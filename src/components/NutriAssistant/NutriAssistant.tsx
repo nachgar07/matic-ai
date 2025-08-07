@@ -352,6 +352,9 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
       // Get user context from frontend
       const userContext = await getUserNutritionContext();
 
+      // Get auth session to pass to edge function
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.functions.invoke('openai-food-assistant', {
         body: {
           action: 'chat',
@@ -362,6 +365,9 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
             originalUserMessage: messageText, // Add original message for target extraction
             selectedDate: selectedDate?.toISOString() // Add selected date
           }
+        },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
         }
       });
 
