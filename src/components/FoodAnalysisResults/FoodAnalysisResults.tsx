@@ -34,7 +34,7 @@ interface FoodAnalysisResultsProps {
 }
 
 export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate }: FoodAnalysisResultsProps) => {
-  const [editedFoods, setEditedFoods] = useState(analysis.foods);
+  const [editedFoods, setEditedFoods] = useState(analysis.foods || []);
   const [selectedMealTypes, setSelectedMealTypes] = useState<Record<number, string>>({});
   const [servings, setServings] = useState<Record<number, number>>({});
   const [globalMealType, setGlobalMealType] = useState<string>("");
@@ -167,7 +167,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
     });
   };
 
-  const totalCalories = editedFoods.reduce((sum, food) => {
+  const totalCalories = (editedFoods || []).reduce((sum, food) => {
     const serving = servings[editedFoods.indexOf(food)] || 1;
     return sum + (food.estimated_calories * serving);
   }, 0);
@@ -180,7 +180,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
             <div>
               <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold mb-2`}>Análisis de Alimentos</h3>
               <p className="text-sm text-muted-foreground">
-                Se identificaron {editedFoods.length} alimentos • ~{Math.round(totalCalories)} calorías
+                Se identificaron {editedFoods?.length || 0} alimentos • ~{Math.round(totalCalories)} calorías
               </p>
             </div>
             <Button variant="ghost" onClick={onClose} size={isMobile ? "sm" : "default"}>×</Button>
@@ -234,7 +234,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
 
           {/* Foods list */}
           <div className={`space-y-4 ${isMobile ? 'mb-4' : 'mb-6'}`}>
-            {editedFoods.map((food, index) => (
+            {(editedFoods || []).map((food, index) => (
               <Card key={index} className={`${isMobile ? 'p-3' : 'p-4'}`}>
                 <div className={`${isMobile ? 'flex-col space-y-3' : 'flex items-start gap-4'}`}>
                   <div className="flex-1">
