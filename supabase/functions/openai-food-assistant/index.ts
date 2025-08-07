@@ -529,10 +529,21 @@ ${mealTypeName}:`;
     systemPrompt += `
 
 INSTRUCCIONES FINALES:
-- NUNCA uses create_meal a menos que el usuario confirme explicitamente que quiere registrar las comidas
+- NUNCA uses create_meal o create_multiple_meals a menos que el usuario confirme explicitamente que quiere registrar las comidas
+- Usa create_multiple_meals cuando el usuario pida registrar un plan completo (desayuno, almuerzo, cena, snacks)
+- Usa create_meal solo para registrar una comida individual
 - Siempre calcula valores nutricionales exactos usando tu conocimiento
 - Prioriza alimentos similares a los que el usuario ha consumido recientemente
-- Respeta ESTRICTAMENTE los limites nutricionales restantes`;
+- Respeta ESTRICTAMENTE los limites nutricionales restantes
+
+CUANDO USAR create_multiple_meals:
+- El usuario dice "crea todas estas comidas", "registra todo el plan", "agrega todos los platos"
+- Quiere registrar un plan nutricional completo con multiples comidas
+- Pide crear las comidas del desayuno, almuerzo, cena por separado
+
+CUANDO USAR create_meal:
+- El usuario quiere registrar solo una comida especifica
+- Pide agregar solo el desayuno, o solo el almuerzo, etc.`;
   }
 
   // Prepare the messages for OpenAI
@@ -595,6 +606,59 @@ INSTRUCCIONES FINALES:
               },
               required: ['meal_type', 'food_name', 'servings', 'calories_per_serving', 'protein_per_serving', 'carbs_per_serving', 'fat_per_serving']
             }
+          },
+          {
+            name: 'create_multiple_meals',
+            description: 'Guarda multiples comidas de un plan nutricional completo en la base de datos del usuario',
+            parameters: {
+              type: 'object',
+              properties: {
+                meals: {
+                  type: 'array',
+                  description: 'Lista de comidas del plan nutricional',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      meal_type: {
+                        type: 'string',
+                        enum: ['breakfast', 'lunch', 'dinner', 'snack'],
+                        description: 'Tipo de comida'
+                      },
+                      food_name: {
+                        type: 'string',
+                        description: 'Nombre descriptivo del plato completo (ej: "Desayuno Proteico", "Almuerzo Balanceado")'
+                      },
+                      servings: {
+                        type: 'number',
+                        description: 'Numero de porciones'
+                      },
+                      calories_per_serving: {
+                        type: 'number',
+                        description: 'Calorias totales del plato'
+                      },
+                      protein_per_serving: {
+                        type: 'number',
+                        description: 'Proteina total del plato en gramos'
+                      },
+                      carbs_per_serving: {
+                        type: 'number',
+                        description: 'Carbohidratos totales del plato en gramos'
+                      },
+                      fat_per_serving: {
+                        type: 'number',
+                        description: 'Grasas totales del plato en gramos'
+                      },
+                      description: {
+                        type: 'string',
+                        description: 'Descripcion detallada de los alimentos incluidos en el plato'
+                      }
+                    },
+                    required: ['meal_type', 'food_name', 'servings', 'calories_per_serving', 'protein_per_serving', 'carbs_per_serving', 'fat_per_serving', 'description']
+                  }
+                }
+              },
+              required: ['meals']
+            }
           }
         ]
       })
@@ -645,6 +709,28 @@ INSTRUCCIONES FINALES:
           return new Response(
             JSON.stringify({
               response: `Lo siento, hubo un error al intentar guardar la comida: ${functionError.message}. Por favor, intenta nuevamente.`,
+              success: false
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } else if (assistantMessage.function_call.name === 'create_multiple_meals') {
+        try {
+          const functionArgs = JSON.parse(assistantMessage.function_call.arguments);
+          console.log('Multiple meals function arguments:', functionArgs);
+          
+          const multipleMealsResult = await executeCreateMultipleMeals(functionArgs, userContext);
+          
+          return new Response(
+            JSON.stringify(multipleMealsResult),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+          
+        } catch (functionError) {
+          console.error('Error executing create_multiple_meals function:', functionError);
+          return new Response(
+            JSON.stringify({
+              response: `Lo siento, hubo un error al intentar guardar las comidas: ${functionError.message}. Por favor, intenta nuevamente.`,
               success: false
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -783,6 +869,147 @@ Has superado tu objetivo diario de calorias. Considera actividad fisica adiciona
 
   } catch (error) {
     console.error('Error in executeCreateMeal:', error);
+    throw error;
+  }
+}
+
+async function executeCreateMultipleMeals(args: any, userContext: any) {
+  console.log('Executing create_multiple_meals with args:', args);
+  
+  try {
+    const results = [];
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    
+    // Create each meal separately
+    for (const meal of args.meals) {
+      console.log(`Creating meal: ${meal.food_name} (${meal.meal_type})`);
+      
+      const createMealResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/create-meal-from-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+        },
+        body: JSON.stringify({
+          meal_type: meal.meal_type,
+          food_name: meal.food_name,
+          servings: meal.servings,
+          calories_per_serving: meal.calories_per_serving,
+          protein_per_serving: meal.protein_per_serving,
+          carbs_per_serving: meal.carbs_per_serving,
+          fat_per_serving: meal.fat_per_serving
+        })
+      });
+
+      if (!createMealResponse.ok) {
+        const errorText = await createMealResponse.text();
+        console.error(`Error creating meal ${meal.food_name}:`, errorText);
+        throw new Error(`Error al guardar ${meal.food_name} en la base de datos`);
+      }
+
+      const createMealResult = await createMealResponse.json();
+      console.log(`Meal ${meal.food_name} created successfully`);
+      
+      // Calculate totals
+      const mealCalories = meal.calories_per_serving * meal.servings;
+      const mealProtein = meal.protein_per_serving * meal.servings;
+      const mealCarbs = meal.carbs_per_serving * meal.servings;
+      const mealFat = meal.fat_per_serving * meal.servings;
+      
+      totalCalories += mealCalories;
+      totalProtein += mealProtein;
+      totalCarbs += mealCarbs;
+      totalFat += mealFat;
+      
+      results.push({
+        meal_type: meal.meal_type,
+        food_name: meal.food_name,
+        servings: meal.servings,
+        calories: Math.round(mealCalories),
+        protein: Math.round(mealProtein * 10) / 10,
+        carbs: Math.round(mealCarbs * 10) / 10,
+        fat: Math.round(mealFat * 10) / 10,
+        description: meal.description
+      });
+    }
+
+    // Format a comprehensive response for the user
+    const mealTypeNames: { [key: string]: string } = {
+      breakfast: 'Desayuno',
+      lunch: 'Almuerzo',
+      dinner: 'Cena',
+      snack: 'Snack'
+    };
+
+    let response = `¡Perfecto! He registrado todas las comidas de tu plan nutricional:\n\n`;
+    
+    results.forEach((meal, index) => {
+      const mealTypeName = mealTypeNames[meal.meal_type] || meal.meal_type;
+      response += `${mealTypeName}: ${meal.food_name}
+📊 ${meal.calories} kcal | ${meal.protein}g proteína | ${meal.carbs}g carbohidratos | ${meal.fat}g grasas
+📝 ${meal.description}
+
+`;
+    });
+
+    response += `📈 RESUMEN TOTAL REGISTRADO:
+Calorías: ${Math.round(totalCalories)} kcal
+Proteína: ${Math.round(totalProtein * 10) / 10}g
+Carbohidratos: ${Math.round(totalCarbs * 10) / 10}g
+Grasas: ${Math.round(totalFat * 10) / 10}g`;
+
+    // Add updated progress if user context is available
+    if (userContext) {
+      const newCalories = Math.round(userContext.today.consumed.calories + totalCalories);
+      const newProtein = Math.round((userContext.today.consumed.protein + totalProtein) * 10) / 10;
+      const newCarbs = Math.round((userContext.today.consumed.carbs + totalCarbs) * 10) / 10;
+      const newFat = Math.round((userContext.today.consumed.fat + totalFat) * 10) / 10;
+      
+      const caloriesRemaining = Math.max(0, userContext.goals.daily_calories - newCalories);
+      const proteinRemaining = Math.max(0, userContext.goals.daily_protein - newProtein);
+      const carbsRemaining = Math.max(0, userContext.goals.daily_carbs - newCarbs);
+      const fatRemaining = Math.max(0, userContext.goals.daily_fat - newFat);
+      
+      response += `
+
+📊 PROGRESO ACTUALIZADO DE HOY:
+Calorías: ${newCalories}/${userContext.goals.daily_calories} kcal (${caloriesRemaining} restantes)
+Proteína: ${newProtein}/${userContext.goals.daily_protein}g (${proteinRemaining}g restantes)
+Carbohidratos: ${newCarbs}/${userContext.goals.daily_carbs}g (${carbsRemaining}g restantes)
+Grasas: ${newFat}/${userContext.goals.daily_fat}g (${fatRemaining}g restantes)`;
+
+      if (caloriesRemaining === 0) {
+        response += `
+
+🎉 ¡Felicidades! Has alcanzado tu objetivo diario de calorías perfectamente.`;
+      } else if (caloriesRemaining > 0) {
+        response += `
+
+💡 Aún puedes consumir ${caloriesRemaining} calorías más para llegar a tu objetivo diario.`;
+      } else {
+        response += `
+
+⚠️ Has superado tu objetivo diario de calorías. Considera actividad física adicional.`;
+      }
+    }
+
+    return {
+      response: response,
+      success: true,
+      meals_logged: results.length,
+      total_nutrition: {
+        calories: Math.round(totalCalories),
+        protein: Math.round(totalProtein * 10) / 10,
+        carbs: Math.round(totalCarbs * 10) / 10,
+        fat: Math.round(totalFat * 10) / 10
+      }
+    };
+
+  } catch (error) {
+    console.error('Error in executeCreateMultipleMeals:', error);
     throw error;
   }
 }
