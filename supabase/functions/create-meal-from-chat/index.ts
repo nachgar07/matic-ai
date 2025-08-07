@@ -13,8 +13,16 @@ interface FoodItem {
 }
 
 interface MealCreateRequest {
-  foods: FoodItem[];
+  // For multiple foods (original format)
+  foods?: FoodItem[];
+  // For single meal from openai-food-assistant
   meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  food_name?: string;
+  servings?: number;
+  calories_per_serving?: number;
+  protein_per_serving?: number;
+  carbs_per_serving?: number;
+  fat_per_serving?: number;
   user_message?: string;
   consumed_at?: string;
 }
@@ -84,9 +92,21 @@ serve(async (req) => {
   }
 
   try {
-    const { foods, meal_type, user_message, consumed_at } = await req.json() as MealCreateRequest;
+    const requestData = await req.json() as MealCreateRequest;
+    const { 
+      foods, 
+      meal_type, 
+      food_name, 
+      servings, 
+      calories_per_serving, 
+      protein_per_serving, 
+      carbs_per_serving, 
+      fat_per_serving, 
+      user_message, 
+      consumed_at 
+    } = requestData;
     
-    console.log('Creating meal from chat:', { foods, meal_type, user_message });
+    console.log('Creating meal from chat:', requestData);
 
     // Get user from auth header
     const authHeader = req.headers.get('Authorization');
@@ -125,12 +145,87 @@ serve(async (req) => {
     const mealEntries = [];
     const nutritionalResults = [];
 
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
+    // Check if this is a single meal request (from openai-food-assistant) or multiple foods
+    if (food_name && calories_per_serving) {
+      // Handle single meal with pre-calculated nutrition
+      console.log(`Creating single meal: ${food_name}`);
+      
+      // Create a food entry in the database if it doesn't exist
+      const { data: existingFood, error: searchError } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('food_name', food_name)
+        .limit(1);
 
-    for (const food of foods) {
+      let foodId;
+      if (existingFood && existingFood.length > 0) {
+        foodId = existingFood[0].id;
+        console.log(`Found existing food: ${food_name}`);
+      } else {
+        // Create new food entry
+        const { data: newFood, error: insertError } = await supabase
+          .from('foods')
+          .insert({
+            food_id: `openai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            food_name: food_name,
+            calories_per_serving: calories_per_serving,
+            protein_per_serving: protein_per_serving,
+            carbs_per_serving: carbs_per_serving,
+            fat_per_serving: fat_per_serving,
+            serving_description: 'Porción estándar'
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error inserting food:', insertError);
+          throw new Error(`Error creating food entry: ${insertError.message}`);
+        }
+
+        foodId = newFood.id;
+        console.log(`Created new food: ${food_name}`);
+      }
+
+      // Create meal entry
+      const { data: mealEntry, error: mealError } = await supabase
+        .from('meal_entries')
+        .insert({
+          user_id: userId,
+          food_id: foodId,
+          servings: servings || 1,
+          meal_type: meal_type,
+          consumed_at: consumed_at ? new Date(consumed_at).toISOString() : new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (mealError) {
+        console.error('Error creating meal entry:', mealError);
+        throw new Error(`Error creating meal entry: ${mealError.message}`);
+      }
+
+      mealEntries.push({
+        ...mealEntry,
+        food: {
+          food_name,
+          calories_per_serving,
+          protein_per_serving,
+          carbs_per_serving,
+          fat_per_serving
+        },
+        calculated_calories: calories_per_serving * (servings || 1),
+        calculated_protein: protein_per_serving * (servings || 1),
+        calculated_carbs: carbs_per_serving * (servings || 1),
+        calculated_fat: fat_per_serving * (servings || 1)
+      });
+    } else if (foods && foods.length > 0) {
+      // Handle multiple foods (original functionality)
+      const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+      if (!openaiApiKey) {
+        throw new Error('OpenAI API key not configured');
+      }
+
+      for (const food of foods) {
       console.log(`Getting nutritional info for: ${food.name} (${food.servings} servings)`);
       
       // Use OpenAI to get nutritional information
@@ -204,6 +299,9 @@ serve(async (req) => {
       } else {
         throw new Error(`Could not get nutritional information for: ${food.name}`);
       }
+      }
+    } else {
+      throw new Error('No food information provided');
     }
 
     // Calculate final totals
@@ -219,7 +317,7 @@ serve(async (req) => {
     const response = {
       success: true,
       meal_type,
-      foods_processed: foods.length,
+      foods_processed: foods ? foods.length : 1,
       foods_saved: mealEntries.length,
       totals: {
         calories: Math.round(totals.calories),

@@ -891,7 +891,8 @@ async function executeCreateMultipleMeals(args: any, userContext: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': userContext.authHeader
+          'Authorization': userContext.authHeader,
+          'x-user-id': userContext.userId
         },
         body: JSON.stringify({
           meal_type: meal.meal_type,
