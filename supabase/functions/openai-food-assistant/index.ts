@@ -303,6 +303,22 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
   console.log('Handling conversation with OpenAI GPT-4...');
   console.log('User context received:', userContext ? 'yes' : 'no');
   
+  // Extract user ID from auth token using the same pattern as create-meal-from-chat
+  let userId: string;
+  
+  const userClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: userContext.authHeader } } }
+  );
+
+  const { data: { user }, error: userError } = await userClient.auth.getUser();
+  if (userError || !user) {
+    console.log('User authentication failed:', userError);
+    throw new Error('User not authenticated');
+  }
+  userId = user.id;
+  
   let systemPrompt = `Eres un asistente nutricional inteligente y amigable llamado NutriAI. Tu trabajo es:
 
 1. Ayudar a los usuarios con sus objetivos nutricionales
@@ -817,20 +833,14 @@ async function executeCreateMeal(args: any, userContext: any) {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get user ID from auth header using anon client
-    const anonClient = createClient(
+    // Extract user ID from auth token using the same pattern as create-meal-from-chat
+    const userClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { 
-        global: { 
-          headers: { 
-            Authorization: userContext.authHeader 
-          } 
-        } 
-      }
+      { global: { headers: { Authorization: userContext.authHeader } } }
     );
 
-    const { data: { user }, error: userError } = await anonClient.auth.getUser();
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
       console.error('User authentication failed:', userError);
       throw new Error('User not authenticated');
