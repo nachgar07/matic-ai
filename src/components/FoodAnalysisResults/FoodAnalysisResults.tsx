@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Edit2, Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,18 +15,10 @@ interface AnalyzedFood {
   name: string;
   estimated_portion: string;
   estimated_calories: number;
-  estimated_protein?: number;
-  estimated_carbs?: number;
-  estimated_fat?: number;
+  estimated_protein: number;
+  estimated_carbs: number;
+  estimated_fat: number;
   confidence: number;
-  fatsecret_data?: {
-    food_id: string;
-    food_name: string;
-    calories_per_serving?: number;
-    protein_per_serving?: number;
-    carbs_per_serving?: number;
-    fat_per_serving?: number;
-  };
 }
 
 interface FoodAnalysisResultsProps {
@@ -42,7 +34,6 @@ interface FoodAnalysisResultsProps {
 }
 
 export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate }: FoodAnalysisResultsProps) => {
-  const [editingFood, setEditingFood] = useState<number | null>(null);
   const [editedFoods, setEditedFoods] = useState(analysis.foods);
   const [selectedMealTypes, setSelectedMealTypes] = useState<Record<number, string>>({});
   const [servings, setServings] = useState<Record<number, number>>({});
@@ -72,32 +63,27 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
     }
 
     try {
-      let foodIdToUse = food.fatsecret_data?.food_id;
+      // Create manual food entry with OpenAI estimated values
+      const foodPayload = {
+        food_id: `manual_${Date.now()}_${index}`,
+        food_name: food.name,
+        brand_name: "Analizado por IA",
+        calories_per_serving: food.estimated_calories,
+        protein_per_serving: food.estimated_protein,
+        carbs_per_serving: food.estimated_carbs,
+        fat_per_serving: food.estimated_fat,
+        serving_description: food.estimated_portion
+      };
 
-      // If no FatSecret data, create a manual food entry with estimated values
-      if (!foodIdToUse) {
-        const foodPayload = {
-          food_id: `manual_${Date.now()}_${index}`,
-          food_name: food.name,
-          brand_name: "Estimado por IA",
-          calories_per_serving: food.estimated_calories,
-          protein_per_serving: food.estimated_protein || Math.round(food.estimated_calories * 0.15 / 4),
-          carbs_per_serving: food.estimated_carbs || Math.round(food.estimated_calories * 0.5 / 4),
-          fat_per_serving: food.estimated_fat || Math.round(food.estimated_calories * 0.35 / 9),
-          serving_description: food.estimated_portion
-        };
+      // Store the food in the foods table first using Supabase function
+      const { data: insertedFood, error: foodError } = await supabase.functions.invoke('add-manual-food', {
+        body: foodPayload
+      });
 
-        // Store the food in the foods table first using Supabase function
-        const { data: insertedFood, error: foodError } = await supabase.functions.invoke('add-manual-food', {
-          body: foodPayload
-        });
-
-        if (foodError) throw foodError;
-        foodIdToUse = insertedFood.food_id;
-      }
+      if (foodError) throw foodError;
 
       await addMealMutation.mutateAsync({
-        foodId: foodIdToUse,
+        foodId: insertedFood.food_id,
         servings: foodServings,
         mealType,
         plateImage: analysis.originalImage,
@@ -258,12 +244,9 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                         <Badge variant={food.confidence > 0.8 ? "default" : "secondary"} className={isMobile ? 'text-xs' : ''}>
                           {Math.round(food.confidence * 100)}% confianza
                         </Badge>
-                        {food.fatsecret_data && (
-                          <Badge variant="outline" className={isMobile ? 'text-xs' : ''}>
-                            <Check className="h-3 w-3 mr-1" />
-                            En base de datos
-                          </Badge>
-                        )}
+                        <Badge variant="outline" className={isMobile ? 'text-xs' : ''}>
+                          Analizado por IA
+                        </Badge>
                       </div>
                     </div>
 
@@ -271,15 +254,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                       {/* Portion */}
                       <div>
                         <label className="text-sm text-muted-foreground">Porción</label>
-                        {editingFood === index ? (
-                          <Input
-                            value={food.estimated_portion}
-                            onChange={(e) => updateFood(index, 'estimated_portion', e.target.value)}
-                            className="mt-1"
-                          />
-                        ) : (
-                          <p className={`mt-1 ${isMobile ? 'text-sm' : ''}`}>{food.estimated_portion}</p>
-                        )}
+                        <p className={`mt-1 ${isMobile ? 'text-sm' : ''}`}>{food.estimated_portion}</p>
                       </div>
 
                       {/* Servings */}
@@ -318,85 +293,38 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                     </div>
 
                     {/* Nutritional info */}
-                    <div className={`mt-3 grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 md:grid-cols-4 gap-3'} text-sm`}>
-                      <div>
-                        <label className="text-xs text-muted-foreground">Calorías</label>
-                        {editingFood === index ? (
-                          <Input
-                            type="number"
-                            value={food.estimated_calories}
-                            onChange={(e) => updateFood(index, 'estimated_calories', parseFloat(e.target.value) || 0)}
-                            className="mt-1 h-8"
-                          />
-                        ) : (
-                          <p className="mt-1 font-medium">
-                            {Math.round(food.estimated_calories * (servings[index] || 1))}
-                          </p>
-                        )}
+                    <div className={`mt-3 grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-4 gap-3'} text-sm`}>
+                      <div className={isMobile ? 'text-center' : ''}>
+                        <span className="text-muted-foreground block text-xs">Calorías</span>
+                        <span className="font-medium text-lg">
+                          {Math.round(food.estimated_calories * (servings[index] || 1))}
+                        </span>
                       </div>
                       
-                      <div>
-                        <label className="text-xs text-muted-foreground">Proteína (g)</label>
-                        {editingFood === index ? (
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={food.estimated_protein || food.fatsecret_data?.protein_per_serving || 0}
-                            onChange={(e) => updateFood(index, 'estimated_protein', parseFloat(e.target.value) || 0)}
-                            className="mt-1 h-8"
-                          />
-                        ) : (
-                          <p className="mt-1 font-medium">
-                            {Math.round((food.estimated_protein || food.fatsecret_data?.protein_per_serving || 0) * (servings[index] || 1))}g
-                          </p>
-                        )}
+                      <div className={isMobile ? 'text-center' : ''}>
+                        <span className="text-muted-foreground block text-xs">Proteína</span>
+                        <span className="font-medium">
+                          {Math.round(food.estimated_protein * (servings[index] || 1))}g
+                        </span>
                       </div>
 
-                      <div>
-                        <label className="text-xs text-muted-foreground">Carbos (g)</label>
-                        {editingFood === index ? (
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={food.estimated_carbs || food.fatsecret_data?.carbs_per_serving || 0}
-                            onChange={(e) => updateFood(index, 'estimated_carbs', parseFloat(e.target.value) || 0)}
-                            className="mt-1 h-8"
-                          />
-                        ) : (
-                          <p className="mt-1 font-medium">
-                            {Math.round((food.estimated_carbs || food.fatsecret_data?.carbs_per_serving || 0) * (servings[index] || 1))}g
-                          </p>
-                        )}
+                      <div className={isMobile ? 'text-center' : ''}>
+                        <span className="text-muted-foreground block text-xs">Carbos</span>
+                        <span className="font-medium">
+                          {Math.round(food.estimated_carbs * (servings[index] || 1))}g
+                        </span>
                       </div>
 
-                      <div>
-                        <label className="text-xs text-muted-foreground">Grasa (g)</label>
-                        {editingFood === index ? (
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={food.estimated_fat || food.fatsecret_data?.fat_per_serving || 0}
-                            onChange={(e) => updateFood(index, 'estimated_fat', parseFloat(e.target.value) || 0)}
-                            className="mt-1 h-8"
-                          />
-                        ) : (
-                          <p className="mt-1 font-medium">
-                            {Math.round((food.estimated_fat || food.fatsecret_data?.fat_per_serving || 0) * (servings[index] || 1))}g
-                          </p>
-                        )}
+                      <div className={isMobile ? 'text-center' : ''}>
+                        <span className="text-muted-foreground block text-xs">Grasa</span>
+                        <span className="font-medium">
+                          {Math.round(food.estimated_fat * (servings[index] || 1))}g
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   <div className={`flex ${isMobile ? 'justify-end gap-2' : 'gap-2'}`}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingFood(editingFood === index ? null : index)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    
                     <Button
                       onClick={async () => {
                         await addFoodToMeal(food, index);
