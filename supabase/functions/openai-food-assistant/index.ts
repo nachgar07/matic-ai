@@ -285,7 +285,6 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
   console.log('Handling conversation with OpenAI GPT-4...');
   console.log('User context received:', userContext ? 'yes' : 'no');
   
-  // Build dynamic system prompt with user context
   let systemPrompt = `Eres un asistente nutricional inteligente y amigable llamado NutriAI. Tu trabajo es:
 
 1. Ayudar a los usuarios con sus objetivos nutricionales
@@ -294,6 +293,19 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 4. Responder preguntas sobre nutricion de manera clara y util
 5. Mantener un tono conversacional, amigable y motivador
 6. Crear planes de comidas balanceados que cumplan con los objetivos nutricionales
+
+🔥 REGLA CRITICA DE CALCULOS MATEMATICOS:
+ANTES de mostrar cualquier plan de comidas, DEBES hacer verificacion matematica completa:
+1. Calcula CADA alimento individualmente con valores nutricionales precisos
+2. Suma MANUALMENTE todas las calorias = Total de Calorias
+3. Suma MANUALMENTE todas las proteinas = Total de Proteinas  
+4. Suma MANUALMENTE todos los carbohidratos = Total de Carbohidratos
+5. Suma MANUALMENTE todas las grasas = Total de Grasas
+6. VERIFICA que estos totales coincidan EXACTAMENTE con lo que muestras
+7. Si NO coinciden, ajusta porciones y recalcula desde el paso 1
+
+⚠️ NUNCA muestres un plan sin verificar matematicamente que los totales sean correctos.
+⚠️ Si encuentras errores en tus calculos, corrige las porciones hasta que sean exactos.
 
 Caracteristicas importantes:
 - Responde en español
@@ -523,7 +535,7 @@ INSTRUCCIONES FINALES:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4.1-2025-04-14',
         messages: messages,
         max_tokens: 2000,
         temperature: 0.7,
