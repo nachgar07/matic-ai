@@ -175,16 +175,28 @@ Instrucciones importantes:
         
         if (usdaData) {
           // Convertir de por 100g a la porción estimada
-          const portionWeight = parseFloat(food.estimated_portion.replace(/[^\d.]/g, '')) || 100;
+          // Extraer el peso de la porción estimada (ej: "15g" -> 15)
+          const portionMatch = food.estimated_portion.match(/(\d+(?:\.\d+)?)\s*g/i);
+          const portionWeight = portionMatch ? parseFloat(portionMatch[1]) : 15; // Default 15g si no se encuentra
           const factor = portionWeight / 100;
+          
+          console.log(`Portion calculation for ${food.name}: ${food.estimated_portion} -> ${portionWeight}g (factor: ${factor})`);
+          console.log(`USDA values per 100g: ${usdaData.calories} cal, ${usdaData.protein}g protein, ${usdaData.carbs}g carbs, ${usdaData.fat}g fat`);
+          
+          const finalCalories = Math.round(usdaData.calories * factor);
+          const finalProtein = Math.round(usdaData.protein * factor * 10) / 10;
+          const finalCarbs = Math.round(usdaData.carbs * factor * 10) / 10;
+          const finalFat = Math.round(usdaData.fat * factor * 10) / 10;
+          
+          console.log(`Final values for portion: ${finalCalories} cal, ${finalProtein}g protein, ${finalCarbs}g carbs, ${finalFat}g fat`);
           
           return {
             name: food.name,
             estimated_portion: food.estimated_portion,
-            estimated_calories: Math.round(usdaData.calories * factor),
-            estimated_protein: Math.round(usdaData.protein * factor * 10) / 10,
-            estimated_carbs: Math.round(usdaData.carbs * factor * 10) / 10,
-            estimated_fat: Math.round(usdaData.fat * factor * 10) / 10,
+            estimated_calories: finalCalories,
+            estimated_protein: finalProtein,
+            estimated_carbs: finalCarbs,
+            estimated_fat: finalFat,
             confidence: food.confidence,
             source: 'USDA'
           };
