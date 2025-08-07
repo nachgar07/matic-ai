@@ -88,6 +88,19 @@ serve(async (req) => {
 async function analyzeFoodImage(base64Image: string, apiKey: string): Promise<FoodAnalysisResult> {
   console.log('Analyzing food image with OpenAI GPT-4 Vision...');
   
+  // Clean and validate base64 image
+  if (!base64Image) {
+    throw new Error('No image data provided');
+  }
+  
+  // Remove any data URL prefix if present
+  const cleanBase64 = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+  
+  // Basic validation of base64 format
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleanBase64)) {
+    throw new Error('Invalid base64 image format');
+  }
+  
   const prompt = `Analiza esta imagen de comida e identifica unicamente los alimentos y sus porciones estimadas en formato JSON:
 
 {
@@ -130,7 +143,7 @@ Instrucciones importantes:
               {
                 type: 'image_url',
                 image_url: {
-                  url: `data:image/jpeg;base64,${base64Image}`,
+                  url: `data:image/jpeg;base64,${cleanBase64}`,
                   detail: 'high'
                 }
               }

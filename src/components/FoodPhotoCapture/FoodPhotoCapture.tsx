@@ -109,7 +109,7 @@ export const FoodPhotoCapture = ({ onAnalysisComplete, onClose }: FoodPhotoCaptu
       const { data, error } = await supabase.functions.invoke('openai-food-assistant', {
         body: {
           action: 'analyze-food',
-          imageBase64: base64Image
+          image: base64Image
         }
       });
 
