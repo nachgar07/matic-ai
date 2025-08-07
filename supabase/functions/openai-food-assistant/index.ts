@@ -392,7 +392,7 @@ Subtotal [nombre comida]:
   if (userContext) {
     systemPrompt += `
 
-INFORMACION ACTUALIZADA DEL USUARIO:
+USER INFORMATION:
 
 Usuario: ${userContext.user.display_name}
 
