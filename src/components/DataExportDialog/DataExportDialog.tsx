@@ -6,7 +6,10 @@ import { Card } from "@/components/ui/card";
 import { Download, FileText, Target, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { utils, writeFile } from "xlsx";
+import { utils, writeFile, write } from "xlsx";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 
 interface DataExportDialogProps {
   open: boolean;
@@ -82,8 +85,16 @@ export const DataExportDialog = ({ open, onOpenChange }: DataExportDialogProps) 
           throw new Error("Tipo de datos no válido");
       }
 
-      // Descargar archivo
-      writeFile(workbook, filename);
+      // Verificar si es un dispositivo móvil con Capacitor
+      if (Capacitor.isNativePlatform()) {
+        await downloadFileNative(workbook, filename);
+      } else if (isMobileDevice()) {
+        // Navegador móvil sin Capacitor - usar descarga como CSV
+        await downloadAsCSVMobile(data, selectedDataType, filename);
+      } else {
+        // Navegador web - usar descarga normal
+        writeFile(workbook, filename);
+      }
 
       toast({
         title: "Éxito",
@@ -100,6 +111,131 @@ export const DataExportDialog = ({ open, onOpenChange }: DataExportDialogProps) 
       });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
+  const downloadAsCSVMobile = async (data: any, dataType: string, filename: string) => {
+    try {
+      let csvContent = '';
+      const csvFilename = filename.replace('.xlsx', '.csv');
+
+      switch (dataType) {
+        case 'meals':
+          csvContent = createMealsCSV(data);
+          break;
+        case 'goals':
+          csvContent = createGoalsCSV(data);
+          break;
+        case 'expenses':
+          csvContent = createExpensesCSV(data);
+          break;
+      }
+
+      // Crear y descargar CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', csvFilename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Error downloading CSV on mobile:', error);
+      throw new Error('Error al descargar archivo CSV en móvil');
+    }
+  };
+
+  const createMealsCSV = (data: any) => {
+    const headers = ['Fecha', 'Hora', 'Tipo de Comida', 'Alimento', 'Marca', 'Porciones', 'Calorías', 'Proteínas (g)', 'Carbohidratos (g)', 'Grasas (g)'];
+    
+    const rows = data.meals.map((meal: any) => [
+      new Date(meal.consumed_at).toLocaleDateString('es-ES'),
+      new Date(meal.consumed_at).toLocaleTimeString('es-ES'),
+      meal.meal_type,
+      meal.foods?.food_name || 'Desconocido',
+      meal.foods?.brand_name || '',
+      meal.servings,
+      Math.round((meal.foods?.calories_per_serving || 0) * meal.servings),
+      Math.round((meal.foods?.protein_per_serving || 0) * meal.servings * 10) / 10,
+      Math.round((meal.foods?.carbs_per_serving || 0) * meal.servings * 10) / 10,
+      Math.round((meal.foods?.fat_per_serving || 0) * meal.servings * 10) / 10
+    ]);
+
+    return [headers, ...rows].map(row => row.join(',')).join('\n');
+  };
+
+  const createGoalsCSV = (data: any) => {
+    const headers = ['Nombre', 'Descripción', 'Categoría', 'Prioridad', 'Frecuencia', 'Valor Objetivo', 'Fecha Inicio', 'Estado'];
+    
+    const rows = data.goals.map((goal: any) => [
+      goal.name,
+      goal.description || '',
+      goal.category,
+      goal.priority,
+      goal.frequency,
+      goal.target_value,
+      goal.start_date,
+      goal.is_active ? 'Activo' : 'Inactivo'
+    ]);
+
+    return [headers, ...rows].map(row => row.join(',')).join('\n');
+  };
+
+  const createExpensesCSV = (data: any) => {
+    const headers = ['Fecha', 'Tienda', 'Categoría', 'Total', 'Método de Pago'];
+    
+    const rows = data.expenses.map((expense: any) => [
+      expense.expense_date,
+      expense.store_name || '',
+      expense.category_name || 'Sin categoría',
+      expense.total_amount,
+      expense.payment_method || ''
+    ]);
+
+    return [headers, ...rows].map(row => row.join(',')).join('\n');
+  };
+
+  const downloadFileNative = async (workbook: any, filename: string) => {
+    try {
+      // Convertir el workbook a ArrayBuffer
+      const arrayBuffer = write(workbook, { type: 'array', bookType: 'xlsx' });
+      
+      // Convertir ArrayBuffer a base64
+      const uint8Array = new Uint8Array(arrayBuffer);
+      let binary = '';
+      uint8Array.forEach((byte) => {
+        binary += String.fromCharCode(byte);
+      });
+      const base64Data = btoa(binary);
+
+      // Escribir archivo en el sistema de archivos del dispositivo
+      const result = await Filesystem.writeFile({
+        path: filename,
+        data: base64Data,
+        directory: Directory.Documents,
+        encoding: Encoding.UTF8
+      });
+
+      // Compartir el archivo
+      await Share.share({
+        title: 'Exportar datos',
+        text: `Archivo exportado: ${filename}`,
+        url: result.uri,
+        dialogTitle: 'Compartir archivo exportado'
+      });
+
+    } catch (error) {
+      console.error('Error downloading file on native:', error);
+      throw new Error('Error al descargar archivo en dispositivo móvil');
     }
   };
 
@@ -315,6 +451,18 @@ export const DataExportDialog = ({ open, onOpenChange }: DataExportDialogProps) 
                     </>
                   )}
                 </ul>
+                
+                <div className="mt-3 pt-2 border-t border-border">
+                  <div className="text-xs text-muted-foreground">
+                    {Capacitor.isNativePlatform() ? (
+                      "📱 App móvil: Se exportará como Excel y se podrá compartir"
+                    ) : isMobileDevice() ? (
+                      "📱 Navegador móvil: Se exportará como CSV para mejor compatibilidad"
+                    ) : (
+                      "💻 Navegador web: Se exportará como Excel con múltiples hojas"
+                    )}
+                  </div>
+                </div>
               </div>
             </Card>
           )}
