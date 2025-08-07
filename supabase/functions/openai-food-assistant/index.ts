@@ -382,7 +382,7 @@ REGLAS PARA MÚLTIPLES COMIDAS:
   if (userContext) {
     systemPrompt += `
 
-INFORMACIÓN ACTUALIZADA DEL USUARIO:
+INFORMACION ACTUALIZADA DEL USUARIO:
 
 Usuario: ${userContext.user.display_name}
 
