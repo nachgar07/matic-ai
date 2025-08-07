@@ -627,13 +627,17 @@ async function executeCreateMeal(args: any, userContext: any) {
     if (data.success && data.foods_saved > 0) {
       response = `¡Perfecto! He registrado tu ${mealTypeNames[args.meal_type] || 'comida'}:\n\n`;
       
-      data.results.filter((r: any) => r.saved).forEach((food: any) => {
-        response += `• ${food.food_data.food_name} (${food.servings} porción${food.servings === 1 ? '' : 'es'}) - ${food.total_calories} kcal\n`;
-      });
+      if (data.results && Array.isArray(data.results)) {
+        data.results.filter((r: any) => r.saved).forEach((food: any) => {
+          response += `• ${food.food_data.food_name} (${food.servings} porción${food.servings === 1 ? '' : 'es'}) - ${food.total_calories} kcal\n`;
+        });
+      }
       
-      response += `\n📊 **Totales:** ${data.totals.calories} kcal, ${data.totals.protein}g proteína, ${data.totals.carbs}g carbohidratos, ${data.totals.fat}g grasa`;
+      if (data.totals) {
+        response += `\n📊 **Totales:** ${data.totals.calories} kcal, ${data.totals.protein}g proteína, ${data.totals.carbs}g carbohidratos, ${data.totals.fat}g grasa`;
+      }
       
-      if (userContext?.goals) {
+      if (userContext?.goals && data.totals) {
         const newCalories = userContext.today.consumed.calories + data.totals.calories;
         const remaining = userContext.goals.daily_calories - newCalories;
         response += `\n\n🎯 Llevas ${Math.round(newCalories)} de tus ${userContext.goals.daily_calories} calorías diarias. ${remaining > 0 ? `Te quedan ${Math.round(remaining)} kcal.` : '¡Objetivo alcanzado!'}`;
@@ -647,7 +651,7 @@ async function executeCreateMeal(args: any, userContext: any) {
       }
     }
 
-    if (data.results.some((r: any) => !r.found)) {
+    if (data.results && Array.isArray(data.results) && data.results.some((r: any) => !r.found)) {
       response += '\n\n❓ **No encontré:** ';
       response += data.results.filter((r: any) => !r.found).map((r: any) => r.food_name).join(', ');
     }
