@@ -10,6 +10,7 @@ import { useTheme } from "next-themes";
 import { useNutritionGoals } from "@/hooks/useFatSecret";
 import { EditNutritionGoalsDialog } from "@/components/EditNutritionGoalsDialog/EditNutritionGoalsDialog";
 import { PersonalDataSettings } from "@/components/PersonalDataSettings/PersonalDataSettings";
+import { DataExportDialog } from "@/components/DataExportDialog/DataExportDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,6 +19,7 @@ export const Perfil = () => {
   const { data: nutritionGoals } = useNutritionGoals();
   const [editGoalsOpen, setEditGoalsOpen] = useState(false);
   const [personalDataOpen, setPersonalDataOpen] = useState(false);
+  const [exportDataOpen, setExportDataOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
@@ -238,7 +240,11 @@ export const Perfil = () => {
             >
               Ajustar datos personales
             </Button>
-            <Button variant="ghost" className="w-full justify-start">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start"
+              onClick={() => setExportDataOpen(true)}
+            >
               Exportar datos
             </Button>
             <div className="flex items-center justify-between py-2">
@@ -309,6 +315,11 @@ export const Perfil = () => {
           }}
         />
       )}
+
+      <DataExportDialog 
+        open={exportDataOpen}
+        onOpenChange={setExportDataOpen}
+      />
 
       <BottomNavigation />
     </div>
