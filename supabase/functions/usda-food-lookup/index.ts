@@ -69,21 +69,45 @@ serve(async (req) => {
 });
 
 async function lookupFoodInUSDA(foodName: string): Promise<FoodMatch | null> {
+  console.log(`Looking up food in USDA: ${foodName}`);
+  
+  // Mapeo de nombres en español a términos de búsqueda en inglés más efectivos
+  const foodMapping: { [key: string]: string } = {
+    'miel': 'honey',
+    'aguacate': 'avocado',
+    'pollo': 'chicken breast',
+    'arroz': 'rice cooked',
+    'huevo': 'egg whole',
+    'pan': 'bread',
+    'leche': 'milk',
+    'queso': 'cheese',
+    'tomate': 'tomato',
+    'cebolla': 'onion',
+    'ajo': 'garlic',
+    'aceite': 'oil olive'
+  };
+  
+  const searchTerm = foodMapping[foodName.toLowerCase()] || foodName;
+  
   // USDA FoodData Central API (público, no requiere API key)
-  const searchUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query=${encodeURIComponent(foodName)}&pageSize=5&dataType=Foundation,SR%20Legacy`;
+  const searchUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query=${encodeURIComponent(searchTerm)}&pageSize=3&dataType=Foundation,SR%20Legacy`;
+  
+  console.log(`USDA search URL: ${searchUrl}`);
   
   try {
     const response = await fetch(searchUrl);
+    console.log(`USDA API response status: ${response.status}`);
     
     if (!response.ok) {
-      console.error(`USDA API error: ${response.status}`);
+      console.error(`USDA API error: ${response.status} - ${response.statusText}`);
       return null;
     }
 
     const data = await response.json();
+    console.log(`USDA API response for ${searchTerm}:`, JSON.stringify(data, null, 2));
     
     if (!data.foods || data.foods.length === 0) {
-      console.log(`No USDA data found for: ${foodName}`);
+      console.log(`No USDA data found for: ${searchTerm} (original: ${foodName})`);
       return null;
     }
 
@@ -93,6 +117,7 @@ async function lookupFoodInUSDA(foodName: string): Promise<FoodMatch | null> {
 
     // Extraer nutrientes principales
     const nutrients = extractMainNutrients(food.foodNutrients);
+    console.log(`Extracted nutrients for ${foodName}:`, nutrients);
     
     return {
       name: foodName,
@@ -117,24 +142,33 @@ function extractMainNutrients(nutrients: USDANutrient[]) {
     fat: 0
   };
 
+  console.log('Processing nutrients:', nutrients.length);
+
   nutrients.forEach(nutrient => {
+    console.log(`Nutrient ID: ${nutrient.nutrientId}, Name: ${nutrient.nutrientName}, Value: ${nutrient.value}, Unit: ${nutrient.unitName}`);
+    
     // Calorías (Energy)
     if (nutrient.nutrientId === 1008 && nutrient.unitName === 'kcal') {
       result.calories = nutrient.value;
+      console.log(`Found calories: ${nutrient.value}`);
     }
     // Proteína (Protein)
     else if (nutrient.nutrientId === 1003 && nutrient.unitName === 'g') {
       result.protein = nutrient.value;
+      console.log(`Found protein: ${nutrient.value}g`);
     }
     // Carbohidratos totales (Carbohydrate, by difference)
     else if (nutrient.nutrientId === 1005 && nutrient.unitName === 'g') {
       result.carbs = nutrient.value;
+      console.log(`Found carbs: ${nutrient.value}g`);
     }
     // Grasa total (Total lipid (fat))
     else if (nutrient.nutrientId === 1004 && nutrient.unitName === 'g') {
       result.fat = nutrient.value;
+      console.log(`Found fat: ${nutrient.value}g`);
     }
   });
 
+  console.log('Final nutrient result:', result);
   return result;
 }

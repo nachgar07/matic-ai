@@ -189,18 +189,47 @@ Instrucciones importantes:
             source: 'USDA'
           };
         } else {
-          // Fallback con valores conservadores si no hay datos USDA
-          console.log(`No USDA data found for ${food.name}, using conservative estimates`);
-          return {
-            name: food.name,
-            estimated_portion: food.estimated_portion,
-            estimated_calories: 50, // Valor conservador
-            estimated_protein: 1,
-            estimated_carbs: 10,
-            estimated_fat: 1,
-            confidence: food.confidence * 0.5, // Reducir confianza
-            source: 'fallback'
+          // Fallback con valores específicos conocidos si no hay datos USDA
+          console.log(`No USDA data found for ${food.name}, using precise fallback values`);
+          
+          // Base de datos de valores nutricionales precisos para alimentos comunes (por 100g)
+          const knownNutrients: { [key: string]: { cal: number, protein: number, carbs: number, fat: number } } = {
+            'miel': { cal: 304, protein: 0.3, carbs: 82.4, fat: 0 },
+            'aguacate': { cal: 160, protein: 2, carbs: 8.5, fat: 14.7 },
+            'huevo': { cal: 155, protein: 13, carbs: 1.1, fat: 11 },
+            'pollo': { cal: 165, protein: 31, carbs: 0, fat: 3.6 },
+            'arroz': { cal: 130, protein: 2.7, carbs: 28, fat: 0.3 },
+            'pan': { cal: 265, protein: 9, carbs: 49, fat: 3.2 }
           };
+          
+          const portionWeight = parseFloat(food.estimated_portion.replace(/[^\d.]/g, '')) || 100;
+          const factor = portionWeight / 100;
+          
+          const nutrientData = knownNutrients[food.name.toLowerCase()];
+          
+          if (nutrientData) {
+            return {
+              name: food.name,
+              estimated_portion: food.estimated_portion,
+              estimated_calories: Math.round(nutrientData.cal * factor),
+              estimated_protein: Math.round(nutrientData.protein * factor * 10) / 10,
+              estimated_carbs: Math.round(nutrientData.carbs * factor * 10) / 10,
+              estimated_fat: Math.round(nutrientData.fat * factor * 10) / 10,
+              confidence: food.confidence,
+              source: 'known_values'
+            };
+          } else {
+            return {
+              name: food.name,
+              estimated_portion: food.estimated_portion,
+              estimated_calories: 50, // Valor conservador
+              estimated_protein: 1,
+              estimated_carbs: 10,
+              estimated_fat: 1,
+              confidence: food.confidence * 0.5, // Reducir confianza
+              source: 'fallback'
+            };
+          }
         }
       });
 
