@@ -875,6 +875,7 @@ Has superado tu objetivo diario de calorias. Considera actividad fisica adiciona
 
 async function executeCreateMultipleMeals(args: any, userContext: any) {
   console.log('Executing create_multiple_meals with args:', args);
+  console.log('User context:', userContext);
   
   try {
     const results = [];
@@ -883,11 +884,27 @@ async function executeCreateMultipleMeals(args: any, userContext: any) {
     let totalCarbs = 0;
     let totalFat = 0;
 
-    // Create Supabase client with service role key
-    const supabase = createClient(
+    // Create Supabase client using the user's auth token
+    const userClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { 
+        global: { 
+          headers: { 
+            Authorization: userContext.authHeader 
+          } 
+        } 
+      }
     );
+
+    // Verify user authentication
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
+      throw new Error('User not authenticated');
+    }
+
+    console.log('User authenticated successfully:', user.id);
     
     // Create each meal separately
     for (const meal of args.meals) {
@@ -895,7 +912,7 @@ async function executeCreateMultipleMeals(args: any, userContext: any) {
       
       try {
         // Create a food entry in the database if it doesn't exist
-        const { data: existingFood, error: searchError } = await supabase
+        const { data: existingFood, error: searchError } = await userClient
           .from('foods')
           .select('*')
           .eq('food_name', meal.food_name)
@@ -906,8 +923,13 @@ async function executeCreateMultipleMeals(args: any, userContext: any) {
           foodId = existingFood[0].id;
           console.log(`Found existing food: ${meal.food_name}`);
         } else {
-          // Create new food entry
-          const { data: newFood, error: insertError } = await supabase
+          // Create new food entry using service role for food creation
+          const serviceClient = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          );
+
+          const { data: newFood, error: insertError } = await serviceClient
             .from('foods')
             .insert({
               food_id: `openai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -930,11 +952,11 @@ async function executeCreateMultipleMeals(args: any, userContext: any) {
           console.log(`Created new food: ${meal.food_name}`);
         }
 
-        // Create meal entry
-        const { data: mealEntry, error: mealError } = await supabase
+        // Create meal entry using user's client for proper RLS
+        const { data: mealEntry, error: mealError } = await userClient
           .from('meal_entries')
           .insert({
-            user_id: userContext.userId,
+            user_id: user.id,
             food_id: foodId,
             servings: meal.servings,
             meal_type: meal.meal_type,
