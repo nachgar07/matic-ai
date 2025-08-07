@@ -15,6 +15,9 @@ interface AnalyzedFood {
   name: string;
   estimated_portion: string;
   estimated_calories: number;
+  estimated_protein?: number;
+  estimated_carbs?: number;
+  estimated_fat?: number;
   confidence: number;
   fatsecret_data?: {
     food_id: string;
@@ -78,9 +81,9 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
           food_name: food.name,
           brand_name: "Estimado por IA",
           calories_per_serving: food.estimated_calories,
-          protein_per_serving: Math.round(food.estimated_calories * 0.15 / 4), // 15% protein estimate
-          carbs_per_serving: Math.round(food.estimated_calories * 0.5 / 4), // 50% carbs estimate  
-          fat_per_serving: Math.round(food.estimated_calories * 0.35 / 9), // 35% fat estimate
+          protein_per_serving: food.estimated_protein || Math.round(food.estimated_calories * 0.15 / 4),
+          carbs_per_serving: food.estimated_carbs || Math.round(food.estimated_calories * 0.5 / 4),
+          fat_per_serving: food.estimated_fat || Math.round(food.estimated_calories * 0.35 / 9),
           serving_description: food.estimated_portion
         };
 
@@ -315,35 +318,73 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                     </div>
 
                     {/* Nutritional info */}
-                    <div className={`mt-3 grid ${isMobile ? 'grid-cols-1 gap-1' : 'grid-cols-2 md:grid-cols-4 gap-2'} text-sm`}>
-                      <div className={isMobile ? 'flex justify-between' : ''}>
-                        <span className="text-muted-foreground">Calorías:</span>
-                        <span className={`${isMobile ? '' : 'ml-1'} font-medium`}>
-                          {Math.round(food.estimated_calories * (servings[index] || 1))}
-                        </span>
+                    <div className={`mt-3 grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 md:grid-cols-4 gap-3'} text-sm`}>
+                      <div>
+                        <label className="text-xs text-muted-foreground">Calorías</label>
+                        {editingFood === index ? (
+                          <Input
+                            type="number"
+                            value={food.estimated_calories}
+                            onChange={(e) => updateFood(index, 'estimated_calories', parseFloat(e.target.value) || 0)}
+                            className="mt-1 h-8"
+                          />
+                        ) : (
+                          <p className="mt-1 font-medium">
+                            {Math.round(food.estimated_calories * (servings[index] || 1))}
+                          </p>
+                        )}
                       </div>
-                      {food.fatsecret_data && (
-                        <>
-                          <div className={isMobile ? 'flex justify-between' : ''}>
-                            <span className="text-muted-foreground">Proteína:</span>
-                            <span className={`${isMobile ? '' : 'ml-1'} font-medium`}>
-                              {Math.round((food.fatsecret_data.protein_per_serving || 0) * (servings[index] || 1))}g
-                            </span>
-                          </div>
-                          <div className={isMobile ? 'flex justify-between' : ''}>
-                            <span className="text-muted-foreground">Carbos:</span>
-                            <span className={`${isMobile ? '' : 'ml-1'} font-medium`}>
-                              {Math.round((food.fatsecret_data.carbs_per_serving || 0) * (servings[index] || 1))}g
-                            </span>
-                          </div>
-                          <div className={isMobile ? 'flex justify-between' : ''}>
-                            <span className="text-muted-foreground">Grasa:</span>
-                            <span className={`${isMobile ? '' : 'ml-1'} font-medium`}>
-                              {Math.round((food.fatsecret_data.fat_per_serving || 0) * (servings[index] || 1))}g
-                            </span>
-                          </div>
-                        </>
-                      )}
+                      
+                      <div>
+                        <label className="text-xs text-muted-foreground">Proteína (g)</label>
+                        {editingFood === index ? (
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={food.estimated_protein || food.fatsecret_data?.protein_per_serving || 0}
+                            onChange={(e) => updateFood(index, 'estimated_protein', parseFloat(e.target.value) || 0)}
+                            className="mt-1 h-8"
+                          />
+                        ) : (
+                          <p className="mt-1 font-medium">
+                            {Math.round((food.estimated_protein || food.fatsecret_data?.protein_per_serving || 0) * (servings[index] || 1))}g
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-muted-foreground">Carbos (g)</label>
+                        {editingFood === index ? (
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={food.estimated_carbs || food.fatsecret_data?.carbs_per_serving || 0}
+                            onChange={(e) => updateFood(index, 'estimated_carbs', parseFloat(e.target.value) || 0)}
+                            className="mt-1 h-8"
+                          />
+                        ) : (
+                          <p className="mt-1 font-medium">
+                            {Math.round((food.estimated_carbs || food.fatsecret_data?.carbs_per_serving || 0) * (servings[index] || 1))}g
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-muted-foreground">Grasa (g)</label>
+                        {editingFood === index ? (
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={food.estimated_fat || food.fatsecret_data?.fat_per_serving || 0}
+                            onChange={(e) => updateFood(index, 'estimated_fat', parseFloat(e.target.value) || 0)}
+                            className="mt-1 h-8"
+                          />
+                        ) : (
+                          <p className="mt-1 font-medium">
+                            {Math.round((food.estimated_fat || food.fatsecret_data?.fat_per_serving || 0) * (servings[index] || 1))}g
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
