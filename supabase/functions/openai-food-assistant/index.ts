@@ -891,7 +891,7 @@ async function executeCreateMultipleMeals(args: any, userContext: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+          'Authorization': userContext.authHeader
         },
         body: JSON.stringify({
           meal_type: meal.meal_type,
