@@ -2,3 +2,6 @@ project_id = "rdzfizthbykgfqfgftpv"
 
 [functions.google-drive-sync]
 verify_jwt = true
+
+[functions.usda-food-lookup]
+verify_jwt = false

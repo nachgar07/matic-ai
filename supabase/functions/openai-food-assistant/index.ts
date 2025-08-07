@@ -60,31 +60,24 @@ serve(async (req) => {
 async function analyzeFoodImage(imageBase64: string, apiKey: string) {
   console.log('Analyzing food image with OpenAI GPT-4 Vision...');
   
-  const prompt = `Analiza esta imagen de comida y proporciona información nutricional completa en formato JSON exacto:
+  const prompt = `Analiza esta imagen de comida e identifica únicamente los alimentos y sus porciones estimadas en formato JSON:
 
 {
   "foods": [
     {
-      "name": "nombre del alimento en español",
-      "estimated_portion": "descripción de la porción (ej: 1 taza, 150g, 1 pieza mediana)",
-      "estimated_calories": número_estimado_de_calorías,
-      "estimated_protein": gramos_de_proteína,
-      "estimated_carbs": gramos_de_carbohidratos,
-      "estimated_fat": gramos_de_grasa,
+      "name": "nombre del alimento en español (simple y común)",
+      "estimated_portion": "peso estimado en gramos (ej: 150g, 200g, 50g)",
       "confidence": nivel_de_confianza_del_0_al_1
     }
   ],
-  "total_estimated_calories": total_de_calorías_estimadas,
-  "total_estimated_protein": total_de_proteína_en_gramos,
-  "total_estimated_carbs": total_de_carbohidratos_en_gramos,
-  "total_estimated_fat": total_de_grasa_en_gramos,
   "suggestions": ["consejos nutricionales breves en español"]
 }
 
 Instrucciones importantes:
 - Identifica TODOS los alimentos visibles en la imagen
-- Estima las porciones de manera realista basándote en el tamaño visual
-- Proporciona información nutricional completa (calorías, proteínas, carbohidratos, grasas) basada en tu conocimiento nutricional
+- Usa nombres SIMPLES y COMUNES (ej: "aguacate", "miel", "pan", "pollo")
+- Estima el PESO EN GRAMOS de cada porción de manera realista
+- NO incluyas información nutricional (calorías, proteínas, etc.) - eso se calculará con datos USDA
 - Si hay múltiples elementos del mismo alimento, agrégalos como elementos separados
 - Incluye 2-3 consejos nutricionales relevantes
 - Responde SOLO con el JSON, sin texto adicional`;
@@ -152,13 +145,85 @@ Instrucciones importantes:
         throw new Error('No se encontró JSON en la respuesta');
       }
       
-      const analysis: FoodAnalysisResult = JSON.parse(jsonMatch[0]);
+      const initialAnalysis = JSON.parse(jsonMatch[0]);
+      
+      // Obtener datos nutricionales precisos de USDA para cada alimento
+      const foodNames = initialAnalysis.foods.map((food: any) => food.name);
+      console.log('Looking up nutritional data for foods:', foodNames);
+      
+      const usdaResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/usda-food-lookup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+        },
+        body: JSON.stringify({ foodNames })
+      });
+
+      let nutritionalData: any[] = [];
+      if (usdaResponse.ok) {
+        const usdaResult = await usdaResponse.json();
+        nutritionalData = usdaResult.results || [];
+        console.log('USDA nutritional data received:', nutritionalData.length, 'foods');
+      } else {
+        console.error('Failed to fetch USDA data, falling back to OpenAI estimates');
+      }
+
+      // Combinar identificación de OpenAI con datos nutricionales de USDA
+      const finalFoods = initialAnalysis.foods.map((food: any, index: number) => {
+        const usdaData = nutritionalData.find(data => data.name === food.name);
+        
+        if (usdaData) {
+          // Convertir de por 100g a la porción estimada
+          const portionWeight = parseFloat(food.estimated_portion.replace(/[^\d.]/g, '')) || 100;
+          const factor = portionWeight / 100;
+          
+          return {
+            name: food.name,
+            estimated_portion: food.estimated_portion,
+            estimated_calories: Math.round(usdaData.calories * factor),
+            estimated_protein: Math.round(usdaData.protein * factor * 10) / 10,
+            estimated_carbs: Math.round(usdaData.carbs * factor * 10) / 10,
+            estimated_fat: Math.round(usdaData.fat * factor * 10) / 10,
+            confidence: food.confidence,
+            source: 'USDA'
+          };
+        } else {
+          // Fallback con valores conservadores si no hay datos USDA
+          console.log(`No USDA data found for ${food.name}, using conservative estimates`);
+          return {
+            name: food.name,
+            estimated_portion: food.estimated_portion,
+            estimated_calories: 50, // Valor conservador
+            estimated_protein: 1,
+            estimated_carbs: 10,
+            estimated_fat: 1,
+            confidence: food.confidence * 0.5, // Reducir confianza
+            source: 'fallback'
+          };
+        }
+      });
+
+      // Calcular totales
+      const totalCalories = finalFoods.reduce((sum, food) => sum + food.estimated_calories, 0);
+      const totalProtein = finalFoods.reduce((sum, food) => sum + food.estimated_protein, 0);
+      const totalCarbs = finalFoods.reduce((sum, food) => sum + food.estimated_carbs, 0);
+      const totalFat = finalFoods.reduce((sum, food) => sum + food.estimated_fat, 0);
+
+      const finalAnalysis: FoodAnalysisResult = {
+        foods: finalFoods,
+        total_estimated_calories: totalCalories,
+        total_estimated_protein: Math.round(totalProtein * 10) / 10,
+        total_estimated_carbs: Math.round(totalCarbs * 10) / 10,
+        total_estimated_fat: Math.round(totalFat * 10) / 10,
+        suggestions: initialAnalysis.suggestions || []
+      };
       
       return new Response(
         JSON.stringify({
-          ...analysis,
+          ...finalAnalysis,
           processing_time: new Date().toISOString(),
-          provider: 'openai'
+          provider: 'openai_usda'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
