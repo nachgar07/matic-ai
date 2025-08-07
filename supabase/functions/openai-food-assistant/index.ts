@@ -804,36 +804,95 @@ async function executeCreateMeal(args: any, userContext: any) {
   console.log('Executing create_meal with args:', args);
   
   try {
-    // Call the create-meal-from-chat function
-    const createMealResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/create-meal-from-chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': userContext.authHeader
-      },
-      body: JSON.stringify(args)
-    });
+    // Create Supabase client using the user's auth token
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { 
+        global: { 
+          headers: { 
+            Authorization: userContext.authHeader 
+          } 
+        } 
+      }
+    );
 
-    if (!createMealResponse.ok) {
-      const errorText = await createMealResponse.text();
-      console.error('Error calling create-meal-from-chat:', errorText);
-      throw new Error('Error al guardar la comida en la base de datos');
+    // Verify user authentication
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
+      throw new Error('User not authenticated');
     }
 
-    const createMealResult = await createMealResponse.json();
-    console.log('Meal created successfully:', createMealResult);
+    console.log('User authenticated successfully:', user.id);
+
+    // Create or find the food entry
+    const { data: existingFood } = await supabase
+      .from('foods')
+      .select('*')
+      .eq('food_name', args.food_name)
+      .limit(1);
+
+    let foodId;
+    if (existingFood && existingFood.length > 0) {
+      foodId = existingFood[0].id;
+      console.log(`Found existing food: ${args.food_name}`);
+    } else {
+      // Create new food entry
+      const { data: newFood, error: insertError } = await supabase
+        .from('foods')
+        .insert({
+          food_id: `openai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          food_name: args.food_name,
+          calories_per_serving: args.calories_per_serving,
+          protein_per_serving: args.protein_per_serving,
+          carbs_per_serving: args.carbs_per_serving,
+          fat_per_serving: args.fat_per_serving,
+          serving_description: 'Porción estándar'
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error inserting food:', insertError);
+        throw new Error(`Error creating food entry: ${insertError.message}`);
+      }
+
+      foodId = newFood.id;
+      console.log(`Created new food: ${args.food_name}`);
+    }
+
+    // Create meal entry
+    const { data: mealEntry, error: mealError } = await supabase
+      .from('meal_entries')
+      .insert({
+        user_id: user.id,
+        food_id: foodId,
+        servings: args.servings || 1,
+        meal_type: args.meal_type,
+        consumed_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (mealError) {
+      console.error('Error creating meal entry:', mealError);
+      throw new Error(`Error creating meal entry: ${mealError.message}`);
+    }
+
+    console.log('Meal created successfully:', mealEntry);
 
     // Format a nice response for the user
-    let response = `Perfecto! He registrado tu comida:
+    let response = `¡Perfecto! He registrado tu comida:
 
-${args.food_name} - ${args.servings} porcion${args.servings === 1 ? '' : 'es'}
-Calorias: ${Math.round(args.calories_per_serving * args.servings)} kcal
-Proteina: ${Math.round(args.protein_per_serving * args.servings * 10) / 10}g
-Carbohidratos: ${Math.round(args.carbs_per_serving * args.servings * 10) / 10}g
-Grasas: ${Math.round(args.fat_per_serving * args.servings * 10) / 10}g`;
+📝 ${args.food_name} - ${args.servings} porcion${args.servings === 1 ? '' : 'es'}
+🔥 Calorías: ${Math.round(args.calories_per_serving * args.servings)} kcal
+💪 Proteína: ${Math.round(args.protein_per_serving * args.servings * 10) / 10}g
+🍞 Carbohidratos: ${Math.round(args.carbs_per_serving * args.servings * 10) / 10}g
+🥑 Grasas: ${Math.round(args.fat_per_serving * args.servings * 10) / 10}g`;
 
     // Add updated progress if user context is available
-    if (userContext) {
+    if (userContext?.goals) {
       const totalCalories = args.calories_per_serving * args.servings;
       const totalProtein = args.protein_per_serving * args.servings;
       const totalCarbs = args.carbs_per_serving * args.servings;
@@ -848,35 +907,19 @@ Grasas: ${Math.round(args.fat_per_serving * args.servings * 10) / 10}g`;
       const proteinRemaining = Math.max(0, userContext.goals.daily_protein - newProtein);
       const carbsRemaining = Math.max(0, userContext.goals.daily_carbs - newCarbs);
       const fatRemaining = Math.max(0, userContext.goals.daily_fat - newFat);
-      
+
       response += `
 
-Progreso actualizado de hoy:
-Calorias: ${newCalories}/${userContext.goals.daily_calories} kcal (${caloriesRemaining} restantes)
-Proteina: ${newProtein}/${userContext.goals.daily_protein}g (${proteinRemaining}g restantes)
-Carbohidratos: ${newCarbs}/${userContext.goals.daily_carbs}g (${carbsRemaining}g restantes)
-Grasas: ${newFat}/${userContext.goals.daily_fat}g (${fatRemaining}g restantes)`;
+📊 **Progreso actualizado:**
+• Calorías: ${newCalories}/${userContext.goals.daily_calories} (quedan ${caloriesRemaining})
+• Proteína: ${newProtein}g/${userContext.goals.daily_protein}g (quedan ${proteinRemaining}g)
+• Carbohidratos: ${newCarbs}g/${userContext.goals.daily_carbs}g (quedan ${carbsRemaining}g)
+• Grasas: ${newFat}g/${userContext.goals.daily_fat}g (quedan ${fatRemaining}g)
 
-      if (caloriesRemaining === 0) {
-        response += `
-
-Felicidades! Has alcanzado tu objetivo diario de calorias.`;
-      } else if (caloriesRemaining > 0) {
-        response += `
-
-Aun puedes consumir ${caloriesRemaining} calorias mas para llegar a tu objetivo diario.`;
-      } else {
-        response += `
-
-Has superado tu objetivo diario de calorias. Considera actividad fisica adicional.`;
-      }
+¡Sigue así! 💪`;
     }
 
-    return {
-      response: response,
-      success: true,
-      meal_logged: true
-    };
+    return response;
 
   } catch (error) {
     console.error('Error in executeCreateMeal:', error);
