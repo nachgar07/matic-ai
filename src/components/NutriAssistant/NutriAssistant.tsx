@@ -394,14 +394,18 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
         throw error;
       }
 
-      if (!data || !data.response) {
+      // Normalize payload shape between different function versions
+      const payload: any = (data && (data as any).data) ? (data as any).data : (data as any);
+      const replyText: string = payload?.response ?? payload?.reply ?? payload?.message ?? '';
+
+      if (!replyText) {
         console.error('No response data:', data);
         throw new Error('La IA no devolvió una respuesta válida');
       }
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.response,
+        content: replyText,
         timestamp: new Date()
       };
 
@@ -412,12 +416,15 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
       await saveMessageToDb(assistantMessage.content, 'assistant');
 
       // If a meal was created, show success toast and refresh data
-      if (data.meal_created && data.meal_data?.success) {
+      const mealCreated: boolean = Boolean(payload?.meal_created ?? payload?.functionCalled);
+      const mealData = payload?.meal_data ?? null;
+      if (mealCreated) {
         toast({
           title: "¡Comida registrada!",
-          description: `Se agregó tu ${getMealTypeName(data.meal_data.meal_type)} con ${data.meal_data.totals.calories} kcal`,
+          description: mealData?.totals?.calories
+            ? `Se agregó tu comida con ${mealData.totals.calories} kcal`
+            : `Se agregó tu comida correctamente`,
         });
-        
         // Trigger data refresh on parent component
         window.dispatchEvent(new CustomEvent('meal-created'));
       }
