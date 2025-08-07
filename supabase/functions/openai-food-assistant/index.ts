@@ -397,27 +397,27 @@ INFORMACION ACTUALIZADA DEL USUARIO:
 Usuario: ${userContext.user.display_name}
 
 OBJETIVOS NUTRICIONALES DIARIOS:
-- Calorías: ${userContext.goals.daily_calories} kcal
-- Proteína: ${userContext.goals.daily_protein}g
+- Calorias: ${userContext.goals.daily_calories} kcal
+- Proteina: ${userContext.goals.daily_protein}g
 - Carbohidratos: ${userContext.goals.daily_carbs}g
 - Grasas: ${userContext.goals.daily_fat}g
 
 PROGRESO DE HOY:
-- Calorías consumidas: ${Math.round(userContext.today.consumed.calories)}/${userContext.goals.daily_calories} kcal
-- Proteína: ${Math.round(userContext.today.consumed.protein * 10) / 10}/${userContext.goals.daily_protein}g
+- Calorias consumidas: ${Math.round(userContext.today.consumed.calories)}/${userContext.goals.daily_calories} kcal
+- Proteina: ${Math.round(userContext.today.consumed.protein * 10) / 10}/${userContext.goals.daily_protein}g
 - Carbohidratos: ${Math.round(userContext.today.consumed.carbs * 10) / 10}/${userContext.goals.daily_carbs}g
 - Grasas: ${Math.round(userContext.today.consumed.fat * 10) / 10}/${userContext.goals.daily_fat}g
 - Total de comidas registradas hoy: ${userContext.today.meal_count}
 
-🎯 VALORES RESTANTES (LO QUE LE FALTA AL USUARIO):
-- Calorías restantes: ${Math.max(0, userContext.goals.daily_calories - Math.round(userContext.today.consumed.calories))} kcal
-- Proteína restante: ${Math.max(0, userContext.goals.daily_protein - Math.round(userContext.today.consumed.protein * 10) / 10)}g
+VALORES RESTANTES (LO QUE LE FALTA AL USUARIO):
+- Calorias restantes: ${Math.max(0, userContext.goals.daily_calories - Math.round(userContext.today.consumed.calories))} kcal
+- Proteina restante: ${Math.max(0, userContext.goals.daily_protein - Math.round(userContext.today.consumed.protein * 10) / 10)}g
 - Carbohidratos restantes: ${Math.max(0, userContext.goals.daily_carbs - Math.round(userContext.today.consumed.carbs * 10) / 10)}g
 - Grasas restantes: ${Math.max(0, userContext.goals.daily_fat - Math.round(userContext.today.consumed.fat * 10) / 10)}g
 
 ${Math.round(userContext.today.consumed.calories) > userContext.goals.daily_calories ? 
-'⚠️ IMPORTANTE: El usuario YA SUPERÓ su objetivo diario de calorías. No debe consumir más calorías hoy.' :
-'✅ El usuario aún puede consumir más calorías para llegar a su objetivo.'}
+'IMPORTANTE: El usuario YA SUPERO su objetivo diario de calorias. No debe consumir mas calorias hoy.' :
+'El usuario aun puede consumir mas calorias para llegar a su objetivo.'}
 
 COMIDAS DE HOY (NO REPITAS ESTOS ALIMENTOS - CREA COMIDAS NUEVAS Y DIFERENTES):`;
 
