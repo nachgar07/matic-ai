@@ -242,7 +242,8 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
       daily_calories: calories,
       daily_protein: grams.protein,
       daily_carbs: grams.carbs,
-      daily_fat: grams.fat
+      daily_fat: grams.fat,
+      daily_water_glasses: litersToGlasses(waterIntake)
     };
     
     try {
@@ -290,7 +291,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                   className="h-auto p-3 text-left flex flex-col items-start min-h-[60px] w-full"
                 >
                   <span className="text-sm font-medium leading-tight">{preset.name}</span>
-                  <span className="text-xs text-muted-foreground mt-1 leading-tight">{preset.description}</span>
+                  <span className="text-xs text-muted-foreground mt-1 leading-tight break-words">{preset.description}</span>
                 </Button>
               ))}
             </div>
