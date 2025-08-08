@@ -50,6 +50,11 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
         fat: nutritionGoals.daily_fat
       });
       
+      // Set water intake from glasses (convert to liters)
+      if (nutritionGoals.daily_water_glasses) {
+        setWaterIntake(nutritionGoals.daily_water_glasses / 4); // 4 glasses = 1 liter
+      }
+      
       // Calculate percentages from existing grams
       const totalCalories = nutritionGoals.daily_calories;
       const proteinPercent = Math.round((nutritionGoals.daily_protein * 4 / totalCalories) * 100);

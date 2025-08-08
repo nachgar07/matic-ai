@@ -10,9 +10,10 @@ interface CalorieRingProps {
   waterGlasses?: number;
   onWaterClick?: () => void;
   simple?: boolean; // Nueva prop para modo simple
+  waterTarget?: number; // Nueva prop para el objetivo de agua
 }
 
-export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200, waterGlasses = 0, onWaterClick, simple = false }: CalorieRingProps) => {
+export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200, waterGlasses = 0, onWaterClick, simple = false, waterTarget = 12 }: CalorieRingProps) => {
   const [showWaterAnimation, setShowWaterAnimation] = useState(false);
   
   const remaining = Math.max(0, target - consumed);
@@ -77,7 +78,6 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
 
   // Water drop calculations
   const waterDropSize = size * 0.15;
-  const waterTarget = 12; // 12 glasses = ~3 liters
   const displayWaterGlasses = waterGlasses % waterTarget || (waterGlasses > 0 && waterGlasses % waterTarget === 0 ? waterTarget : 0);
   const waterPercentage = Math.min(100, (displayWaterGlasses / waterTarget) * 100);
   const waterFillHeight = waterPercentage === 100 ? 37 : (waterPercentage / 100) * 32;

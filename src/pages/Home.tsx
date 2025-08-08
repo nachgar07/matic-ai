@@ -144,6 +144,7 @@ export const Home = () => {
           size={220}
           waterGlasses={waterGlasses}
           simple={true}
+          waterTarget={nutritionGoals?.daily_water_glasses || 12}
         />
       </div>
 

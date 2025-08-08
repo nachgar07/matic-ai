@@ -32,6 +32,7 @@ export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummary
           size={160}
           waterGlasses={waterGlasses}
           onWaterClick={addWaterGlass}
+          waterTarget={nutritionGoals?.daily_water_glasses || 12}
         />
       </Card>
 

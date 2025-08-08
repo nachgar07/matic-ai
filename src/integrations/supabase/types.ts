@@ -466,6 +466,7 @@ export type Database = {
           daily_carbs: number
           daily_fat: number
           daily_protein: number
+          daily_water_glasses: number
           id: string
           updated_at: string
           user_id: string
@@ -476,6 +477,7 @@ export type Database = {
           daily_carbs?: number
           daily_fat?: number
           daily_protein?: number
+          daily_water_glasses?: number
           id?: string
           updated_at?: string
           user_id: string
@@ -486,6 +488,7 @@ export type Database = {
           daily_carbs?: number
           daily_fat?: number
           daily_protein?: number
+          daily_water_glasses?: number
           id?: string
           updated_at?: string
           user_id?: string

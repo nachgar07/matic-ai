@@ -29,6 +29,7 @@ export interface DailyTotals {
   carbs: number;
   protein: number;
   fat: number;
+  waterTarget?: number;
 }
 
 export interface FavoriteFood {
@@ -46,6 +47,7 @@ export interface NutritionGoals {
   daily_protein: number;
   daily_carbs: number;
   daily_fat: number;
+  daily_water_glasses?: number;
   created_at: string;
   updated_at: string;
 }
@@ -178,6 +180,7 @@ export const useSetNutritionGoals = () => {
       daily_protein: number;
       daily_carbs: number;
       daily_fat: number;
+      daily_water_glasses?: number;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
