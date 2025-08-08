@@ -56,7 +56,7 @@ Usa tu conocimiento nutricional para proporcionar valores precisos y realistas.`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4.1-2025-04-14',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 300,
         temperature: 0.1,
