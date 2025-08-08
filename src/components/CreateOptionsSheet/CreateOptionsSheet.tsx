@@ -3,6 +3,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog/CreateTaskDialog";
 import { CategorySelector } from "@/components/CategorySelector/CategorySelector";
+import { ProgressEvaluationSelector, EvaluationType } from "@/components/ProgressEvaluationSelector/ProgressEvaluationSelector";
+import { CreateGoalDialog } from "@/components/CreateGoalDialog/CreateGoalDialog";
 import { CheckSquare, Target } from "lucide-react";
 
 interface CreateOptionsSheetProps {
@@ -12,6 +14,10 @@ interface CreateOptionsSheetProps {
 export const CreateOptionsSheet = ({ children }: CreateOptionsSheetProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [showProgressEvaluation, setShowProgressEvaluation] = useState(false);
+  const [showCreateGoal, setShowCreateGoal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedEvaluationType, setSelectedEvaluationType] = useState<EvaluationType | null>(null);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -23,8 +29,21 @@ export const CreateOptionsSheet = ({ children }: CreateOptionsSheetProps) => {
   };
 
   const handleCategorySelect = (category: string) => {
-    // TODO: Abrir CreateGoalDialog con la categoría seleccionada
-    console.log("Categoría seleccionada:", category);
+    setSelectedCategory(category);
+    setShowCategorySelector(false);
+    setShowProgressEvaluation(true);
+  };
+
+  const handleEvaluationSelect = (evaluationType: EvaluationType) => {
+    setSelectedEvaluationType(evaluationType);
+    setShowProgressEvaluation(false);
+    setShowCreateGoal(true);
+  };
+
+  const handleGoalCreated = () => {
+    setShowCreateGoal(false);
+    setSelectedCategory("");
+    setSelectedEvaluationType(null);
   };
 
   return (
@@ -71,6 +90,28 @@ export const CreateOptionsSheet = ({ children }: CreateOptionsSheetProps) => {
         isOpen={showCategorySelector}
         onClose={() => setShowCategorySelector(false)}
         onSelectCategory={handleCategorySelect}
+      />
+
+      <ProgressEvaluationSelector
+        isOpen={showProgressEvaluation}
+        onClose={() => {
+          setShowProgressEvaluation(false);
+          setSelectedCategory("");
+        }}
+        onSelectEvaluation={handleEvaluationSelect}
+        category={selectedCategory}
+      />
+
+      <CreateGoalDialog
+        isOpen={showCreateGoal}
+        onClose={() => {
+          setShowCreateGoal(false);
+          setSelectedCategory("");
+          setSelectedEvaluationType(null);
+        }}
+        onGoalCreated={handleGoalCreated}
+        category={selectedCategory}
+        evaluationType={selectedEvaluationType}
       />
     </>
   );

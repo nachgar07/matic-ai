@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,8 +11,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useCreateGoal } from "@/hooks/useGoals";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EvaluationType } from "@/components/ProgressEvaluationSelector/ProgressEvaluationSelector";
 
 const categories = [
   { value: "deportes", label: "Deportes", icon: "🏃", color: "#ef4444" },
@@ -46,21 +47,38 @@ const priorities = [
 ];
 
 interface CreateGoalDialogProps {
-  children: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
+  onGoalCreated: () => void;
+  category: string;
+  evaluationType: EvaluationType | null;
 }
 
-export const CreateGoalDialog = ({ children }: CreateGoalDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const CreateGoalDialog = ({ 
+  isOpen, 
+  onClose, 
+  onGoalCreated, 
+  category: initialCategory, 
+  evaluationType 
+}: CreateGoalDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(initialCategory || "");
   const [priority, setPriority] = useState(1);
   const [frequency, setFrequency] = useState("daily");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [targetValue, setTargetValue] = useState(1);
+  const [targetUnit, setTargetUnit] = useState("veces");
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [reminderTime, setReminderTime] = useState("");
+  const [activities, setActivities] = useState<string[]>([""]);
+
+  useEffect(() => {
+    if (initialCategory) {
+      setCategory(initialCategory);
+    }
+  }, [initialCategory]);
 
   const createGoal = useCreateGoal();
 
@@ -94,9 +112,16 @@ export const CreateGoalDialog = ({ children }: CreateGoalDialogProps) => {
       is_active: true,
     };
 
+    const extendedGoalData = {
+      ...goalData,
+      evaluation_type: evaluationType || "boolean",
+      target_unit: evaluationType === "timer" ? "minutos" : targetUnit,
+      activities: evaluationType === "activities" ? activities.filter(a => a.trim()) : null,
+    };
+
     try {
-      await createGoal.mutateAsync(goalData);
-      setOpen(false);
+      await createGoal.mutateAsync(extendedGoalData);
+      onGoalCreated();
       // Reset form
       setName("");
       setDescription("");
@@ -105,22 +130,57 @@ export const CreateGoalDialog = ({ children }: CreateGoalDialogProps) => {
       setFrequency("daily");
       setSelectedDays([]);
       setTargetValue(1);
+      setTargetUnit("veces");
       setStartDate(new Date());
       setEndDate(undefined);
       setReminderTime("");
+      setActivities([""]);
     } catch (error) {
       console.error("Error creating goal:", error);
     }
   };
 
+  const getEvaluationTypeLabel = () => {
+    switch (evaluationType) {
+      case "boolean": return "Sí/No";
+      case "quantity": return "Cantidad";
+      case "timer": return "Tiempo";
+      case "activities": return "Lista de actividades";
+      default: return "Sí/No";
+    }
+  };
+
+  const addActivity = () => {
+    setActivities([...activities, ""]);
+  };
+
+  const removeActivity = (index: number) => {
+    if (activities.length > 1) {
+      setActivities(activities.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateActivity = (index: number, value: string) => {
+    const updated = [...activities];
+    updated[index] = value;
+    setActivities(updated);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Crear nuevo objetivo</DialogTitle>
+        <DialogHeader className="relative">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="absolute left-0 top-0 h-8 w-8"
+            onClick={onClose}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <DialogTitle className="text-center">
+            Crear nuevo hábito - {getEvaluationTypeLabel()}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -334,34 +394,113 @@ export const CreateGoalDialog = ({ children }: CreateGoalDialogProps) => {
             <Label className="flex items-center gap-2 text-muted-foreground">
               🎯 Objetivo diario
             </Label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Al menos</span>
-              <Input
-                type="number"
-                min="1"
-                value={targetValue}
-                onChange={(e) => setTargetValue(parseInt(e.target.value) || 1)}
-                className="w-20"
-              />
-              <span className="text-sm text-muted-foreground">veces</span>
-            </div>
+            
+            {evaluationType === "boolean" && (
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Marcará como completado con un simple Sí/No cada día
+                </p>
+              </div>
+            )}
+
+            {evaluationType === "quantity" && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Al menos</span>
+                <Input
+                  type="number"
+                  min="1"
+                  value={targetValue}
+                  onChange={(e) => setTargetValue(parseInt(e.target.value) || 1)}
+                  className="w-20"
+                />
+                <Select value={targetUnit} onValueChange={setTargetUnit}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="veces">veces</SelectItem>
+                    <SelectItem value="páginas">páginas</SelectItem>
+                    <SelectItem value="vasos">vasos</SelectItem>
+                    <SelectItem value="km">km</SelectItem>
+                    <SelectItem value="repeticiones">reps</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {evaluationType === "timer" && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Al menos</span>
+                <Input
+                  type="number"
+                  min="1"
+                  value={targetValue}
+                  onChange={(e) => setTargetValue(parseInt(e.target.value) || 1)}
+                  className="w-20"
+                />
+                <span className="text-sm text-muted-foreground">minutos</span>
+              </div>
+            )}
+
+            {evaluationType === "activities" && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Define las sub-actividades para evaluar tu progreso:
+                </p>
+                {activities.map((activity, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={activity}
+                      onChange={(e) => updateActivity(index, e.target.value)}
+                      placeholder={`Actividad ${index + 1}`}
+                      className="flex-1"
+                    />
+                    {activities.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeActivity(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addActivity}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar actividad
+                </Button>
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg">
+                  <p className="text-sm text-rose-700 font-medium">
+                    ⭐ Funcionalidad Premium
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 pt-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={onClose}
               className="flex-1"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={!name || !category || createGoal.isPending}
+              disabled={!name || !category || createGoal.isPending || (evaluationType === "activities" && activities.every(a => !a.trim()))}
               className="flex-1"
             >
-              {createGoal.isPending ? "Creando..." : "Crear objetivo"}
+              {createGoal.isPending ? "Creando..." : "Crear hábito"}
             </Button>
           </div>
         </form>
