@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Droplets } from "lucide-react";
 
 interface EditNutritionGoalsDialogProps {
   open: boolean;
@@ -37,6 +38,8 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     carbs: 225,
     fat: 67
   });
+  
+  const [waterIntake, setWaterIntake] = useState(2.5); // Liters
 
   useEffect(() => {
     if (nutritionGoals) {
@@ -213,6 +216,25 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     setGrams(newGrams);
   };
 
+  const calculateRecommendedWater = () => {
+    if (profile?.weight) {
+      // Recomendación: 35ml por kg de peso corporal
+      const recommendedLiters = (profile.weight * 35) / 1000;
+      setWaterIntake(Math.round(recommendedLiters * 10) / 10);
+      toast({
+        title: "Agua recomendada aplicada",
+        description: `Se aplicaron ${Math.round(recommendedLiters * 10) / 10}L basado en tu peso.`
+      });
+    } else {
+      setShowAlert(true);
+    }
+  };
+
+  const litersToGlasses = (liters: number) => {
+    // 1 vaso = 250ml
+    return Math.round(liters * 4);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -257,7 +279,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
           {/* Presets nutricionales */}
           <div className="space-y-3">
             <Label>Presets Nutricionales</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {nutritionPresets.map((preset) => (
                 <Button
                   key={preset.name}
@@ -408,6 +430,44 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
           {/* Verificación de porcentajes */}
           <div className="text-sm text-muted-foreground text-center">
             Total: {percentages.protein + percentages.carbs + percentages.fat}%
+          </div>
+
+          {/* Ingesta de agua */}
+          <div className="space-y-3 pt-4 border-t">
+            <Label className="flex items-center gap-2">
+              <Droplets className="h-4 w-4 text-blue-500" />
+              Ingesta de agua diaria
+            </Label>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  value={waterIntake}
+                  onChange={(e) => setWaterIntake(parseFloat(e.target.value) || 0)}
+                  min="0"
+                  max="10"
+                  step="0.1"
+                  className="flex-1"
+                  placeholder="Litros"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={calculateRecommendedWater}
+                  className="px-3"
+                >
+                  Recomendado
+                </Button>
+              </div>
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>{waterIntake}L = {litersToGlasses(waterIntake)} vasos</span>
+                <span className="flex items-center gap-1">
+                  <Droplets className="h-3 w-3" />
+                  {litersToGlasses(waterIntake)}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-2 pt-4">
