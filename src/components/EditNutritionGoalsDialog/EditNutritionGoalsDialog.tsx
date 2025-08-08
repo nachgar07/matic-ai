@@ -467,7 +467,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                 </Button>
               </div>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{waterIntake}L = {litersToGlasses(waterIntake)} vasos</span>
+                <span>{waterIntake}L = {litersToGlasses(waterIntake)} vasos (250ml c/u)</span>
                 <span className="flex items-center gap-1">
                   <Droplets className="h-3 w-3" />
                   {litersToGlasses(waterIntake)}
