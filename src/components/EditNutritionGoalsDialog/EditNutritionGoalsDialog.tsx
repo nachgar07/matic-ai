@@ -161,42 +161,42 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
   const nutritionPresets = [
     {
       name: "🔥 Pérdida de Peso",
-      description: "Déficit calórico preservando músculo",
+      description: "Déficit calórico\npreservando músculo",
       protein: 35,
       carbs: 30,
       fat: 35
     },
     {
       name: "💪 Ganancia Muscular", 
-      description: "Volumen para crecimiento muscular",
+      description: "Volumen para\ncrecimiento muscular",
       protein: 30,
       carbs: 40,
       fat: 30
     },
     {
       name: "⚖️ Mantenimiento",
-      description: "Balanceado para mantener peso",
+      description: "Balanceado para\nmantener peso",
       protein: 25,
       carbs: 45,
       fat: 30
     },
     {
       name: "🥑 Ketogénica",
-      description: "Muy baja en carbohidratos",
+      description: "Muy baja en\ncarbohidratos",
       protein: 20,
       carbs: 10,
       fat: 70
     },
     {
       name: "🏃‍♂️ Alto Rendimiento",
-      description: "Para atletas y deportistas",
+      description: "Para atletas y\ndeportistas",
       protein: 25,
       carbs: 50,
       fat: 25
     },
     {
       name: "🩺 Diabético",
-      description: "Control glucémico optimizado",
+      description: "Control glucémico\noptimizado",
       protein: 30,
       carbs: 35,
       fat: 35
@@ -296,7 +296,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                   className="h-auto p-3 text-left flex flex-col items-start min-h-[80px] w-full"
                 >
                   <span className="text-xs font-medium leading-tight w-full">{preset.name}</span>
-                  <span className="text-[9px] text-muted-foreground mt-1 leading-tight w-full">{preset.description}</span>
+                  <span className="text-[9px] text-muted-foreground mt-1 leading-tight w-full whitespace-pre-line">{preset.description}</span>
                 </Button>
               ))}
             </div>
