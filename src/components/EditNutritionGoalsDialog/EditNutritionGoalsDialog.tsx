@@ -293,10 +293,10 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                   variant="outline"
                   size="sm"
                   onClick={() => applyPreset(preset)}
-                  className="h-auto p-3 text-left flex flex-col items-start min-h-[60px] w-full"
+                  className="h-auto p-2 text-left flex flex-col items-start min-h-[64px] w-full overflow-hidden"
                 >
-                  <span className="text-sm font-medium leading-tight">{preset.name}</span>
-                  <span className="text-xs text-muted-foreground mt-1 leading-tight break-words">{preset.description}</span>
+                  <span className="text-xs font-medium leading-tight truncate w-full">{preset.name}</span>
+                  <span className="text-[10px] text-muted-foreground mt-1 leading-tight break-words hyphens-auto overflow-hidden">{preset.description}</span>
                 </Button>
               ))}
             </div>
