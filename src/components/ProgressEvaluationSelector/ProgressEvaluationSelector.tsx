@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Hash, Clock, List, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type EvaluationType = "boolean" | "quantity" | "timer" | "activities";
+export type EvaluationType = "quantity" | "timer" | "activities";
 
 interface ProgressEvaluationSelectorProps {
   isOpen: boolean;
@@ -14,15 +14,6 @@ interface ProgressEvaluationSelectorProps {
 }
 
 const evaluationOptions = [
-  {
-    type: "boolean" as EvaluationType,
-    title: "CON UN SI O UN NO",
-    description: "Si cada día quieres registrar si tuviste éxito o no con tu actividad",
-    icon: CheckCircle2,
-    gradient: "from-emerald-500 to-teal-600",
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-600"
-  },
   {
     type: "quantity" as EvaluationType,
     title: "CON UNA CANTIDAD",
@@ -135,7 +126,7 @@ export const ProgressEvaluationSelector = ({
         </div>
 
         <div className="flex justify-center space-x-2 pb-4">
-          {[0, 1, 2, 3].map((dot, index) => (
+          {[0, 1, 2].map((dot, index) => (
             <div
               key={dot}
               className={cn(

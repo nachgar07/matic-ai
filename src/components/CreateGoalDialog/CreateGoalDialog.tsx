@@ -101,23 +101,19 @@ export const CreateGoalDialog = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || (!category && evaluationType !== "boolean")) return;
+    if (!name || !category) return;
 
-    // Use default category for boolean evaluation type if not set
-    const finalCategory = category || (evaluationType === "boolean" ? "personal" : "");
-    const finalSelectedCategory = categories.find(cat => cat.value === finalCategory);
+    const finalSelectedCategory = categories.find(cat => cat.value === category);
 
     const goalData = {
       name,
       description,
-      category: finalCategory,
+      category,
       icon: finalSelectedCategory?.icon || "🎯",
       color: finalSelectedCategory?.color || priorities.find(p => p.value === priority)?.color || "#6366f1",
       priority,
-      frequency: evaluationType === "boolean" ? "custom" : (frequency as "daily" | "weekly" | "monthly" | "custom"),
-      frequency_days: evaluationType === "boolean" 
-        ? (frequencyData.type === "specific_weekdays" ? frequencyData.weekdays : null)
-        : (frequency === "custom" ? selectedDays : null),
+      frequency: frequency as "daily" | "weekly" | "monthly" | "custom",
+      frequency_days: frequency === "custom" ? selectedDays : null,
       target_value: targetValue,
       start_date: format(startDate, "yyyy-MM-dd"),
       end_date: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
@@ -126,11 +122,9 @@ export const CreateGoalDialog = ({
 
     const extendedGoalData = {
       ...goalData,
-      evaluation_type: evaluationType || "boolean",
+      evaluation_type: evaluationType || "quantity",
       target_unit: evaluationType === "timer" ? "minutos" : targetUnit,
       activities: evaluationType === "activities" ? activities.filter(a => a.trim()) : null,
-      // Store the advanced frequency data for boolean evaluation
-      frequency_config: evaluationType === "boolean" ? frequencyData : null,
     };
 
     try {
@@ -157,11 +151,10 @@ export const CreateGoalDialog = ({
 
   const getEvaluationTypeLabel = () => {
     switch (evaluationType) {
-      case "boolean": return "Sí/No";
       case "quantity": return "Cantidad";
       case "timer": return "Tiempo";
       case "activities": return "Lista de actividades";
-      default: return "Sí/No";
+      default: return "Cantidad";
     }
   };
 
@@ -199,52 +192,7 @@ export const CreateGoalDialog = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 px-1">
-          {/* Campos iniciales para evaluación boolean */}
-          {evaluationType === "boolean" && (
-            <>
-              {/* Nombre del hábito */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  ✏️ Nombre del hábito
-                </Label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Salir a correr"
-                  required
-                  className="text-base"
-                />
-              </div>
-
-              {/* Descripción */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  ℹ️ Descripción (opcional)
-                </Label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descripción opcional..."
-                  rows={2}
-                  className="text-base resize-none"
-                />
-              </div>
-
-              {/* Frecuencia avanzada */}
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  📅 ¿Con qué frecuencia quieres realizarlo?
-                </Label>
-                <FrequencySelector
-                  value={frequencyData}
-                  onChange={setFrequencyData}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Resto de campos para otros tipos de evaluación */}
-          {evaluationType !== "boolean" && (
+          {/* Campos para todos los tipos de evaluación */}
             <>
               {/* Nombre del hábito */}
               <div className="space-y-2">
@@ -341,8 +289,6 @@ export const CreateGoalDialog = ({
                 )}
               </div>
             </>
-          )}
-
           {/* Campos comunes */}
           {/* Hora y recordatorios */}
           <div className="space-y-2">
@@ -459,8 +405,7 @@ export const CreateGoalDialog = ({
             </div>
           </div>
 
-          {/* Objetivo diario - Solo para tipos no boolean */}
-          {evaluationType !== "boolean" && (
+          {/* Objetivo diario */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-muted-foreground text-sm">
                 🎯 Objetivo diario
@@ -548,7 +493,6 @@ export const CreateGoalDialog = ({
                 </div>
               )}
             </div>
-          )}
 
           <div className="flex gap-2 pt-4">
             <Button
@@ -561,7 +505,7 @@ export const CreateGoalDialog = ({
             </Button>
             <Button
               type="submit"
-              disabled={!name || (!category && evaluationType !== "boolean") || createGoal.isPending || (evaluationType === "activities" && activities.every(a => !a.trim()))}
+              disabled={!name || !category || createGoal.isPending || (evaluationType === "activities" && activities.every(a => !a.trim()))}
               className="flex-1"
             >
               {createGoal.isPending ? "Creando..." : "Crear hábito"}
