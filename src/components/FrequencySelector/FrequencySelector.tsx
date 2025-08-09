@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
 
@@ -29,6 +30,7 @@ export interface FrequencyData {
   isFlexible?: boolean;
   alternatedays?: boolean;
   useWeekdays?: boolean;
+  monthdaysWeekdays?: { [key: number]: string[] };
 }
 
 interface FrequencySelectorProps {
@@ -52,6 +54,9 @@ export const FrequencySelector = ({ value, onChange }: FrequencySelectorProps) =
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>(value.weekdays || []);
   const [selectedMonthdays, setSelectedMonthdays] = useState<number[]>(value.monthdays || []);
   const [selectedYeardays, setSelectedYeardays] = useState<string[]>(value.yeardays || []);
+  const [weekdayDialogOpen, setWeekdayDialogOpen] = useState(false);
+  const [selectedMonthday, setSelectedMonthday] = useState<number | null>(null);
+  const [tempWeekdays, setTempWeekdays] = useState<string[]>([]);
 
   const handleFrequencyChange = (type: FrequencyType) => {
     const newValue: FrequencyData = {
@@ -75,13 +80,65 @@ export const FrequencySelector = ({ value, onChange }: FrequencySelectorProps) =
   };
 
   const toggleMonthday = (day: number) => {
-    const updated = selectedMonthdays.includes(day)
-      ? selectedMonthdays.filter(d => d !== day)
-      : [...selectedMonthdays, day];
-    setSelectedMonthdays(updated);
-    if (value.type === "specific_monthdays") {
-      onChange({ ...value, monthdays: updated });
+    if (value.useWeekdays) {
+      // Open dialog to select weekdays for this monthday
+      setSelectedMonthday(day);
+      setTempWeekdays(value.monthdaysWeekdays?.[day] || []);
+      setWeekdayDialogOpen(true);
+    } else {
+      const updated = selectedMonthdays.includes(day)
+        ? selectedMonthdays.filter(d => d !== day)
+        : [...selectedMonthdays, day];
+      setSelectedMonthdays(updated);
+      if (value.type === "specific_monthdays") {
+        onChange({ ...value, monthdays: updated });
+      }
     }
+  };
+
+  const handleWeekdayDialogAccept = () => {
+    if (selectedMonthday === null) return;
+    
+    const updatedMonthdaysWeekdays = { ...value.monthdaysWeekdays };
+    if (tempWeekdays.length > 0) {
+      updatedMonthdaysWeekdays[selectedMonthday] = tempWeekdays;
+      // Add monthday to selected if it has weekdays
+      const updatedMonthdays = selectedMonthdays.includes(selectedMonthday) 
+        ? selectedMonthdays 
+        : [...selectedMonthdays, selectedMonthday];
+      setSelectedMonthdays(updatedMonthdays);
+      onChange({ 
+        ...value, 
+        monthdays: updatedMonthdays,
+        monthdaysWeekdays: updatedMonthdaysWeekdays 
+      });
+    } else {
+      // Remove monthday if no weekdays selected
+      delete updatedMonthdaysWeekdays[selectedMonthday];
+      const updatedMonthdays = selectedMonthdays.filter(d => d !== selectedMonthday);
+      setSelectedMonthdays(updatedMonthdays);
+      onChange({ 
+        ...value, 
+        monthdays: updatedMonthdays,
+        monthdaysWeekdays: updatedMonthdaysWeekdays 
+      });
+    }
+    setWeekdayDialogOpen(false);
+    setSelectedMonthday(null);
+  };
+
+  const handleWeekdayDialogCancel = () => {
+    setWeekdayDialogOpen(false);
+    setSelectedMonthday(null);
+    setTempWeekdays([]);
+  };
+
+  const toggleTempWeekday = (day: string) => {
+    setTempWeekdays(prev => 
+      prev.includes(day) 
+        ? prev.filter(d => d !== day)
+        : [...prev, day]
+    );
   };
 
   const addYearday = () => {
@@ -188,7 +245,11 @@ export const FrequencySelector = ({ value, onChange }: FrequencySelectorProps) =
                   <Button
                     key={day}
                     type="button"
-                    variant={selectedMonthdays.includes(day) ? "default" : "outline"}
+                    variant={
+                      value.useWeekdays 
+                        ? (value.monthdaysWeekdays?.[day]?.length > 0 ? "default" : "outline")
+                        : (selectedMonthdays.includes(day) ? "default" : "outline")
+                    }
                     size="sm"
                     className="h-12 p-0"
                     onClick={() => toggleMonthday(day)}
@@ -198,7 +259,11 @@ export const FrequencySelector = ({ value, onChange }: FrequencySelectorProps) =
                 ))}
                 <Button
                   type="button"
-                  variant={selectedMonthdays.includes(32) ? "default" : "outline"}
+                  variant={
+                    value.useWeekdays 
+                      ? (value.monthdaysWeekdays?.[32]?.length > 0 ? "default" : "outline")
+                      : (selectedMonthdays.includes(32) ? "default" : "outline")
+                  }
                   size="sm"
                   className="h-12 p-0"
                   onClick={() => toggleMonthday(32)}
@@ -395,6 +460,48 @@ export const FrequencySelector = ({ value, onChange }: FrequencySelectorProps) =
           )}
         </div>
       </div>
+
+      {/* Weekday Selection Dialog */}
+      <Dialog open={weekdayDialogOpen} onOpenChange={setWeekdayDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Selecciona una fecha</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {weekDays.map((day, index) => (
+                <div key={day.value} className="text-center">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {index === 6 ? "Último" : 
+                     index === 5 ? "Sábado" : 
+                     index === 0 ? "Primer" :
+                     index === 1 ? "Domingo" :
+                     index === 2 ? "Segundo" :
+                     "Lunes"}
+                  </p>
+                  <Button
+                    type="button"
+                    variant={tempWeekdays.includes(day.value) ? "default" : "outline"}
+                    className="w-full"
+                    onClick={() => toggleTempWeekday(day.value)}
+                  >
+                    {day.short}
+                  </Button>
+                  <div className="mt-1 h-1 bg-muted rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter className="flex justify-between">
+            <Button variant="ghost" onClick={handleWeekdayDialogCancel}>
+              CANCELAR
+            </Button>
+            <Button onClick={handleWeekdayDialogAccept}>
+              ACEPTAR
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
