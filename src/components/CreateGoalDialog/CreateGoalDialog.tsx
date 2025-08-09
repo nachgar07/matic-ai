@@ -343,121 +343,125 @@ export const CreateGoalDialog = ({
             </>
           )}
 
-          {/* Campos comunes */}
-          {/* Hora y recordatorios */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-              🔔 Hora y recordatorios
-            </Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="time"
-                value={reminderTime}
-                onChange={(e) => setReminderTime(e.target.value)}
-                className="flex-1 text-base"
-              />
-              <Badge variant="secondary" className="min-w-8 h-8 rounded-full text-sm">
-                {reminderTime ? "1" : "0"}
-              </Badge>
-            </div>
-          </div>
-
-          {/* Prioridad */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-              🏷️ Prioridad
-            </Label>
-            <div className="grid grid-cols-3 gap-2">
-              {priorities.map((p) => (
-                <Button
-                  key={p.value}
-                  type="button"
-                  variant={priority === p.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPriority(p.value)}
-                  className="text-sm"
-                >
-                  {p.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Fechas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Fecha de inicio */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                📅 Fecha de inicio
-              </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal text-sm",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "dd/MM/yy", { locale: es }) : "Seleccionar fecha"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={(date) => date && setStartDate(date)}
-                    locale={es}
-                    initialFocus
+          {/* Campos específicos para tipos no boolean */}
+          {evaluationType !== "boolean" && (
+            <>
+              {/* Hora y recordatorios */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                  🔔 Hora y recordatorios
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="time"
+                    value={reminderTime}
+                    onChange={(e) => setReminderTime(e.target.value)}
+                    className="flex-1 text-base"
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Fecha de fin */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                📅 Fecha de fin
-              </Label>
-              <div className="flex gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "flex-1 justify-start text-left font-normal text-sm",
-                        !endDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, "dd/MM/yy", { locale: es }) : "Sin límite"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={endDate}
-                      onSelect={setEndDate}
-                      locale={es}
-                      disabled={(date) => date < startDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                {endDate && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setEndDate(undefined)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+                  <Badge variant="secondary" className="min-w-8 h-8 rounded-full text-sm">
+                    {reminderTime ? "1" : "0"}
+                  </Badge>
+                </div>
               </div>
-            </div>
-          </div>
+
+              {/* Prioridad */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                  🏷️ Prioridad
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {priorities.map((p) => (
+                    <Button
+                      key={p.value}
+                      type="button"
+                      variant={priority === p.value ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPriority(p.value)}
+                      className="text-sm"
+                    >
+                      {p.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fechas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Fecha de inicio */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                    📅 Fecha de inicio
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal text-sm",
+                          !startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, "dd/MM/yy", { locale: es }) : "Seleccionar fecha"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={(date) => date && setStartDate(date)}
+                        locale={es}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Fecha de fin */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                    📅 Fecha de fin
+                  </Label>
+                  <div className="flex gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "flex-1 justify-start text-left font-normal text-sm",
+                            !endDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {endDate ? format(endDate, "dd/MM/yy", { locale: es }) : "Sin límite"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={endDate}
+                          onSelect={setEndDate}
+                          locale={es}
+                          disabled={(date) => date < startDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {endDate && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setEndDate(undefined)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Objetivo diario - Solo para tipos no boolean */}
           {evaluationType !== "boolean" && (
