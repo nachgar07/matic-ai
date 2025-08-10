@@ -68,50 +68,50 @@ export const ProgressEvaluationSelector = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-gradient-to-b from-background to-muted/20">
-        <DialogHeader className="space-y-4 pb-6">
+      <DialogContent className="max-w-full sm:max-w-md h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto bg-gradient-to-b from-background to-muted/20 m-0 sm:m-4 rounded-none sm:rounded-lg">
+        <DialogHeader className="space-y-3 sm:space-y-4 pb-4 sm:pb-6 px-4 sm:px-6">
           <Button 
             variant="ghost" 
             size="icon"
-            className="absolute left-4 top-4 h-8 w-8"
+            className="absolute left-3 sm:left-4 top-3 sm:top-4 h-8 w-8 z-10"
             onClick={onClose}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           
-          <div className="text-center space-y-2 pt-8">
-            <DialogTitle className="text-2xl font-bold text-primary">
+          <div className="text-center space-y-1 sm:space-y-2 pt-6 sm:pt-8">
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-primary px-8">
               ¿Cómo quieres evaluar tu progreso?
             </DialogTitle>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground px-4">
               Selecciona el método que mejor se adapte a tu hábito
             </p>
           </div>
         </DialogHeader>
 
-        <div className="space-y-4 pb-6">
+        <div className="space-y-3 sm:space-y-4 pb-4 sm:pb-6 px-4 sm:px-6">
           {evaluationOptions.map((option, index) => (
             <Button
               key={option.type}
               variant="outline"
               className={cn(
-                "w-full h-auto p-6 flex flex-col items-start space-y-3 text-left border-2 transition-all duration-200 hover:scale-[1.02]",
+                "w-full h-auto p-4 sm:p-6 flex flex-col items-start space-y-2 sm:space-y-3 text-left border-2 transition-all duration-200 hover:scale-[1.01] sm:hover:scale-[1.02]",
                 selectedType === option.type 
                   ? "border-primary bg-primary/5 shadow-lg" 
                   : "border-border hover:border-primary/30 hover:bg-muted/50"
               )}
               onClick={() => handleSelectType(option.type)}
             >
-              <div className="flex items-center gap-4 w-full">
+              <div className="flex items-center gap-3 sm:gap-4 w-full">
                 <div className={cn(
-                  "w-12 h-12 rounded-2xl flex items-center justify-center",
+                  "w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center flex-shrink-0",
                   option.iconBg
                 )}>
-                  <option.icon className={cn("w-6 h-6", option.iconColor)} />
+                  <option.icon className={cn("w-5 h-5 sm:w-6 sm:h-6", option.iconColor)} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={cn(
-                    "font-bold text-lg mb-2 bg-gradient-to-r bg-clip-text text-transparent",
+                    "font-bold text-base sm:text-lg mb-1 sm:mb-2 bg-gradient-to-r bg-clip-text text-transparent",
                     option.gradient
                   )}>
                     {option.title}
@@ -119,13 +119,13 @@ export const ProgressEvaluationSelector = ({
                 </div>
               </div>
               
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-13 sm:pl-0">
                 {option.description}
               </p>
               
               {option.isPremium && (
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="px-3 py-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-xs font-medium rounded-full">
+                <div className="flex items-center gap-2 mt-1 sm:mt-2 pl-13 sm:pl-0">
+                  <div className="px-2 sm:px-3 py-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-xs font-medium rounded-full">
                     Funcionalidad premium
                   </div>
                 </div>
