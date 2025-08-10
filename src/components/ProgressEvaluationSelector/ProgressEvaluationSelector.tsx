@@ -111,7 +111,7 @@ export const ProgressEvaluationSelector = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={cn(
-                    "font-bold text-base sm:text-lg mb-1 sm:mb-2 bg-gradient-to-r bg-clip-text text-transparent",
+                    "font-bold text-sm sm:text-base lg:text-lg mb-1 sm:mb-2 bg-gradient-to-r bg-clip-text text-transparent break-words hyphens-auto",
                     option.gradient
                   )}>
                     {option.title}
