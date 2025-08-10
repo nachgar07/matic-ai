@@ -89,47 +89,46 @@ export const ProgressEvaluationSelector = ({
           </div>
         </DialogHeader>
 
-        <div className="space-y-3 sm:space-y-4 pb-4 sm:pb-6 px-4 sm:px-6">
+        <div className="space-y-2 sm:space-y-4 pb-4 sm:pb-6 px-2 sm:px-6">
           {evaluationOptions.map((option, index) => (
             <Button
               key={option.type}
               variant="outline"
               className={cn(
-                "w-full h-auto p-4 sm:p-6 flex flex-col items-start space-y-2 sm:space-y-3 text-left border-2 transition-all duration-200 hover:scale-[1.01] sm:hover:scale-[1.02]",
+                "w-full h-auto p-3 sm:p-6 flex flex-col items-start space-y-2 sm:space-y-3 text-left border-2 transition-all duration-200 hover:scale-[1.01] sm:hover:scale-[1.02]",
                 selectedType === option.type 
                   ? "border-primary bg-primary/5 shadow-lg" 
                   : "border-border hover:border-primary/30 hover:bg-muted/50"
               )}
               onClick={() => handleSelectType(option.type)}
             >
-              <div className="flex items-center gap-3 sm:gap-4 w-full">
+              <div className="flex items-start gap-2 sm:gap-4 w-full">
                 <div className={cn(
-                  "w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center flex-shrink-0",
+                  "w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0",
                   option.iconBg
                 )}>
-                  <option.icon className={cn("w-5 h-5 sm:w-6 sm:h-6", option.iconColor)} />
+                  <option.icon className={cn("w-4 h-4 sm:w-6 sm:h-6", option.iconColor)} />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 pr-1">
                   <div className={cn(
-                    "font-bold text-sm sm:text-base lg:text-lg mb-1 sm:mb-2 bg-gradient-to-r bg-clip-text text-transparent break-words hyphens-auto",
+                    "font-bold text-xs sm:text-base lg:text-lg mb-1 sm:mb-2 bg-gradient-to-r bg-clip-text text-transparent break-words leading-tight",
                     option.gradient
                   )}>
                     {option.title}
                   </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
+                    {option.description}
+                  </p>
+                  
+                  {option.isPremium && (
+                    <div className="flex items-center gap-1 mt-2">
+                      <div className="px-2 py-0.5 sm:px-3 sm:py-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-xs font-medium rounded-full whitespace-nowrap">
+                        Funcionalidad premium
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-13 sm:pl-0">
-                {option.description}
-              </p>
-              
-              {option.isPremium && (
-                <div className="flex items-center gap-2 mt-1 sm:mt-2 pl-13 sm:pl-0">
-                  <div className="px-2 sm:px-3 py-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-xs font-medium rounded-full">
-                    Funcionalidad premium
-                  </div>
-                </div>
-              )}
             </Button>
           ))}
         </div>
