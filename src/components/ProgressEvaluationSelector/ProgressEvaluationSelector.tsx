@@ -69,21 +69,21 @@ export const ProgressEvaluationSelector = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-full sm:max-w-md h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto bg-gradient-to-b from-background to-muted/20 m-0 sm:m-4 rounded-none sm:rounded-lg">
-        <DialogHeader className="space-y-3 sm:space-y-4 pb-4 sm:pb-6 px-4 sm:px-6">
+        <DialogHeader className="space-y-3 sm:space-y-4 pb-4 sm:pb-6 px-2 sm:px-6">
           <Button 
             variant="ghost" 
             size="icon"
-            className="absolute left-3 sm:left-4 top-3 sm:top-4 h-8 w-8 z-10"
+            className="absolute left-2 sm:left-4 top-3 sm:top-4 h-8 w-8 z-10"
             onClick={onClose}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           
-          <div className="text-center space-y-1 sm:space-y-2 pt-6 sm:pt-8">
-            <DialogTitle className="text-xl sm:text-2xl font-bold text-primary px-8">
+          <div className="text-center space-y-1 sm:space-y-2 pt-6 sm:pt-8 px-2">
+            <DialogTitle className="text-lg sm:text-2xl font-bold text-primary leading-tight">
               ¿Cómo quieres evaluar tu progreso?
             </DialogTitle>
-            <p className="text-xs sm:text-sm text-muted-foreground px-4">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               Selecciona el método que mejor se adapte a tu hábito
             </p>
           </div>
