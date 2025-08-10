@@ -116,7 +116,7 @@ export const ProgressEvaluationSelector = ({
                   )}>
                     {option.title}
                   </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words word-wrap overflow-wrap-anywhere hyphens-auto">
                     {option.description}
                   </p>
                   
