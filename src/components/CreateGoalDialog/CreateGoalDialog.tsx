@@ -183,22 +183,22 @@ export const CreateGoalDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="relative">
+      <DialogContent className="max-w-full sm:max-w-md h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto bg-gradient-to-b from-background to-muted/20 m-0 sm:m-4 rounded-none sm:rounded-lg">
+        <DialogHeader className="relative pb-4 sm:pb-6 px-4 sm:px-6">
           <Button 
             variant="ghost" 
             size="icon"
-            className="absolute left-0 top-0 h-8 w-8"
+            className="absolute left-3 sm:left-4 top-3 sm:top-4 h-8 w-8 z-10"
             onClick={onClose}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <DialogTitle className="text-center text-lg sm:text-xl">
+          <DialogTitle className="text-center text-lg sm:text-xl pt-6 sm:pt-8 px-8">
             Crear nuevo hábito - {getEvaluationTypeLabel()}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 px-1">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
           {/* Campos iniciales para evaluación boolean */}
           {evaluationType === "boolean" && (
             <>
