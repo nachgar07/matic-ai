@@ -126,11 +126,8 @@ export const CreateGoalDialog = ({
 
     const extendedGoalData = {
       ...goalData,
-      evaluation_type: evaluationType || "boolean",
-      target_unit: evaluationType === "timer" ? "minutos" : targetUnit,
-      activities: evaluationType === "activities" ? activities.filter(a => a.trim()) : null,
-      // Store the advanced frequency data for boolean evaluation
-      frequency_config: evaluationType === "boolean" ? frequencyData : null,
+      // Only include fields that exist in the goals table
+      target_value: evaluationType === "timer" ? targetValue : (evaluationType === "quantity" ? targetValue : 1),
     };
 
     try {
