@@ -73,12 +73,30 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       const activeDays = allDays.filter(day => isDayActive(day));
       const completedActiveDays = activeDays.filter(day => getDayProgress(day)?.is_completed);
       
+      console.log(`Calculando porcentaje para ${goal.name}:`, {
+        hasEndDate: true,
+        totalDays: allDays.length,
+        activeDays: activeDays.length,
+        completedDays: completedActiveDays.length,
+        startDate: goal.start_date,
+        endDate: goal.end_date,
+        effectiveEndDate: format(effectiveEndDate, 'yyyy-MM-dd')
+      });
+      
       if (activeDays.length === 0) return 0;
-      return Math.round((completedActiveDays.length / activeDays.length) * 100);
+      const percentage = Math.round((completedActiveDays.length / activeDays.length) * 100);
+      console.log(`Porcentaje calculado: ${percentage}%`);
+      return percentage;
     } else {
       // Si no hay fecha de fin, calcular solo para la semana actual
       const activeDays = weekDays.filter(day => isDayActive(day));
       const completedActiveDays = activeDays.filter(day => getDayProgress(day)?.is_completed);
+      
+      console.log(`Calculando porcentaje semanal para ${goal.name}:`, {
+        hasEndDate: false,
+        activeDays: activeDays.length,
+        completedDays: completedActiveDays.length
+      });
       
       if (activeDays.length === 0) return 0;
       return Math.round((completedActiveDays.length / activeDays.length) * 100);
@@ -181,12 +199,23 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     }
 
     try {
+      console.log('Actualizando progreso:', {
+        goalId: goal.id,
+        goalName: goal.name,
+        goalHasEndDate: !!goal.end_date,
+        date: dateString,
+        completedValue: nextCompletedValue,
+        isCompleted: nextIsCompleted,
+      });
+      
       await updateProgress.mutateAsync({
         goalId: goal.id,
         date: dateString,
         completedValue: nextCompletedValue,
         isCompleted: nextIsCompleted,
       });
+      
+      console.log('Progreso actualizado exitosamente');
     } catch (error) {
       console.error('Error updating progress:', error);
     }
