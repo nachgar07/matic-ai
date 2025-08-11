@@ -94,6 +94,10 @@ export const CreateOptionsSheet = ({ children }: CreateOptionsSheetProps) => {
           setSelectedCategory("");
           setSelectedEvaluationType(null);
         }}
+        onBack={() => {
+          setShowCreateGoal(false);
+          setShowCategorySelector(true);
+        }}
         onGoalCreated={handleGoalCreated}
         category={selectedCategory}
         evaluationType={selectedEvaluationType}

@@ -51,6 +51,7 @@ const priorities = [
 interface CreateGoalDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onBack: () => void;
   onGoalCreated: () => void;
   category: string;
   evaluationType: EvaluationType | null;
@@ -59,6 +60,7 @@ interface CreateGoalDialogProps {
 export const CreateGoalDialog = ({ 
   isOpen, 
   onClose, 
+  onBack,
   onGoalCreated, 
   category: initialCategory, 
   evaluationType 
@@ -246,12 +248,12 @@ export const CreateGoalDialog = ({
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="absolute left-3 sm:left-4 top-3 sm:top-4 h-8 w-8 z-10"
-                onClick={onClose}
+                className="absolute left-4 top-4 h-10 w-10 z-10"
+                onClick={onBack}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <DialogTitle className="text-center text-lg sm:text-xl pt-6 sm:pt-8 px-8">
+              <DialogTitle className="text-center text-lg sm:text-xl pt-4 px-8">
                 Crear nuevo hábito
               </DialogTitle>
             </DialogHeader>
