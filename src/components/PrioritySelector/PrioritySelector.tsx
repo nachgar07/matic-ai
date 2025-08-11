@@ -69,7 +69,7 @@ export const PrioritySelector = ({ open, onOpenChange, value, onValueChange }: P
               </div>
               <div className="flex items-center justify-center gap-1 text-sm text-foreground">
                 <Flag className="w-4 h-4" />
-                <span>{getPriorityLabel(tempValue)} - {tempValue}</span>
+                <span>Normal - 1</span>
               </div>
             </div>
             
