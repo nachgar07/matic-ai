@@ -78,23 +78,42 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dateString = format(date, 'yyyy-MM-dd');
     const currentProgress = getDayProgress(date);
     
+    console.log('🔄 TOGGLE DAY - Estado actual:', {
+      dateString,
+      currentProgress,
+      hasProgress: !!currentProgress,
+      isCompleted: currentProgress?.is_completed,
+      completedValue: currentProgress?.completed_value
+    });
+    
     // Determinar el estado actual y el siguiente
     let nextIsCompleted: boolean;
     let nextCompletedValue: number;
+    let stateTransition: string;
     
-    if (!currentProgress) {
+    if (!currentProgress || currentProgress.completed_value === 0) {
       // Estado 1: Sin progreso → Verde (completado)
       nextIsCompleted = true;
       nextCompletedValue = goal.target_value;
+      stateTransition = 'NORMAL → VERDE (completado)';
     } else if (currentProgress.is_completed) {
       // Estado 2: Verde (completado) → Rojo (cancelado)
       nextIsCompleted = false;
       nextCompletedValue = goal.target_value; // Mantener el valor pero marcar como no completado
+      stateTransition = 'VERDE → ROJO (cancelado)';
     } else {
       // Estado 3: Rojo (cancelado) → Normal (sin progreso)
       nextIsCompleted = false;
       nextCompletedValue = 0; // Eliminar el progreso
+      stateTransition = 'ROJO → NORMAL (sin progreso)';
     }
+    
+    console.log('🎯 TOGGLE DAY - Transición:', {
+      stateTransition,
+      nextIsCompleted,
+      nextCompletedValue,
+      goalTargetValue: goal.target_value
+    });
 
     try {
       await updateProgress.mutateAsync({
@@ -103,8 +122,9 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
         completedValue: nextCompletedValue,
         isCompleted: nextIsCompleted,
       });
+      console.log('✅ Update successful');
     } catch (error) {
-      console.error('Update failed:', error);
+      console.error('❌ Update failed:', error);
     }
   };
 
@@ -172,11 +192,22 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
 
           // Determinar el estado del botón
           let buttonState = 'normal';
+          let stateLabel = 'Normal';
           if (hasProgress && isCompleted) {
             buttonState = 'completed'; // Verde
+            stateLabel = 'Completado';
           } else if (hasProgress && !isCompleted) {
             buttonState = 'cancelled'; // Rojo
+            stateLabel = 'Cancelado';
           }
+          
+          console.log(`📅 Día ${format(date, 'd')}:`, {
+            dayProgress,
+            hasProgress,
+            isCompleted,
+            buttonState,
+            stateLabel
+          });
 
           return (
             <div key={date.toISOString()} className="text-center">
