@@ -62,6 +62,8 @@ export const FrequencySelector = ({ value, onChange }: FrequencySelectorProps) =
       weekdays: type === "specific_weekdays" ? selectedWeekdays : undefined,
       monthdays: type === "specific_monthdays" ? selectedMonthdays : undefined,
       yeardays: type === "specific_yeardays" ? selectedYeardays : undefined,
+      // Inicializar repeatInterval para tipo repeat
+      repeatInterval: type === "repeat" ? (value.repeatInterval || 2) : undefined,
     };
     onChange(newValue);
   };
