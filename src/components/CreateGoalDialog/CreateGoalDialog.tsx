@@ -114,7 +114,9 @@ export const CreateGoalDialog = ({
       icon: finalSelectedCategory?.icon || "🎯",
       color: finalSelectedCategory?.color || priorities.find(p => p.value === priority)?.color || "#6366f1",
       priority,
-      frequency: evaluationType === "boolean" ? "custom" : (frequency as "daily" | "weekly" | "monthly" | "custom"),
+      frequency: evaluationType === "boolean" 
+        ? (frequencyData.type === "daily" ? "daily" : frequencyData.type === "specific_weekdays" ? "custom" : "weekly")
+        : (frequency as "daily" | "weekly" | "monthly" | "custom"),
       frequency_days: evaluationType === "boolean" 
         ? (frequencyData.type === "specific_weekdays" ? frequencyData.weekdays : null)
         : (frequency === "custom" ? selectedDays : null),
