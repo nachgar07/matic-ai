@@ -3,12 +3,11 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon, Clock, Flag, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ReminderPermissions } from "@/components/ReminderPermissions/ReminderPermissions";
 import { cn } from "@/lib/utils";
 
 interface HabitScheduleSettingsProps {
@@ -21,7 +20,8 @@ export interface HabitScheduleSettings {
   endDate?: Date;
   hasEndDate: boolean;
   reminderCount: number;
-  priority: 'low' | 'normal' | 'high';
+  reminderData?: any;
+  priorityScore: number;
 }
 
 export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSettingsProps) => {
@@ -29,7 +29,9 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
   const [endDate, setEndDate] = useState<Date>();
   const [hasEndDate, setHasEndDate] = useState(false);
   const [reminderCount, setReminderCount] = useState(0);
-  const [priority, setPriority] = useState<'low' | 'normal' | 'high'>('normal');
+  const [reminderData, setReminderData] = useState<any>(null);
+  const [priorityScore, setPriorityScore] = useState(1);
+  const [showReminderPermissions, setShowReminderPermissions] = useState(false);
 
   const handleFinish = () => {
     onFinish({
@@ -37,29 +39,23 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
       endDate: hasEndDate ? endDate : undefined,
       hasEndDate,
       reminderCount,
-      priority
+      reminderData,
+      priorityScore
     });
+  };
+
+  const handleReminderCreated = (data: any) => {
+    setReminderData(data);
+    setReminderCount(1);
+    setShowReminderPermissions(false);
+  };
+
+  const handleReminderClick = () => {
+    setShowReminderPermissions(true);
   };
 
   const setToday = () => {
     setStartDate(new Date());
-  };
-
-  const incrementReminders = () => {
-    setReminderCount(prev => prev + 1);
-  };
-
-  const decrementReminders = () => {
-    setReminderCount(prev => Math.max(0, prev - 1));
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'low': return 'Baja';
-      case 'normal': return 'Normal';
-      case 'high': return 'Alta';
-      default: return 'Normal';
-    }
   };
 
   return (
@@ -163,21 +159,24 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
             <Button
               variant="ghost"
               size="sm"
-              onClick={decrementReminders}
+              onClick={() => reminderCount > 0 ? setReminderCount(prev => prev - 1) : null}
               disabled={reminderCount === 0}
               className="w-8 h-8 p-0 text-primary"
             >
               <Minus className="w-4 h-4" />
             </Button>
             
-            <div className="w-12 h-8 rounded-lg bg-destructive flex items-center justify-center">
+            <Button 
+              onClick={handleReminderClick}
+              className="w-12 h-8 rounded-lg bg-destructive hover:bg-destructive/90 flex items-center justify-center"
+            >
               <span className="text-sm font-medium text-white">{reminderCount}</span>
-            </div>
+            </Button>
             
             <Button
               variant="ghost"
               size="sm"
-              onClick={incrementReminders}
+              onClick={handleReminderClick}
               className="w-8 h-8 p-0 text-primary"
             >
               <Plus className="w-4 h-4" />
@@ -185,7 +184,7 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
           </div>
         </div>
 
-        {/* Prioridad */}
+        {/* Prioridad con sistema de puntaje */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -194,16 +193,38 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
             <span className="text-base">Prioridad</span>
           </div>
           
-          <Select value={priority} onValueChange={(value: 'low' | 'normal' | 'high') => setPriority(value)}>
-            <SelectTrigger className="w-auto min-w-[100px] bg-primary/20 text-primary border-0">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">Baja</SelectItem>
-              <SelectItem value="normal">Normal</SelectItem>
-              <SelectItem value="high">Alta</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPriorityScore(prev => Math.max(1, prev - 1))}
+              disabled={priorityScore <= 1}
+              className="w-8 h-8 p-0 text-primary"
+            >
+              <Minus className="w-4 h-4" />
+            </Button>
+            
+            <div className={cn(
+              "w-20 h-8 rounded-lg flex items-center justify-center",
+              priorityScore === 1 && "bg-green-500",
+              priorityScore === 2 && "bg-orange-500", 
+              priorityScore >= 3 && "bg-red-500"
+            )}>
+              <span className="text-sm font-medium text-white">
+                {priorityScore === 1 ? 'Baja' : priorityScore === 2 ? 'Media' : 'Alta'}
+              </span>
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPriorityScore(prev => Math.min(3, prev + 1))}
+              disabled={priorityScore >= 3}
+              className="w-8 h-8 p-0 text-primary"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -231,6 +252,13 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
           FINALIZAR
         </Button>
       </div>
+
+      {/* Modal de permisos de recordatorios */}
+      <ReminderPermissions
+        isOpen={showReminderPermissions}
+        onClose={() => setShowReminderPermissions(false)}
+        onReminderCreated={handleReminderCreated}
+      />
     </div>
   );
 };

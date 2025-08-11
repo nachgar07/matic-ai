@@ -134,8 +134,7 @@ export const CreateGoalDialog = ({
     // Para hábitos boolean, usar la configuración de horarios si está disponible
     const finalStartDate = settings?.startDate || startDate;
     const finalEndDate = settings?.hasEndDate ? settings.endDate : endDate;
-    const finalPriority = evaluationType === "boolean" && settings ? 
-      (settings.priority === 'low' ? 1 : settings.priority === 'normal' ? 2 : 3) : priority;
+    const finalPriority = evaluationType === "boolean" && settings ? settings.priorityScore : priority;
 
     const goalData = {
       name,
