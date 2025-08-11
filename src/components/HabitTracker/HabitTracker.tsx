@@ -31,11 +31,32 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const weekDays = getWeekDays(currentWeek);
   
-  // Obtener progreso para todos los días de la semana
-  const { data: progressData } = useGoalProgress(
-    format(weekDays[0], 'yyyy-MM-dd'),
-    format(weekDays[6], 'yyyy-MM-dd')
-  );
+  // Determinar el rango de fechas para cargar datos de progreso
+  const getProgressDateRange = () => {
+    if (goal.end_date) {
+      // Para hábitos con fecha final, cargar desde inicio hasta fin (o hoy si es menor)
+      const startDate = new Date(goal.start_date);
+      const endDate = new Date(goal.end_date);
+      const today = new Date();
+      const effectiveEndDate = today < endDate ? today : endDate;
+      
+      return {
+        startDate: format(startDate, 'yyyy-MM-dd'),
+        endDate: format(effectiveEndDate, 'yyyy-MM-dd')
+      };
+    } else {
+      // Para hábitos sin fecha final, solo la semana actual
+      return {
+        startDate: format(weekDays[0], 'yyyy-MM-dd'),
+        endDate: format(weekDays[6], 'yyyy-MM-dd')
+      };
+    }
+  };
+
+  const dateRange = getProgressDateRange();
+  
+  // Obtener progreso para el rango apropiado
+  const { data: progressData } = useGoalProgress(dateRange.startDate, dateRange.endDate);
   const updateProgress = useUpdateGoalProgress();
   const deleteGoal = useDeleteGoal();
   const dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -50,21 +71,20 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
   const getWeekPercentage = () => {
     if (goal.end_date) {
       // Si hay fecha de fin, calcular sobre todo el rango del hábito
-      const startDate = new Date(goal.start_date);
-      const endDate = new Date(goal.end_date);
-      // WORKAROUND: Agregar 1 día a la fecha final para compensar problema de zona horaria
-      endDate.setDate(endDate.getDate() + 1);
-      
+      const startDate = new Date(goal.start_date + 'T00:00:00');
+      const endDate = new Date(goal.end_date + 'T23:59:59');
       const today = new Date();
       
-      // Normalizar fechas para comparar solo días (sin horas)
-      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-      const effectiveEndDate = todayOnly <= endDateOnly ? todayOnly : endDateOnly;
+      // La fecha efectiva final es la menor entre hoy y la fecha final
+      const effectiveEndDate = today < endDate ? today : endDate;
       
-      // Generar todos los días desde inicio hasta hoy (o fecha fin si es menor)
+      // Generar todos los días desde inicio hasta la fecha efectiva
       const allDays = [];
       const current = new Date(startDate);
+      
+      // Establecer la hora a 00:00:00 para evitar problemas de zona horaria
+      current.setHours(0, 0, 0, 0);
+      
       while (current <= effectiveEndDate) {
         allDays.push(new Date(current));
         current.setDate(current.getDate() + 1);
@@ -80,7 +100,10 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
         completedDays: completedActiveDays.length,
         startDate: goal.start_date,
         endDate: goal.end_date,
-        effectiveEndDate: format(effectiveEndDate, 'yyyy-MM-dd')
+        effectiveEndDate: format(effectiveEndDate, 'yyyy-MM-dd'),
+        startDateParsed: format(startDate, 'yyyy-MM-dd'),
+        endDateParsed: format(endDate, 'yyyy-MM-dd'),
+        allDaysRange: allDays.map(d => format(d, 'yyyy-MM-dd'))
       });
       
       if (activeDays.length === 0) return 0;
