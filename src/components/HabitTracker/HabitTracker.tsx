@@ -161,8 +161,10 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
                     ? 'bg-green-500 text-white hover:bg-green-600'
                     : isCurrentDay
                     ? 'bg-primary text-primary-foreground hover:bg-primary/80'
-                    : isPastDay
+                    : isPastDay && dayProgress
                     ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                    : isPastDay
+                    ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
                     : 'bg-muted hover:bg-muted/80'
                 }`}
               >
