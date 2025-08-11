@@ -116,7 +116,14 @@ export const HabitScheduleSettings = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar mode="single" selected={endDate} onSelect={setEndDate} disabled={date => date <= startDate} initialFocus className="pointer-events-auto" />
+                  <Calendar 
+                    mode="single" 
+                    selected={endDate} 
+                    onSelect={(date) => date && setEndDate(date)} 
+                    disabled={(date) => date < startDate} 
+                    initialFocus 
+                    className="pointer-events-auto" 
+                  />
                 </PopoverContent>
               </Popover>}
           </div>
