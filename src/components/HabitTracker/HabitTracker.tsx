@@ -88,9 +88,25 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = dayNames[dayOfWeek];
     
+    // DEBUG específico para el día 21
+    if (format(date, 'yyyy-MM-dd') === '2025-08-21') {
+      console.log('🚨 DEBUG ESPECIAL para día 21:', {
+        goal: goal.name,
+        startDate: goal.start_date,
+        endDate: goal.end_date,
+        frequency: goal.frequency,
+        frequency_data: goal.frequency_data
+      });
+    }
+    
     // Verificar si la fecha está dentro del rango del hábito
     const startDate = new Date(goal.start_date);
-    if (date < startDate) return false;
+    if (date < startDate) {
+      if (format(date, 'yyyy-MM-dd') === '2025-08-21') {
+        console.log('❌ Día 21 eliminado: antes de fecha de inicio');
+      }
+      return false;
+    }
     
     // Si hay fecha de fin, verificar que no la exceda (incluir el día final)
     if (goal.end_date) {
@@ -98,7 +114,21 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       // Comparar solo las fechas sin la hora para incluir todo el día final
       const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-      if (dateOnly > endDateOnly) return false;
+      
+      if (format(date, 'yyyy-MM-dd') === '2025-08-21') {
+        console.log('🔍 Comparación de fechas para día 21:', {
+          dateOnly: format(dateOnly, 'yyyy-MM-dd'),
+          endDateOnly: format(endDateOnly, 'yyyy-MM-dd'),
+          isAfterEnd: dateOnly > endDateOnly
+        });
+      }
+      
+      if (dateOnly > endDateOnly) {
+        if (format(date, 'yyyy-MM-dd') === '2025-08-21') {
+          console.log('❌ Día 21 eliminado: después de fecha final');
+        }
+        return false;
+      }
     }
     
     if (goal.frequency === 'daily') return true;
@@ -131,6 +161,17 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           if (frequencyData.type === 'repeat' && frequencyData.repeatInterval) {
             const diffInDays = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
             const isActiveDay = diffInDays >= 0 && diffInDays % frequencyData.repeatInterval === 0;
+            
+            if (format(date, 'yyyy-MM-dd') === '2025-08-21') {
+              console.log('🔄 Cálculo de repetición para día 21:', {
+                startDate: format(startDate, 'yyyy-MM-dd'),
+                diffInDays,
+                repeatInterval: frequencyData.repeatInterval,
+                modulo: diffInDays % frequencyData.repeatInterval,
+                isActiveDay
+              });
+            }
+            
             return isActiveDay;
           }
         } catch (error) {
