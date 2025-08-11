@@ -228,6 +228,8 @@ export const useUpdateGoalProgress = () => {
           completed_value: completedValue,
           is_completed: isCompleted,
           notes,
+        }, {
+          onConflict: 'goal_id,date'
         })
         .select()
         .single();
