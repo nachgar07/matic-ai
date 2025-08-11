@@ -3,10 +3,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { format, subDays, addDays, isToday, isSameDay } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { format, subDays, addDays, isToday, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { es } from "date-fns/locale";
 import { Goal, useGoalProgress, useUpdateGoalProgress, useDeleteGoal } from "@/hooks/useGoals";
-import { ChevronLeft, ChevronRight, BarChart3, Trash2, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, BarChart3, Trash2, MoreHorizontal, CalendarIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface HabitTrackerProps {
@@ -275,6 +277,46 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span>🔥 {weekDays.filter(day => isDayActive(day) && getDayProgress(day)?.is_completed).length}</span>
+          
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-1">
+                <CalendarIcon className="w-4 h-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-fit">
+              <DialogHeader>
+                <DialogTitle>Calendario de {goal.name}</DialogTitle>
+              </DialogHeader>
+              <div className="p-4">
+                <Calendar
+                  mode="multiple"
+                  selected={eachDayOfInterval({
+                    start: startOfMonth(new Date()),
+                    end: endOfMonth(new Date())
+                  }).filter(day => isDayActive(day))}
+                  className="rounded-md border pointer-events-auto"
+                  locale={es}
+                  disabled={false}
+                  modifiers={{
+                    active: (date) => isDayActive(date),
+                  }}
+                  modifiersStyles={{
+                    active: {
+                      backgroundColor: goal.color + '40',
+                      color: goal.color,
+                      fontWeight: 'bold',
+                      border: `2px solid ${goal.color}`,
+                    }
+                  }}
+                />
+                <div className="mt-4 text-sm text-muted-foreground text-center">
+                  Los días marcados representan cuándo debes realizar este hábito
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
           <Button variant="ghost" size="sm" className="p-1">
             <BarChart3 className="w-4 h-4" />
           </Button>
