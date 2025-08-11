@@ -159,10 +159,10 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
                     ? 'bg-muted/30 text-muted-foreground/50 cursor-not-allowed'
                     : isCompleted
                     ? 'bg-green-500 text-white hover:bg-green-600'
+                    : dayProgress && !isCompleted
+                    ? 'bg-red-500 text-white hover:bg-red-600'
                     : isCurrentDay
                     ? 'bg-primary text-primary-foreground hover:bg-primary/80'
-                    : isPastDay && dayProgress
-                    ? 'bg-red-100 text-red-600 hover:bg-red-200'
                     : isPastDay
                     ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
                     : 'bg-muted hover:bg-muted/80'
