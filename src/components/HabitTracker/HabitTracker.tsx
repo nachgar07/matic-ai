@@ -40,12 +40,35 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
 
   // Calcular porcentaje de cumplimiento de la semana
   const getWeekPercentage = () => {
-    const completedDays = weekDays.filter(day => getDayProgress(day)?.is_completed).length;
-    return Math.round((completedDays / 7) * 100);
+    const activeDays = weekDays.filter(day => isDayActive(day));
+    const completedActiveDays = activeDays.filter(day => getDayProgress(day)?.is_completed);
+    
+    if (activeDays.length === 0) return 0;
+    return Math.round((completedActiveDays.length / activeDays.length) * 100);
+  };
+
+  // Verificar si un día específico está activo para el hábito
+  const isDayActive = (date: Date) => {
+    const dayOfWeek = date.getDay();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek];
+    
+    if (goal.frequency === 'daily') return true;
+    if (goal.frequency === 'custom') {
+      return goal.frequency_days?.includes(dayName) || false;
+    }
+    if (goal.frequency === 'weekly') {
+      // Para semanal, solo los lunes están activos
+      return dayOfWeek === 1;
+    }
+    return false;
   };
 
   // Marcar día como completado/no completado
   const toggleDayComplete = async (date: Date) => {
+    // Solo permitir toggle en días activos
+    if (!isDayActive(date)) return;
+    
     const dateString = format(date, 'yyyy-MM-dd');
     const currentProgress = getDayProgress(date);
     const isCompleted = currentProgress?.is_completed || false;
@@ -99,6 +122,7 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           const isCompleted = dayProgress?.is_completed || false;
           const isCurrentDay = isToday(date);
           const isPastDay = date < new Date() && !isToday(date);
+          const isActive = isDayActive(date);
 
           return (
             <div key={date.toISOString()} className="text-center">
@@ -109,13 +133,16 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => toggleDayComplete(date)}
+                disabled={!isActive}
                 className={`w-10 h-10 rounded-full p-0 ${
-                  isCompleted
+                  !isActive
+                    ? 'bg-muted/30 text-muted-foreground/50 cursor-not-allowed'
+                    : isCompleted
                     ? 'bg-green-500 text-white hover:bg-green-600'
                     : isCurrentDay
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/80'
                     : isPastDay
-                    ? 'bg-red-100 text-red-600'
+                    ? 'bg-red-100 text-red-600 hover:bg-red-200'
                     : 'bg-muted hover:bg-muted/80'
                 }`}
               >
@@ -136,7 +163,7 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
         </div>
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span>🔥 {weekDays.filter(day => getDayProgress(day)?.is_completed).length}</span>
+          <span>🔥 {weekDays.filter(day => isDayActive(day) && getDayProgress(day)?.is_completed).length}</span>
           <Button variant="ghost" size="sm" className="p-1">
             <BarChart3 className="w-4 h-4" />
           </Button>
