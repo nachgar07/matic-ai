@@ -99,9 +99,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
       if (dateOnly > endDateOnly) return false;
-      
-      // Si es exactamente el día final, siempre está activo
-      if (dateOnly.getTime() === endDateOnly.getTime()) return true;
     }
     
     if (goal.frequency === 'daily') return true;
