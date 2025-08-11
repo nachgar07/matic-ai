@@ -61,6 +61,42 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     
     if (goal.frequency === 'daily') return true;
     if (goal.frequency === 'custom') {
+      // Verificar si hay frequency_data con configuraciones avanzadas
+      if (goal.frequency_data) {
+        try {
+          const frequencyData = JSON.parse(goal.frequency_data);
+          
+          // Días específicos del mes
+          if (frequencyData.type === 'specific_monthdays' && frequencyData.monthdays) {
+            const dayOfMonth = date.getDate();
+            return frequencyData.monthdays.includes(dayOfMonth);
+          }
+          
+          // Días específicos del año
+          if (frequencyData.type === 'specific_yeardays' && frequencyData.yeardays) {
+            const monthDay = format(date, 'MM-dd');
+            return frequencyData.yeardays.includes(monthDay);
+          }
+          
+          // Períodos específicos (ej: cada 3 días, cada 2 semanas)
+          if (frequencyData.type === 'periodic' && frequencyData.interval && frequencyData.unit) {
+            const startDate = new Date(goal.start_date);
+            const diffInDays = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            if (frequencyData.unit === 'days') {
+              return diffInDays >= 0 && diffInDays % frequencyData.interval === 0;
+            }
+            if (frequencyData.unit === 'weeks') {
+              const diffInWeeks = Math.floor(diffInDays / 7);
+              return diffInDays >= 0 && diffInWeeks % frequencyData.interval === 0 && dayOfWeek === startDate.getDay();
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing frequency_data:', error);
+        }
+      }
+      
+      // Fallback a frequency_days para días específicos de la semana
       return goal.frequency_days?.includes(dayName) || false;
     }
     if (goal.frequency === 'weekly') {

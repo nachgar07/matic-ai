@@ -14,6 +14,7 @@ export interface Goal {
   priority: number;
   frequency: 'daily' | 'weekly' | 'monthly' | 'custom';
   frequency_days?: string[];
+  frequency_data?: string;
   target_value: number;
   start_date: string;
   end_date?: string;
