@@ -84,13 +84,37 @@ export const Objetivos = () => {
 
           <div className="pt-4">
             <TabsContent value="tasks" className="m-0">
-              {tasks.length > 0 ? (
+              {(tasks.length > 0 || goals.length > 0) ? (
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground">
-                    Tareas para {format(selectedDate, "dd 'de' MMMM", { locale: es })}
+                    Tareas y hábitos para {format(selectedDate, "dd 'de' MMMM", { locale: es })}
                   </h3>
+                  {/* Tareas */}
                   {tasks.map((task) => (
-                    <TaskCard key={task.id} task={task} />
+                    <TaskCard key={`task-${task.id}`} task={task} itemType="tarea" />
+                  ))}
+                  {/* Hábitos convertidos a formato de tarea */}
+                  {goals.map((goal) => (
+                    <TaskCard 
+                      key={`habit-${goal.id}`} 
+                      task={{
+                        id: goal.id,
+                        title: goal.name,
+                        description: goal.description || '',
+                        category: goal.category,
+                        priority: goal.priority,
+                        is_completed: false, // Los hábitos no tienen estado completado simple
+                        is_recurring: true,
+                        due_date: format(selectedDate, 'yyyy-MM-dd'),
+                        due_time: null,
+                        created_at: goal.created_at,
+                        updated_at: goal.updated_at,
+                        user_id: goal.user_id,
+                        reminder_time: null
+                      }}
+                      itemType="hábito"
+                      isHabit={true}
+                    />
                   ))}
                 </div>
               ) : (
@@ -99,9 +123,9 @@ export const Objetivos = () => {
                     <div className="w-20 h-20 mx-auto mb-6 bg-primary/10 rounded-2xl flex items-center justify-center">
                       <Calendar className="text-primary" size={32} />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2 text-foreground">No hay tareas programadas</h3>
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">No hay tareas o hábitos programados</h3>
                     <p className="text-muted-foreground">
-                      Prueba agregar nuevas tareas
+                      Prueba agregar nuevas tareas o hábitos
                     </p>
                   </div>
                 </div>

@@ -19,9 +19,11 @@ import {
 
 interface TaskCardProps {
   task: Task;
+  itemType?: 'tarea' | 'hábito';
+  isHabit?: boolean;
 }
 
-export const TaskCard = ({ task }: TaskCardProps) => {
+export const TaskCard = ({ task, itemType = 'tarea', isHabit = false }: TaskCardProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [dragX, setDragX] = useState(0);
@@ -201,9 +203,14 @@ export const TaskCard = ({ task }: TaskCardProps) => {
 
         {/* Contenido central */}
         <div className="flex-1 min-w-0">
-          <h3 className={`font-medium text-base ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-            {task.title}
-          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className={`font-medium text-base ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+              {task.title}
+            </h3>
+            <Badge variant="secondary" className="text-xs px-2 py-0.5">
+              {itemType}
+            </Badge>
+          </div>
           
           <span className="text-sm capitalize" style={{ color: categoryData.color }}>
             {categoryData.label}
@@ -211,19 +218,30 @@ export const TaskCard = ({ task }: TaskCardProps) => {
         </div>
 
         {/* Botón de check a la derecha */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleToggleComplete}
-          disabled={isUpdating}
-          className="p-2 h-auto"
-        >
-          {task.is_completed ? (
-            <CheckCircle2 className="w-6 h-6 text-green-500" />
-          ) : (
-            <Circle className="w-6 h-6 text-muted-foreground" />
-          )}
-        </Button>
+        {!isHabit ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleToggleComplete}
+            disabled={isUpdating}
+            className="p-2 h-auto"
+          >
+            {task.is_completed ? (
+              <CheckCircle2 className="w-6 h-6 text-green-500" />
+            ) : (
+              <Circle className="w-6 h-6 text-muted-foreground" />
+            )}
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="p-2 h-auto"
+            disabled
+          >
+            <CalendarDays className="w-6 h-6 text-muted-foreground" />
+          </Button>
+        )}
       </div>
       
       <EditTaskDialog 
