@@ -71,9 +71,14 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
   const getWeekPercentage = () => {
     if (goal.end_date) {
       // Si hay fecha de fin, calcular sobre todo el rango del hábito
-      const startDate = new Date(goal.start_date + 'T00:00:00');
-      const endDate = new Date(goal.end_date + 'T23:59:59');
+      const startDate = new Date(goal.start_date);
+      const endDate = new Date(goal.end_date);
       const today = new Date();
+      
+      // Normalizar fechas eliminando horas
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      today.setHours(23, 59, 59, 999);
       
       // La fecha efectiva final es la menor entre hoy y la fecha final
       const effectiveEndDate = today < endDate ? today : endDate;
@@ -82,33 +87,31 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       const allDays = [];
       const current = new Date(startDate);
       
-      // Establecer la hora a 00:00:00 para evitar problemas de zona horaria
-      current.setHours(0, 0, 0, 0);
-      
       while (current <= effectiveEndDate) {
         allDays.push(new Date(current));
         current.setDate(current.getDate() + 1);
       }
       
+      // Filtrar solo los días que son activos según la frecuencia
       const activeDays = allDays.filter(day => isDayActive(day));
       const completedActiveDays = activeDays.filter(day => getDayProgress(day)?.is_completed);
       
       console.log(`Calculando porcentaje para ${goal.name}:`, {
         hasEndDate: true,
+        startDate: format(startDate, 'yyyy-MM-dd'),
+        endDate: format(endDate, 'yyyy-MM-dd'),
+        effectiveEndDate: format(effectiveEndDate, 'yyyy-MM-dd'),
         totalDays: allDays.length,
         activeDays: activeDays.length,
         completedDays: completedActiveDays.length,
-        startDate: goal.start_date,
-        endDate: goal.end_date,
-        effectiveEndDate: format(effectiveEndDate, 'yyyy-MM-dd'),
-        startDateParsed: format(startDate, 'yyyy-MM-dd'),
-        endDateParsed: format(endDate, 'yyyy-MM-dd'),
-        allDaysRange: allDays.map(d => format(d, 'yyyy-MM-dd'))
+        allDaysRange: allDays.map(d => format(d, 'yyyy-MM-dd')),
+        activeDaysRange: activeDays.map(d => format(d, 'yyyy-MM-dd')),
+        completedDaysRange: completedActiveDays.map(d => format(d, 'yyyy-MM-dd'))
       });
       
       if (activeDays.length === 0) return 0;
       const percentage = Math.round((completedActiveDays.length / activeDays.length) * 100);
-      console.log(`Porcentaje calculado: ${percentage}%`);
+      console.log(`Porcentaje final calculado: ${percentage}%`);
       return percentage;
     } else {
       // Si no hay fecha de fin, calcular solo para la semana actual
