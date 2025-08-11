@@ -11,8 +11,8 @@ interface PrioritySelectorProps {
 }
 
 const getPriorityLabel = (priority: number) => {
-  if (priority >= 8) return "Alta";
-  if (priority >= 4) return "Normal";
+  if (priority >= 67) return "Alta";
+  if (priority >= 34) return "Normal";
   return "Baja";
 };
 
@@ -37,7 +37,7 @@ export const PrioritySelector = ({ open, onOpenChange, value, onValueChange }: P
   };
 
   const incrementPriority = () => {
-    setTempValue(Math.min(10, tempValue + 1));
+    setTempValue(Math.min(100, tempValue + 1));
   };
 
   const decrementPriority = () => {
@@ -77,7 +77,7 @@ export const PrioritySelector = ({ open, onOpenChange, value, onValueChange }: P
               variant="ghost"
               size="icon"
               onClick={incrementPriority}
-              disabled={tempValue >= 10}
+              disabled={tempValue >= 100}
               className="w-12 h-12 rounded-full border border-border text-muted-foreground hover:text-foreground"
             >
               <Plus className="w-6 h-6" />
