@@ -143,18 +143,15 @@ export const CreateGoalDialog = ({
       icon: finalSelectedCategory?.icon || "🎯",
       color: finalSelectedCategory?.color || priorities.find(p => p.value === finalPriority)?.color || "#6366f1",
       priority: finalPriority,
-      frequency: evaluationType === "boolean" 
-        ? (frequencyData.type === "daily" ? "daily" 
-           : frequencyData.type === "specific_weekdays" ? "custom"
-           : "custom") as "daily" | "weekly" | "monthly" | "custom"
-        : (frequency as "daily" | "weekly" | "monthly" | "custom"),
-      frequency_days: evaluationType === "boolean" 
-        ? (frequencyData.type === "specific_weekdays" ? frequencyData.weekdays 
-           : frequencyData.type === "specific_monthdays" ? frequencyData.monthdays?.map(String)
-           : frequencyData.type === "specific_yeardays" ? frequencyData.yeardays
-           : null)
-        : (frequency === "custom" ? selectedDays : null),
-      frequency_data: evaluationType === "boolean" ? JSON.stringify(frequencyData) : null,
+      frequency: (frequencyData.type === "daily" ? "daily" 
+                 : frequencyData.type === "specific_weekdays" ? "custom"
+                 : "custom") as "daily" | "weekly" | "custom" | "monthly",
+      frequency_days: frequencyData.type === "specific_weekdays" ? frequencyData.weekdays 
+                     : frequencyData.type === "specific_monthdays" ? frequencyData.monthdays?.map(String)
+                     : frequencyData.type === "specific_yeardays" ? frequencyData.yeardays
+                     : null,
+      // Siempre guardar frequency_data para todos los hábitos
+      frequency_data: JSON.stringify(frequencyData),
       target_value: targetValue,
       start_date: format(finalStartDate, "yyyy-MM-dd"),
       end_date: finalEndDate ? format(finalEndDate, "yyyy-MM-dd") : undefined,
@@ -366,40 +363,15 @@ export const CreateGoalDialog = ({
                     />
                   </div>
 
-                  {/* Frecuencia simple para otros tipos */}
-                  <div className="space-y-2">
+                  {/* Frecuencia avanzada para todos los tipos */}
+                  <div className="space-y-3">
                     <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                      📅 Frecuencia
+                      📅 ¿Con qué frecuencia quieres realizarlo?
                     </Label>
-                    <Select value={frequency} onValueChange={setFrequency}>
-                      <SelectTrigger className="text-base">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {frequencies.map((freq) => (
-                          <SelectItem key={freq.value} value={freq.value}>
-                            {freq.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    {frequency === "custom" && (
-                      <div className="grid grid-cols-7 gap-1 mt-2">
-                        {weekDays.map((day) => (
-                          <Button
-                            key={day.value}
-                            type="button"
-                            variant={selectedDays.includes(day.value) ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => toggleDay(day.value)}
-                            className="h-8 p-0 text-xs"
-                          >
-                            {day.short}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
+                    <FrequencySelector
+                      value={frequencyData}
+                      onChange={setFrequencyData}
+                    />
                   </div>
                 </>
               )}
