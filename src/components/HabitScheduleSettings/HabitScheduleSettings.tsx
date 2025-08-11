@@ -30,7 +30,7 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
   const [hasEndDate, setHasEndDate] = useState(false);
   const [reminderCount, setReminderCount] = useState(0);
   const [reminderData, setReminderData] = useState<any>(null);
-  const [priorityScore, setPriorityScore] = useState(1);
+  const [priorityScore, setPriorityScore] = useState(50);
   const [showReminderPermissions, setShowReminderPermissions] = useState(false);
 
   const handleFinish = () => {
@@ -197,7 +197,7 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setPriorityScore(prev => Math.max(1, prev - 1))}
+              onClick={() => setPriorityScore(prev => Math.max(1, prev - 5))}
               disabled={priorityScore <= 1}
               className="w-8 h-8 p-0 text-primary"
             >
@@ -205,21 +205,21 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
             </Button>
             
             <div className={cn(
-              "w-20 h-8 rounded-lg flex items-center justify-center",
-              priorityScore === 1 && "bg-green-500",
-              priorityScore === 2 && "bg-orange-500", 
-              priorityScore >= 3 && "bg-red-500"
+              "w-16 h-8 rounded-lg flex items-center justify-center border",
+              priorityScore <= 33 && "bg-green-500 text-white",
+              priorityScore > 33 && priorityScore <= 66 && "bg-orange-500 text-white",
+              priorityScore > 66 && "bg-red-500 text-white"
             )}>
-              <span className="text-sm font-medium text-white">
-                {priorityScore === 1 ? 'Baja' : priorityScore === 2 ? 'Media' : 'Alta'}
+              <span className="text-sm font-medium">
+                {priorityScore}
               </span>
             </div>
             
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setPriorityScore(prev => Math.min(3, prev + 1))}
-              disabled={priorityScore >= 3}
+              onClick={() => setPriorityScore(prev => Math.min(100, prev + 5))}
+              disabled={priorityScore >= 100}
               className="w-8 h-8 p-0 text-primary"
             >
               <Plus className="w-4 h-4" />
