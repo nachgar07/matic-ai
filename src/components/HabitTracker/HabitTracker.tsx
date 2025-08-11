@@ -74,15 +74,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           
           // Días específicos del año
           if (frequencyData.type === 'specific_yeardays' && frequencyData.yeardays) {
-            console.log(`🎆 YEARDAYS CHECK for ${format(date, 'd')}:`, {
-              currentDate: date,
-              currentDateFormatted: format(date, 'yyyy-MM-dd'),
-              currentMonthDay: format(date, 'MM-dd'),
-              yeardays: frequencyData.yeardays,
-              checkFullDate: frequencyData.yeardays.includes(format(date, 'yyyy-MM-dd')),
-              checkMonthDay: frequencyData.yeardays.some(yearday => yearday.endsWith(format(date, 'MM-dd')))
-            });
-            
             // Verificar si algún yearday coincide con la fecha actual
             // Pueden venir en formato completo (yyyy-MM-dd) o solo mes-día (MM-dd)
             const currentFullDate = format(date, 'yyyy-MM-dd');
@@ -94,7 +85,21 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
             });
           }
           
-          // Períodos específicos (ej: cada 3 días, cada 2 semanas)
+          // Algunas veces por período (X veces por semana/mes/año)
+          if (frequencyData.type === 'period' && frequencyData.periodAmount && frequencyData.periodUnit) {
+            // Para este tipo, todos los días del período están activos
+            // La lógica de completado se maneja a nivel de período, no día individual
+            return true;
+          }
+          
+          // Repetir cada X días
+          if (frequencyData.type === 'repeat' && frequencyData.repeatInterval) {
+            const startDate = new Date(goal.start_date);
+            const diffInDays = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+            return diffInDays >= 0 && diffInDays % frequencyData.repeatInterval === 0;
+          }
+          
+          // Períodos específicos (ej: cada 3 días, cada 2 semanas) - legacy
           if (frequencyData.type === 'periodic' && frequencyData.interval && frequencyData.unit) {
             const startDate = new Date(goal.start_date);
             const diffInDays = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
