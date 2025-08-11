@@ -79,14 +79,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const currentProgress = getDayProgress(date);
     const isCompleted = currentProgress?.is_completed || false;
 
-    console.log('Toggle day complete:', {
-      date: dateString,
-      currentProgress,
-      isCompleted,
-      willSetCompleted: !isCompleted,
-      willSetValue: isCompleted ? 0 : goal.target_value
-    });
-
     await updateProgress.mutateAsync({
       goalId: goal.id,
       date: dateString,

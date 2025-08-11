@@ -235,7 +235,8 @@ export const useUpdateGoalProgress = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['goal-progress'] });
+      // Invalidar todas las queries de goal-progress con cualquier parámetro
+      queryClient.invalidateQueries({ queryKey: ['goal-progress'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['goal-stats'] });
     },
   });
@@ -296,7 +297,7 @@ export const useDeleteGoal = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
-      queryClient.invalidateQueries({ queryKey: ['goal-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['goal-progress'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['goal-stats'] });
       toast({
         title: "Hábito eliminado",
