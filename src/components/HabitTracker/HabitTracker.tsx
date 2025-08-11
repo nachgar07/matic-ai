@@ -70,31 +70,39 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     return false;
   };
 
-  // Marcar día como completado/no completado
+  // Marcar día con 3 estados: normal → verde (completado) → rojo (cancelado) → normal
   const toggleDayComplete = async (date: Date) => {
     // Solo permitir toggle en días activos
     if (!isDayActive(date)) return;
     
     const dateString = format(date, 'yyyy-MM-dd');
     const currentProgress = getDayProgress(date);
-    const isCompleted = currentProgress?.is_completed || false;
     
-    console.log('Toggling day:', {
-      dateString,
-      currentProgress,
-      isCompleted,
-      willSetCompleted: !isCompleted,
-      willSetValue: isCompleted ? 0 : goal.target_value
-    });
+    // Determinar el estado actual y el siguiente
+    let nextIsCompleted: boolean;
+    let nextCompletedValue: number;
+    
+    if (!currentProgress) {
+      // Estado 1: Sin progreso → Verde (completado)
+      nextIsCompleted = true;
+      nextCompletedValue = goal.target_value;
+    } else if (currentProgress.is_completed) {
+      // Estado 2: Verde (completado) → Rojo (cancelado)
+      nextIsCompleted = false;
+      nextCompletedValue = goal.target_value; // Mantener el valor pero marcar como no completado
+    } else {
+      // Estado 3: Rojo (cancelado) → Normal (sin progreso)
+      nextIsCompleted = false;
+      nextCompletedValue = 0; // Eliminar el progreso
+    }
 
     try {
       await updateProgress.mutateAsync({
         goalId: goal.id,
         date: dateString,
-        completedValue: isCompleted ? 0 : goal.target_value,
-        isCompleted: !isCompleted,
+        completedValue: nextCompletedValue,
+        isCompleted: nextIsCompleted,
       });
-      console.log('Update successful');
     } catch (error) {
       console.error('Update failed:', error);
     }
@@ -157,9 +165,18 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
         {weekDays.map((date, index) => {
           const dayProgress = getDayProgress(date);
           const isCompleted = dayProgress?.is_completed || false;
+          const hasProgress = dayProgress && dayProgress.completed_value > 0;
           const isCurrentDay = isToday(date);
           const isPastDay = date < new Date() && !isToday(date);
           const isActive = isDayActive(date);
+
+          // Determinar el estado del botón
+          let buttonState = 'normal';
+          if (hasProgress && isCompleted) {
+            buttonState = 'completed'; // Verde
+          } else if (hasProgress && !isCompleted) {
+            buttonState = 'cancelled'; // Rojo
+          }
 
           return (
             <div key={date.toISOString()} className="text-center">
@@ -174,9 +191,9 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
                 className={`w-10 h-10 rounded-full p-0 ${
                   !isActive
                     ? 'bg-muted/30 text-muted-foreground/50 cursor-not-allowed'
-                    : isCompleted
+                    : buttonState === 'completed'
                     ? 'bg-green-500 text-white hover:bg-green-600'
-                    : dayProgress && !isCompleted
+                    : buttonState === 'cancelled'
                     ? 'bg-red-500 text-white hover:bg-red-600'
                     : isCurrentDay
                     ? 'bg-primary text-primary-foreground hover:bg-primary/80'
