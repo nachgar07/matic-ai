@@ -46,13 +46,36 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     return progressData?.find(p => p.date === dateString && p.goal_id === goal.id);
   };
 
-  // Calcular porcentaje de cumplimiento de la semana
+  // Calcular porcentaje de cumplimiento 
   const getWeekPercentage = () => {
-    const activeDays = weekDays.filter(day => isDayActive(day));
-    const completedActiveDays = activeDays.filter(day => getDayProgress(day)?.is_completed);
-    
-    if (activeDays.length === 0) return 0;
-    return Math.round((completedActiveDays.length / activeDays.length) * 100);
+    if (goal.end_date) {
+      // Si hay fecha de fin, calcular sobre todo el rango del hábito
+      const startDate = new Date(goal.start_date);
+      const endDate = new Date(goal.end_date);
+      const today = new Date();
+      const effectiveEndDate = today < endDate ? today : endDate;
+      
+      // Generar todos los días desde inicio hasta hoy (o fecha fin si es menor)
+      const allDays = [];
+      const current = new Date(startDate);
+      while (current <= effectiveEndDate) {
+        allDays.push(new Date(current));
+        current.setDate(current.getDate() + 1);
+      }
+      
+      const activeDays = allDays.filter(day => isDayActive(day));
+      const completedActiveDays = activeDays.filter(day => getDayProgress(day)?.is_completed);
+      
+      if (activeDays.length === 0) return 0;
+      return Math.round((completedActiveDays.length / activeDays.length) * 100);
+    } else {
+      // Si no hay fecha de fin, calcular solo para la semana actual
+      const activeDays = weekDays.filter(day => isDayActive(day));
+      const completedActiveDays = activeDays.filter(day => getDayProgress(day)?.is_completed);
+      
+      if (activeDays.length === 0) return 0;
+      return Math.round((completedActiveDays.length / activeDays.length) * 100);
+    }
   };
 
   // Verificar si un día específico está activo para el hábito
@@ -60,6 +83,16 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dayOfWeek = date.getDay();
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = dayNames[dayOfWeek];
+    
+    // Verificar si la fecha está dentro del rango del hábito
+    const startDate = new Date(goal.start_date);
+    if (date < startDate) return false;
+    
+    // Si hay fecha de fin, verificar que no la exceda
+    if (goal.end_date) {
+      const endDate = new Date(goal.end_date);
+      if (date > endDate) return false;
+    }
     
     if (goal.frequency === 'daily') return true;
     if (goal.frequency === 'custom') {
@@ -87,10 +120,8 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
             });
           }
           
-          
           // Repetir cada X días
           if (frequencyData.type === 'repeat' && frequencyData.repeatInterval) {
-            const startDate = new Date(goal.start_date);
             const diffInDays = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
             const isActiveDay = diffInDays >= 0 && diffInDays % frequencyData.repeatInterval === 0;
             return isActiveDay;
@@ -262,7 +293,28 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
         </div>
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span>🔥 {weekDays.filter(day => isDayActive(day) && getDayProgress(day)?.is_completed).length}</span>
+          <span>🔥 {
+            goal.end_date ? 
+            // Si hay fecha fin, contar completados en todo el rango
+            (() => {
+              const startDate = new Date(goal.start_date);
+              const endDate = new Date(goal.end_date);
+              const today = new Date();
+              const effectiveEndDate = today < endDate ? today : endDate;
+              
+              const allDays = [];
+              const current = new Date(startDate);
+              while (current <= effectiveEndDate) {
+                allDays.push(new Date(current));
+                current.setDate(current.getDate() + 1);
+              }
+              
+              return allDays.filter(day => isDayActive(day) && getDayProgress(day)?.is_completed).length;
+            })()
+            :
+            // Si no hay fecha fin, contar solo la semana actual
+            weekDays.filter(day => isDayActive(day) && getDayProgress(day)?.is_completed).length
+          }</span>
           
           <Dialog>
             <DialogTrigger asChild>
