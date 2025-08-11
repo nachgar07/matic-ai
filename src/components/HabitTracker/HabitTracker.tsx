@@ -78,13 +78,26 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dateString = format(date, 'yyyy-MM-dd');
     const currentProgress = getDayProgress(date);
     const isCompleted = currentProgress?.is_completed || false;
-
-    await updateProgress.mutateAsync({
-      goalId: goal.id,
-      date: dateString,
-      completedValue: isCompleted ? 0 : goal.target_value,
-      isCompleted: !isCompleted,
+    
+    console.log('Toggling day:', {
+      dateString,
+      currentProgress,
+      isCompleted,
+      willSetCompleted: !isCompleted,
+      willSetValue: isCompleted ? 0 : goal.target_value
     });
+
+    try {
+      await updateProgress.mutateAsync({
+        goalId: goal.id,
+        date: dateString,
+        completedValue: isCompleted ? 0 : goal.target_value,
+        isCompleted: !isCompleted,
+      });
+      console.log('Update successful');
+    } catch (error) {
+      console.error('Update failed:', error);
+    }
   };
 
   const navigateWeek = (direction: 'prev' | 'next') => {
