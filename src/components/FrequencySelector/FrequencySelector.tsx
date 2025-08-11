@@ -14,7 +14,6 @@ export type FrequencyType =
   | "specific_weekdays" 
   | "specific_monthdays" 
   | "specific_yeardays" 
-  | "period" 
   | "repeat" 
   | "flexible";
 
@@ -23,8 +22,6 @@ export interface FrequencyData {
   weekdays?: string[];
   monthdays?: number[];
   yeardays?: string[];
-  periodAmount?: number;
-  periodUnit?: string;
   repeatInterval?: number;
   repeatUnit?: string;
   isFlexible?: boolean;
@@ -353,52 +350,6 @@ export const FrequencySelector = ({ value, onChange }: FrequencySelectorProps) =
           )}
         </div>
 
-        {/* Algunas veces por período */}
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3">
-            <div 
-              className={cn(
-                "w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer",
-                value.type === "period" ? "border-primary bg-primary" : "border-muted-foreground"
-              )}
-              onClick={() => handleFrequencyChange("period")}
-            >
-              {value.type === "period" && <div className="w-2 h-2 rounded-full bg-white" />}
-            </div>
-            <span 
-              className={cn("text-base cursor-pointer", value.type === "period" ? "text-foreground" : "text-muted-foreground")}
-              onClick={() => handleFrequencyChange("period")}
-            >
-              Algunas veces por período
-            </span>
-          </div>
-
-          {value.type === "period" && (
-            <div className="ml-8 flex items-center gap-2">
-              <Input
-                type="number"
-                min="1"
-                value={value.periodAmount || 1}
-                onChange={(e) => onChange({ ...value, periodAmount: parseInt(e.target.value) || 1 })}
-                className="w-20"
-              />
-              <span className="text-sm">veces por</span>
-              <Select 
-                value={value.periodUnit || "SEMANA"} 
-                onValueChange={(unit) => onChange({ ...value, periodUnit: unit })}
-              >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SEMANA">SEMANA</SelectItem>
-                  <SelectItem value="MES">MES</SelectItem>
-                  <SelectItem value="AÑO">AÑO</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
 
         {/* Repetir */}
         <div className="space-y-3">

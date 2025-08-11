@@ -85,12 +85,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
             });
           }
           
-          // Algunas veces por período (X veces por semana/mes/año)
-          if (frequencyData.type === 'period' && frequencyData.periodAmount && frequencyData.periodUnit) {
-            // Para este tipo, todos los días del período están activos
-            // La lógica de completado se maneja a nivel de período, no día individual
-            return true;
-          }
           
           // Repetir cada X días
           if (frequencyData.type === 'repeat' && frequencyData.repeatInterval) {
