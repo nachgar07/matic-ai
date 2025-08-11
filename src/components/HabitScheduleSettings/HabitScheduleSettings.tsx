@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ReminderPermissions } from "@/components/ReminderPermissions/ReminderPermissions";
+import { PrioritySelector } from "@/components/PrioritySelector/PrioritySelector";
 import { cn } from "@/lib/utils";
 
 interface HabitScheduleSettingsProps {
@@ -30,8 +31,9 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
   const [hasEndDate, setHasEndDate] = useState(false);
   const [reminderCount, setReminderCount] = useState(0);
   const [reminderData, setReminderData] = useState<any>(null);
-  const [priorityScore, setPriorityScore] = useState(50);
+  const [priorityScore, setPriorityScore] = useState(1);
   const [showReminderPermissions, setShowReminderPermissions] = useState(false);
+  const [showPrioritySelector, setShowPrioritySelector] = useState(false);
 
   const handleFinish = () => {
     onFinish({
@@ -184,7 +186,7 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
           </div>
         </div>
 
-        {/* Prioridad con sistema de puntaje */}
+        {/* Prioridad */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -193,38 +195,14 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
             <span className="text-base">Prioridad</span>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setPriorityScore(prev => Math.max(1, prev - 5))}
-              disabled={priorityScore <= 1}
-              className="w-8 h-8 p-0 text-primary"
-            >
-              <Minus className="w-4 h-4" />
-            </Button>
-            
-            <div className={cn(
-              "w-16 h-8 rounded-lg flex items-center justify-center border",
-              priorityScore <= 33 && "bg-green-500 text-white",
-              priorityScore > 33 && priorityScore <= 66 && "bg-orange-500 text-white",
-              priorityScore > 66 && "bg-red-500 text-white"
-            )}>
-              <span className="text-sm font-medium">
-                {priorityScore}
-              </span>
-            </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setPriorityScore(prev => Math.min(100, prev + 5))}
-              disabled={priorityScore >= 100}
-              className="w-8 h-8 p-0 text-primary"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowPrioritySelector(true)}
+            className="text-muted-foreground"
+          >
+            {priorityScore}
+          </Button>
         </div>
       </div>
 
@@ -258,6 +236,14 @@ export const HabitScheduleSettings = ({ onBack, onFinish }: HabitScheduleSetting
         isOpen={showReminderPermissions}
         onClose={() => setShowReminderPermissions(false)}
         onReminderCreated={handleReminderCreated}
+      />
+
+      {/* Modal de selector de prioridad */}
+      <PrioritySelector
+        open={showPrioritySelector}
+        onOpenChange={setShowPrioritySelector}
+        value={priorityScore}
+        onValueChange={setPriorityScore}
       />
     </div>
   );

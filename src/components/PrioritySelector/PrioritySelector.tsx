@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Flag } from "lucide-react";
 
 interface PrioritySelectorProps {
   open: boolean;
@@ -11,9 +11,8 @@ interface PrioritySelectorProps {
 }
 
 const getPriorityLabel = (priority: number) => {
-  if (priority >= 8) return "Urgente";
-  if (priority >= 5) return "Alta";
-  if (priority >= 3) return "Normal";
+  if (priority >= 8) return "Alta";
+  if (priority >= 4) return "Normal";
   return "Baja";
 };
 
@@ -65,11 +64,12 @@ export const PrioritySelector = ({ open, onOpenChange, value, onValueChange }: P
             </Button>
             
             <div className="text-center">
-              <div className="text-4xl font-bold text-foreground mb-2">
-                {tempValue}
+              <div className="w-16 h-16 bg-primary text-primary-foreground rounded-lg flex items-center justify-center mb-4">
+                <span className="text-2xl font-bold">{tempValue}</span>
               </div>
-              <div className="text-sm text-primary font-medium px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
-                {getPriorityLabel(tempValue)} - {tempValue}
+              <div className="flex items-center justify-center gap-1 text-sm text-foreground">
+                <Flag className="w-4 h-4" />
+                <span>{getPriorityLabel(tempValue)} - {tempValue}</span>
               </div>
             </div>
             
