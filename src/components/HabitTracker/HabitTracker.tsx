@@ -53,7 +53,11 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       const startDate = new Date(goal.start_date);
       const endDate = new Date(goal.end_date);
       const today = new Date();
-      const effectiveEndDate = today < endDate ? today : endDate;
+      
+      // Normalizar fechas para comparar solo días (sin horas)
+      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+      const effectiveEndDate = todayOnly <= endDateOnly ? todayOnly : endDateOnly;
       
       // Generar todos los días desde inicio hasta hoy (o fecha fin si es menor)
       const allDays = [];
@@ -88,10 +92,13 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const startDate = new Date(goal.start_date);
     if (date < startDate) return false;
     
-    // Si hay fecha de fin, verificar que no la exceda
+    // Si hay fecha de fin, verificar que no la exceda (incluir el día final)
     if (goal.end_date) {
       const endDate = new Date(goal.end_date);
-      if (date > endDate) return false;
+      // Comparar solo las fechas sin la hora para incluir todo el día final
+      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+      if (dateOnly > endDateOnly) return false;
     }
     
     if (goal.frequency === 'daily') return true;
@@ -300,7 +307,11 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
               const startDate = new Date(goal.start_date);
               const endDate = new Date(goal.end_date);
               const today = new Date();
-              const effectiveEndDate = today < endDate ? today : endDate;
+              
+              // Normalizar fechas para comparar solo días (sin horas)
+              const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+              const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+              const effectiveEndDate = todayOnly <= endDateOnly ? todayOnly : endDateOnly;
               
               const allDays = [];
               const current = new Date(startDate);
