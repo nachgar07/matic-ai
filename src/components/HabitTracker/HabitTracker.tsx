@@ -61,12 +61,20 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = dayNames[dayOfWeek];
     
+    console.log('🔍 DEBUG - isDayActive para', format(date, 'yyyy-MM-dd'), {
+      goalName: goal.name,
+      frequency: goal.frequency,
+      frequency_data: goal.frequency_data,
+      start_date: goal.start_date
+    });
+    
     if (goal.frequency === 'daily') return true;
     if (goal.frequency === 'custom') {
       // Verificar si hay frequency_data con configuraciones avanzadas
       if (goal.frequency_data) {
         try {
           const frequencyData = JSON.parse(goal.frequency_data);
+          console.log('📊 Parsed frequency data:', frequencyData);
           
           // Días específicos del mes
           if (frequencyData.type === 'specific_monthdays' && frequencyData.monthdays) {
@@ -92,7 +100,15 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           if (frequencyData.type === 'repeat' && frequencyData.repeatInterval) {
             const startDate = new Date(goal.start_date);
             const diffInDays = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-            return diffInDays >= 0 && diffInDays % frequencyData.repeatInterval === 0;
+            const isActiveDay = diffInDays >= 0 && diffInDays % frequencyData.repeatInterval === 0;
+            console.log('🔄 Repeat calculation:', {
+              startDate: format(startDate, 'yyyy-MM-dd'),
+              currentDate: format(date, 'yyyy-MM-dd'),
+              diffInDays,
+              repeatInterval: frequencyData.repeatInterval,
+              isActiveDay
+            });
+            return isActiveDay;
           }
           
           // Períodos específicos (ej: cada 3 días, cada 2 semanas) - legacy
