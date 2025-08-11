@@ -52,6 +52,9 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       // Si hay fecha de fin, calcular sobre todo el rango del hábito
       const startDate = new Date(goal.start_date);
       const endDate = new Date(goal.end_date);
+      // WORKAROUND: Agregar 1 día a la fecha final para compensar problema de zona horaria
+      endDate.setDate(endDate.getDate() + 1);
+      
       const today = new Date();
       
       // Normalizar fechas para comparar solo días (sin horas)
@@ -88,47 +91,21 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = dayNames[dayOfWeek];
     
-    // DEBUG específico para el día 21
-    if (format(date, 'yyyy-MM-dd') === '2025-08-21') {
-      console.log('🚨 DEBUG ESPECIAL para día 21:', {
-        goal: goal.name,
-        startDate: goal.start_date,
-        endDate: goal.end_date,
-        frequency: goal.frequency,
-        frequency_data: goal.frequency_data
-      });
-    }
-    
     // Verificar si la fecha está dentro del rango del hábito
     const startDate = new Date(goal.start_date);
-    if (date < startDate) {
-      if (format(date, 'yyyy-MM-dd') === '2025-08-21') {
-        console.log('❌ Día 21 eliminado: antes de fecha de inicio');
-      }
-      return false;
-    }
+    if (date < startDate) return false;
     
     // Si hay fecha de fin, verificar que no la exceda (incluir el día final)
     if (goal.end_date) {
       const endDate = new Date(goal.end_date);
+      // WORKAROUND: Agregar 1 día a la fecha final para compensar problema de zona horaria
+      endDate.setDate(endDate.getDate() + 1);
+      
       // Comparar solo las fechas sin la hora para incluir todo el día final
       const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
       
-      if (format(date, 'yyyy-MM-dd') === '2025-08-21') {
-        console.log('🔍 Comparación de fechas para día 21:', {
-          dateOnly: format(dateOnly, 'yyyy-MM-dd'),
-          endDateOnly: format(endDateOnly, 'yyyy-MM-dd'),
-          isAfterEnd: dateOnly > endDateOnly
-        });
-      }
-      
-      if (dateOnly > endDateOnly) {
-        if (format(date, 'yyyy-MM-dd') === '2025-08-21') {
-          console.log('❌ Día 21 eliminado: después de fecha final');
-        }
-        return false;
-      }
+      if (dateOnly > endDateOnly) return false;
     }
     
     if (goal.frequency === 'daily') return true;
@@ -161,17 +138,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           if (frequencyData.type === 'repeat' && frequencyData.repeatInterval) {
             const diffInDays = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
             const isActiveDay = diffInDays >= 0 && diffInDays % frequencyData.repeatInterval === 0;
-            
-            if (format(date, 'yyyy-MM-dd') === '2025-08-21') {
-              console.log('🔄 Cálculo de repetición para día 21:', {
-                startDate: format(startDate, 'yyyy-MM-dd'),
-                diffInDays,
-                repeatInterval: frequencyData.repeatInterval,
-                modulo: diffInDays % frequencyData.repeatInterval,
-                isActiveDay
-              });
-            }
-            
             return isActiveDay;
           }
         } catch (error) {
@@ -347,6 +313,9 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
             (() => {
               const startDate = new Date(goal.start_date);
               const endDate = new Date(goal.end_date);
+              // WORKAROUND: Agregar 1 día a la fecha final para compensar problema de zona horaria
+              endDate.setDate(endDate.getDate() + 1);
+              
               const today = new Date();
               
               // Normalizar fechas para comparar solo días (sin horas)
