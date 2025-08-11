@@ -252,7 +252,7 @@ export const CreateGoalDialog = ({
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <DialogTitle className="text-center text-lg sm:text-xl pt-6 sm:pt-8 px-8">
-                Crear nuevo hábito - {getEvaluationTypeLabel()}
+                Crear nuevo hábito
               </DialogTitle>
             </DialogHeader>
 
