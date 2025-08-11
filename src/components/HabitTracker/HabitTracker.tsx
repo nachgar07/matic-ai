@@ -59,17 +59,32 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = dayNames[dayOfWeek];
     
+    console.log(`🔍 CHECKING DAY ACTIVE for ${format(date, 'd')}:`, {
+      goal: goal.name,
+      frequency: goal.frequency,
+      frequency_days: goal.frequency_days,
+      frequency_data: goal.frequency_data,
+      dayOfMonth: date.getDate()
+    });
+    
     if (goal.frequency === 'daily') return true;
     if (goal.frequency === 'custom') {
       // Verificar si hay frequency_data con configuraciones avanzadas
       if (goal.frequency_data) {
         try {
           const frequencyData = JSON.parse(goal.frequency_data);
+          console.log(`📊 PARSED FREQUENCY DATA for ${format(date, 'd')}:`, frequencyData);
           
           // Días específicos del mes
           if (frequencyData.type === 'specific_monthdays' && frequencyData.monthdays) {
             const dayOfMonth = date.getDate();
-            return frequencyData.monthdays.includes(dayOfMonth);
+            const isActive = frequencyData.monthdays.includes(dayOfMonth);
+            console.log(`📅 MONTHDAYS CHECK for ${format(date, 'd')}:`, {
+              dayOfMonth,
+              monthdays: frequencyData.monthdays,
+              isActive
+            });
+            return isActive;
           }
           
           // Días específicos del año
@@ -92,7 +107,7 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
             }
           }
         } catch (error) {
-          console.error('Error parsing frequency_data:', error);
+          console.error('❌ Error parsing frequency_data:', error, goal.frequency_data);
         }
       }
       
