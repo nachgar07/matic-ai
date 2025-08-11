@@ -74,8 +74,24 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           
           // Días específicos del año
           if (frequencyData.type === 'specific_yeardays' && frequencyData.yeardays) {
-            const monthDay = format(date, 'MM-dd');
-            return frequencyData.yeardays.includes(monthDay);
+            console.log(`🎆 YEARDAYS CHECK for ${format(date, 'd')}:`, {
+              currentDate: date,
+              currentDateFormatted: format(date, 'yyyy-MM-dd'),
+              currentMonthDay: format(date, 'MM-dd'),
+              yeardays: frequencyData.yeardays,
+              checkFullDate: frequencyData.yeardays.includes(format(date, 'yyyy-MM-dd')),
+              checkMonthDay: frequencyData.yeardays.some(yearday => yearday.endsWith(format(date, 'MM-dd')))
+            });
+            
+            // Verificar si algún yearday coincide con la fecha actual
+            // Pueden venir en formato completo (yyyy-MM-dd) o solo mes-día (MM-dd)
+            const currentFullDate = format(date, 'yyyy-MM-dd');
+            const currentMonthDay = format(date, 'MM-dd');
+            
+            return frequencyData.yeardays.some(yearday => {
+              // Comparar fecha completa o solo mes-día
+              return yearday === currentFullDate || yearday.endsWith(currentMonthDay);
+            });
           }
           
           // Períodos específicos (ej: cada 3 días, cada 2 semanas)
