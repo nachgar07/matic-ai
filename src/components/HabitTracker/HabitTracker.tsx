@@ -5,8 +5,9 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { format, subDays, addDays, isToday, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { Goal, useGoalProgress, useUpdateGoalProgress } from "@/hooks/useGoals";
-import { ChevronLeft, ChevronRight, BarChart3 } from "lucide-react";
+import { Goal, useGoalProgress, useUpdateGoalProgress, useDeleteGoal } from "@/hooks/useGoals";
+import { ChevronLeft, ChevronRight, BarChart3, Trash2, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface HabitTrackerProps {
   goal: Goal;
@@ -16,6 +17,7 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const { data: progressData } = useGoalProgress();
   const updateProgress = useUpdateGoalProgress();
+  const deleteGoal = useDeleteGoal();
 
   // Generar días de la semana
   const getWeekDays = () => {
@@ -87,6 +89,10 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     setCurrentWeek(newDate);
   };
 
+  const handleDelete = async () => {
+    await deleteGoal.mutateAsync(goal.id);
+  };
+
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -112,6 +118,20 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           <Button variant="ghost" size="sm" onClick={() => navigateWeek('next')}>
             <ChevronRight className="w-4 h-4" />
           </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Eliminar hábito
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
