@@ -15,6 +15,7 @@ import { CalendarIcon, Plus, Trash2, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EvaluationType } from "@/components/ProgressEvaluationSelector/ProgressEvaluationSelector";
 import { FrequencySelector, FrequencyData } from "@/components/FrequencySelector/FrequencySelector";
+import { HabitScheduleSettings, HabitScheduleSettings as HabitScheduleSettingsType } from "@/components/HabitScheduleSettings/HabitScheduleSettings";
 
 const categories = [
   { value: "deportes", label: "Deportes", icon: "🏃", color: "#ef4444" },
@@ -62,6 +63,9 @@ export const CreateGoalDialog = ({
   category: initialCategory, 
   evaluationType 
 }: CreateGoalDialogProps) => {
+  // Estado del paso actual
+  const [currentStep, setCurrentStep] = useState<'basic' | 'schedule'>('basic');
+  
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState(initialCategory || "");
@@ -79,6 +83,9 @@ export const CreateGoalDialog = ({
   const [frequencyData, setFrequencyData] = useState<FrequencyData>({
     type: "daily"
   });
+  
+  // Estado para configuración de horarios
+  const [scheduleSettings, setScheduleSettings] = useState<HabitScheduleSettingsType | null>(null);
 
   useEffect(() => {
     if (initialCategory) {
@@ -98,22 +105,45 @@ export const CreateGoalDialog = ({
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Función para avanzar al siguiente paso (solo para hábitos boolean)
+  const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (evaluationType === "boolean" && name.trim() && currentStep === 'basic') {
+      setCurrentStep('schedule');
+    }
+  };
+
+  // Función para volver al paso anterior
+  const handleBack = () => {
+    setCurrentStep('basic');
+  };
+
+  // Función para finalizar la creación del hábito
+  const handleFinish = async (settings: HabitScheduleSettingsType) => {
+    setScheduleSettings(settings);
+    await createHabit(settings);
+  };
+
+  const createHabit = async (settings?: HabitScheduleSettingsType) => {
     if (!name || (!category && evaluationType !== "boolean")) return;
 
     // Use default category for boolean evaluation type if not set
     const finalCategory = category || (evaluationType === "boolean" ? "personal" : "");
     const finalSelectedCategory = categories.find(cat => cat.value === finalCategory);
 
+    // Para hábitos boolean, usar la configuración de horarios si está disponible
+    const finalStartDate = settings?.startDate || startDate;
+    const finalEndDate = settings?.hasEndDate ? settings.endDate : endDate;
+    const finalPriority = evaluationType === "boolean" && settings ? 
+      (settings.priority === 'low' ? 1 : settings.priority === 'normal' ? 2 : 3) : priority;
+
     const goalData = {
       name,
       description,
       category: finalCategory,
       icon: finalSelectedCategory?.icon || "🎯",
-      color: finalSelectedCategory?.color || priorities.find(p => p.value === priority)?.color || "#6366f1",
-      priority,
+      color: finalSelectedCategory?.color || priorities.find(p => p.value === finalPriority)?.color || "#6366f1",
+      priority: finalPriority,
       frequency: evaluationType === "boolean" 
         ? (frequencyData.type === "daily" ? "daily" 
            : frequencyData.type === "specific_weekdays" ? "custom"
@@ -127,8 +157,8 @@ export const CreateGoalDialog = ({
         : (frequency === "custom" ? selectedDays : null),
       frequency_data: evaluationType === "boolean" ? JSON.stringify(frequencyData) : null,
       target_value: targetValue,
-      start_date: format(startDate, "yyyy-MM-dd"),
-      end_date: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
+      start_date: format(finalStartDate, "yyyy-MM-dd"),
+      end_date: finalEndDate ? format(finalEndDate, "yyyy-MM-dd") : undefined,
       is_active: true,
     };
 
@@ -155,9 +185,26 @@ export const CreateGoalDialog = ({
       setReminderTime("");
       setActivities([""]);
       setFrequencyData({ type: "daily" });
+      setCurrentStep('basic');
+      setScheduleSettings(null);
     } catch (error) {
       console.error("Error creating goal:", error);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Para hábitos boolean, usamos el flujo de dos pasos
+    if (evaluationType === "boolean") {
+      if (currentStep === 'basic') {
+        handleContinue(e);
+      }
+      return;
+    }
+    
+    // Para otros tipos, usar el flujo normal
+    await createHabit();
   };
 
   const getEvaluationTypeLabel = () => {
@@ -188,395 +235,412 @@ export const CreateGoalDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-full sm:max-w-md h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto bg-gradient-to-b from-background to-muted/20 m-0 sm:m-4 rounded-none sm:rounded-lg">
-        <DialogHeader className="relative pb-4 sm:pb-6 px-4 sm:px-6">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="absolute left-3 sm:left-4 top-3 sm:top-4 h-8 w-8 z-10"
-            onClick={onClose}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <DialogTitle className="text-center text-lg sm:text-xl pt-6 sm:pt-8 px-8">
-            Crear nuevo hábito - {getEvaluationTypeLabel()}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-full sm:max-w-md h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto bg-gradient-to-b from-background to-muted/20 m-0 sm:m-4 rounded-none sm:rounded-lg p-0">
+        
+        {/* Para hábitos boolean en paso de configuración adicional */}
+        {evaluationType === "boolean" && currentStep === "schedule" ? (
+          <HabitScheduleSettings
+            onBack={handleBack}
+            onFinish={handleFinish}
+          />
+        ) : (
+          /* Configuración básica */
+          <>
+            <DialogHeader className="relative pb-4 sm:pb-6 px-4 sm:px-6">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="absolute left-3 sm:left-4 top-3 sm:top-4 h-8 w-8 z-10"
+                onClick={onClose}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <DialogTitle className="text-center text-lg sm:text-xl pt-6 sm:pt-8 px-8">
+                Crear nuevo hábito - {getEvaluationTypeLabel()}
+              </DialogTitle>
+            </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
-          {/* Campos iniciales para evaluación boolean */}
-          {evaluationType === "boolean" && (
-            <>
-              {/* Nombre del hábito */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  ✏️ Nombre del hábito
-                </Label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Salir a correr"
-                  required
-                  className="text-base"
-                />
-              </div>
-
-              {/* Descripción */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  ℹ️ Descripción (opcional)
-                </Label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descripción opcional..."
-                  rows={2}
-                  className="text-base resize-none"
-                />
-              </div>
-
-              {/* Frecuencia avanzada */}
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  📅 ¿Con qué frecuencia quieres realizarlo?
-                </Label>
-                <FrequencySelector
-                  value={frequencyData}
-                  onChange={setFrequencyData}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Resto de campos para otros tipos de evaluación */}
-          {evaluationType !== "boolean" && (
-            <>
-              {/* Nombre del hábito */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  ✏️ Nombre del hábito
-                </Label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Salir a correr"
-                  required
-                  className="text-base"
-                />
-              </div>
-
-              {/* Categoría */}
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  🎯 Categoría
-                </Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                  {categories.map((cat) => (
-                    <Button
-                      key={cat.value}
-                      type="button"
-                      variant="outline"
-                      onClick={() => setCategory(cat.value)}
-                      className={cn(
-                        "h-16 sm:h-20 flex flex-col gap-1 border-2 transition-all text-xs",
-                        category === cat.value 
-                          ? "border-primary bg-primary/5" 
-                          : "border-border hover:border-primary/30"
-                      )}
-                    >
-                      <div 
-                        className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm sm:text-lg"
-                        style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
-                      >
-                        {cat.icon}
-                      </div>
-                      <span className="text-xs font-medium">{cat.label}</span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Descripción */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  ℹ️ Descripción
-                </Label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descripción opcional..."
-                  rows={2}
-                  className="text-base resize-none"
-                />
-              </div>
-
-              {/* Frecuencia simple para otros tipos */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  📅 Frecuencia
-                </Label>
-                <Select value={frequency} onValueChange={setFrequency}>
-                  <SelectTrigger className="text-base">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {frequencies.map((freq) => (
-                      <SelectItem key={freq.value} value={freq.value}>
-                        {freq.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {frequency === "custom" && (
-                  <div className="grid grid-cols-7 gap-1 mt-2">
-                    {weekDays.map((day) => (
-                      <Button
-                        key={day.value}
-                        type="button"
-                        variant={selectedDays.includes(day.value) ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => toggleDay(day.value)}
-                        className="h-8 p-0 text-xs"
-                      >
-                        {day.short}
-                      </Button>
-                    ))}
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
+              {/* Campos iniciales para evaluación boolean */}
+              {evaluationType === "boolean" && (
+                <>
+                  {/* Nombre del hábito */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                      ✏️ Nombre del hábito
+                    </Label>
+                    <Input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Salir a correr"
+                      required
+                      className="text-base"
+                    />
                   </div>
-                )}
-              </div>
-            </>
-          )}
 
-          {/* Campos específicos para tipos no boolean */}
-          {evaluationType !== "boolean" && (
-            <>
-              {/* Hora y recordatorios */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  🔔 Hora y recordatorios
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="time"
-                    value={reminderTime}
-                    onChange={(e) => setReminderTime(e.target.value)}
-                    className="flex-1 text-base"
-                  />
-                  <Badge variant="secondary" className="min-w-8 h-8 rounded-full text-sm">
-                    {reminderTime ? "1" : "0"}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Prioridad */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  🏷️ Prioridad
-                </Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {priorities.map((p) => (
-                    <Button
-                      key={p.value}
-                      type="button"
-                      variant={priority === p.value ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setPriority(p.value)}
-                      className="text-sm"
-                    >
-                      {p.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Fechas */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Fecha de inicio */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                    📅 Fecha de inicio
-                  </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal text-sm",
-                          !startDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "dd/MM/yy", { locale: es }) : "Seleccionar fecha"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={(date) => date && setStartDate(date)}
-                        locale={es}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Fecha de fin */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                    📅 Fecha de fin
-                  </Label>
-                  <div className="flex gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "flex-1 justify-start text-left font-normal text-sm",
-                            !endDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {endDate ? format(endDate, "dd/MM/yy", { locale: es }) : "Sin límite"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={endDate}
-                          onSelect={setEndDate}
-                          locale={es}
-                          disabled={(date) => date < startDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {endDate && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setEndDate(undefined)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                  {/* Descripción */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                      ℹ️ Descripción (opcional)
+                    </Label>
+                    <Textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Descripción opcional..."
+                      rows={2}
+                      className="text-base resize-none"
+                    />
                   </div>
-                </div>
-              </div>
-            </>
-          )}
 
-          {/* Objetivo diario - Solo para tipos no boolean */}
-          {evaluationType !== "boolean" && (
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-muted-foreground text-sm">
-                🎯 Objetivo diario
-              </Label>
-              
-              {evaluationType === "quantity" && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Al menos</span>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={targetValue}
-                    onChange={(e) => setTargetValue(parseInt(e.target.value) || 1)}
-                    className="w-20 text-base"
-                  />
-                  <Select value={targetUnit} onValueChange={setTargetUnit}>
-                    <SelectTrigger className="w-28">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="veces">veces</SelectItem>
-                      <SelectItem value="páginas">páginas</SelectItem>
-                      <SelectItem value="vasos">vasos</SelectItem>
-                      <SelectItem value="km">km</SelectItem>
-                      <SelectItem value="repeticiones">reps</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Frecuencia avanzada */}
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                      📅 ¿Con qué frecuencia quieres realizarlo?
+                    </Label>
+                    <FrequencySelector
+                      value={frequencyData}
+                      onChange={setFrequencyData}
+                    />
+                  </div>
+                </>
               )}
 
-              {evaluationType === "timer" && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Al menos</span>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={targetValue}
-                    onChange={(e) => setTargetValue(parseInt(e.target.value) || 1)}
-                    className="w-20 text-base"
-                  />
-                  <span className="text-sm text-muted-foreground">minutos</span>
-                </div>
-              )}
+              {/* Resto de campos para otros tipos de evaluación */}
+              {evaluationType !== "boolean" && (
+                <>
+                  {/* Nombre del hábito */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                      ✏️ Nombre del hábito
+                    </Label>
+                    <Input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Salir a correr"
+                      required
+                      className="text-base"
+                    />
+                  </div>
 
-              {evaluationType === "activities" && (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Define las sub-actividades para evaluar tu progreso:
-                  </p>
-                  {activities.map((activity, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        value={activity}
-                        onChange={(e) => updateActivity(index, e.target.value)}
-                        placeholder={`Actividad ${index + 1}`}
-                        className="flex-1 text-base"
-                      />
-                      {activities.length > 1 && (
+                  {/* Categoría */}
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                      🎯 Categoría
+                    </Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                      {categories.map((cat) => (
                         <Button
+                          key={cat.value}
                           type="button"
                           variant="outline"
-                          size="icon"
-                          onClick={() => removeActivity(index)}
+                          onClick={() => setCategory(cat.value)}
+                          className={cn(
+                            "h-16 sm:h-20 flex flex-col gap-1 border-2 transition-all text-xs",
+                            category === cat.value 
+                              ? "border-primary bg-primary/5" 
+                              : "border-border hover:border-primary/30"
+                          )}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <div 
+                            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm sm:text-lg"
+                            style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+                          >
+                            {cat.icon}
+                          </div>
+                          <span className="text-xs font-medium">{cat.label}</span>
                         </Button>
-                      )}
+                      ))}
                     </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addActivity}
-                    className="w-full"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar actividad
-                  </Button>
-                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg">
-                    <p className="text-sm text-rose-700 font-medium">
-                      ⭐ Funcionalidad Premium
-                    </p>
                   </div>
+
+                  {/* Descripción */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                      ℹ️ Descripción
+                    </Label>
+                    <Textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Descripción opcional..."
+                      rows={2}
+                      className="text-base resize-none"
+                    />
+                  </div>
+
+                  {/* Frecuencia simple para otros tipos */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                      📅 Frecuencia
+                    </Label>
+                    <Select value={frequency} onValueChange={setFrequency}>
+                      <SelectTrigger className="text-base">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {frequencies.map((freq) => (
+                          <SelectItem key={freq.value} value={freq.value}>
+                            {freq.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {frequency === "custom" && (
+                      <div className="grid grid-cols-7 gap-1 mt-2">
+                        {weekDays.map((day) => (
+                          <Button
+                            key={day.value}
+                            type="button"
+                            variant={selectedDays.includes(day.value) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleDay(day.value)}
+                            className="h-8 p-0 text-xs"
+                          >
+                            {day.short}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Campos específicos para tipos no boolean */}
+              {evaluationType !== "boolean" && (
+                <>
+                  {/* Hora y recordatorios */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                      🔔 Hora y recordatorios
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="time"
+                        value={reminderTime}
+                        onChange={(e) => setReminderTime(e.target.value)}
+                        className="flex-1 text-base"
+                      />
+                      <Badge variant="secondary" className="min-w-8 h-8 rounded-full text-sm">
+                        {reminderTime ? "1" : "0"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Prioridad */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                      🏷️ Prioridad
+                    </Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {priorities.map((p) => (
+                        <Button
+                          key={p.value}
+                          type="button"
+                          variant={priority === p.value ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPriority(p.value)}
+                          className="text-sm"
+                        >
+                          {p.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Fechas */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Fecha de inicio */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                        📅 Fecha de inicio
+                      </Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal text-sm",
+                              !startDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {startDate ? format(startDate, "dd/MM/yy", { locale: es }) : "Seleccionar fecha"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={startDate}
+                            onSelect={(date) => date && setStartDate(date)}
+                            locale={es}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {/* Fecha de fin */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                        📅 Fecha de fin
+                      </Label>
+                      <div className="flex gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "flex-1 justify-start text-left font-normal text-sm",
+                                !endDate && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {endDate ? format(endDate, "dd/MM/yy", { locale: es }) : "Sin límite"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={endDate}
+                              onSelect={setEndDate}
+                              locale={es}
+                              disabled={(date) => date < startDate}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {endDate && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setEndDate(undefined)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Objetivo diario - Solo para tipos no boolean */}
+              {evaluationType !== "boolean" && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-muted-foreground text-sm">
+                    🎯 Objetivo diario
+                  </Label>
+                  
+                  {evaluationType === "quantity" && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Al menos</span>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={targetValue}
+                        onChange={(e) => setTargetValue(parseInt(e.target.value) || 1)}
+                        className="w-20 text-base"
+                      />
+                      <Select value={targetUnit} onValueChange={setTargetUnit}>
+                        <SelectTrigger className="w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="veces">veces</SelectItem>
+                          <SelectItem value="páginas">páginas</SelectItem>
+                          <SelectItem value="vasos">vasos</SelectItem>
+                          <SelectItem value="km">km</SelectItem>
+                          <SelectItem value="repeticiones">reps</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {evaluationType === "timer" && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Al menos</span>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={targetValue}
+                        onChange={(e) => setTargetValue(parseInt(e.target.value) || 1)}
+                        className="w-20 text-base"
+                      />
+                      <span className="text-sm text-muted-foreground">minutos</span>
+                    </div>
+                  )}
+
+                  {evaluationType === "activities" && (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Define las sub-actividades para evaluar tu progreso:
+                      </p>
+                      {activities.map((activity, index) => (
+                        <div key={index} className="flex gap-2">
+                          <Input
+                            value={activity}
+                            onChange={(e) => updateActivity(index, e.target.value)}
+                            placeholder={`Actividad ${index + 1}`}
+                            className="flex-1 text-base"
+                          />
+                          {activities.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => removeActivity(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addActivity}
+                        className="w-full"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar actividad
+                      </Button>
+                      <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg">
+                        <p className="text-sm text-rose-700 font-medium">
+                          ⭐ Funcionalidad Premium
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          <div className="flex gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={!name || (!category && evaluationType !== "boolean") || createGoal.isPending || (evaluationType === "activities" && activities.every(a => !a.trim()))}
-              className="flex-1"
-            >
-              {createGoal.isPending ? "Creando..." : "Crear hábito"}
-            </Button>
-          </div>
-        </form>
+              <div className="flex gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!name || (!category && evaluationType !== "boolean") || createGoal.isPending || (evaluationType === "activities" && activities.every(a => !a.trim()))}
+                  className="flex-1"
+                >
+                  {createGoal.isPending 
+                    ? "Creando..." 
+                    : evaluationType === "boolean" && currentStep === "basic" 
+                      ? "Continuar" 
+                      : "Crear hábito"
+                  }
+                </Button>
+              </div>
+            </form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
