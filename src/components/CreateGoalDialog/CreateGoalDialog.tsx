@@ -125,6 +125,7 @@ export const CreateGoalDialog = ({
            : frequencyData.type === "specific_yeardays" ? frequencyData.yeardays
            : null)
         : (frequency === "custom" ? selectedDays : null),
+      frequency_data: evaluationType === "boolean" ? JSON.stringify(frequencyData) : null,
       target_value: targetValue,
       start_date: format(startDate, "yyyy-MM-dd"),
       end_date: endDate ? format(endDate, "yyyy-MM-dd") : undefined,

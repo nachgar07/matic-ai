@@ -59,32 +59,17 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = dayNames[dayOfWeek];
     
-    console.log(`🔍 CHECKING DAY ACTIVE for ${format(date, 'd')}:`, {
-      goal: goal.name,
-      frequency: goal.frequency,
-      frequency_days: goal.frequency_days,
-      frequency_data: goal.frequency_data,
-      dayOfMonth: date.getDate()
-    });
-    
     if (goal.frequency === 'daily') return true;
     if (goal.frequency === 'custom') {
       // Verificar si hay frequency_data con configuraciones avanzadas
       if (goal.frequency_data) {
         try {
           const frequencyData = JSON.parse(goal.frequency_data);
-          console.log(`📊 PARSED FREQUENCY DATA for ${format(date, 'd')}:`, frequencyData);
           
           // Días específicos del mes
           if (frequencyData.type === 'specific_monthdays' && frequencyData.monthdays) {
             const dayOfMonth = date.getDate();
-            const isActive = frequencyData.monthdays.includes(dayOfMonth);
-            console.log(`📅 MONTHDAYS CHECK for ${format(date, 'd')}:`, {
-              dayOfMonth,
-              monthdays: frequencyData.monthdays,
-              isActive
-            });
-            return isActive;
+            return frequencyData.monthdays.includes(dayOfMonth);
           }
           
           // Días específicos del año
@@ -107,7 +92,7 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
             }
           }
         } catch (error) {
-          console.error('❌ Error parsing frequency_data:', error, goal.frequency_data);
+          console.error('Error parsing frequency_data:', error);
         }
       }
       
@@ -129,42 +114,23 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dateString = format(date, 'yyyy-MM-dd');
     const currentProgress = getDayProgress(date);
     
-    console.log('🔄 TOGGLE DAY - Estado actual:', {
-      dateString,
-      currentProgress,
-      hasProgress: !!currentProgress,
-      isCompleted: currentProgress?.is_completed,
-      completedValue: currentProgress?.completed_value
-    });
-    
     // Determinar el estado actual y el siguiente
     let nextIsCompleted: boolean;
     let nextCompletedValue: number;
-    let stateTransition: string;
     
     if (!currentProgress || currentProgress.completed_value === 0) {
       // Estado 1: Sin progreso → Verde (completado)
       nextIsCompleted = true;
       nextCompletedValue = goal.target_value;
-      stateTransition = 'NORMAL → VERDE (completado)';
     } else if (currentProgress.is_completed) {
       // Estado 2: Verde (completado) → Rojo (cancelado)
       nextIsCompleted = false;
       nextCompletedValue = goal.target_value; // Mantener el valor pero marcar como no completado
-      stateTransition = 'VERDE → ROJO (cancelado)';
     } else {
       // Estado 3: Rojo (cancelado) → Normal (sin progreso)
       nextIsCompleted = false;
       nextCompletedValue = 0; // Eliminar el progreso
-      stateTransition = 'ROJO → NORMAL (sin progreso)';
     }
-    
-    console.log('🎯 TOGGLE DAY - Transición:', {
-      stateTransition,
-      nextIsCompleted,
-      nextCompletedValue,
-      goalTargetValue: goal.target_value
-    });
 
     try {
       await updateProgress.mutateAsync({
@@ -173,9 +139,8 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
         completedValue: nextCompletedValue,
         isCompleted: nextIsCompleted,
       });
-      console.log('✅ Update successful');
     } catch (error) {
-      console.error('❌ Update failed:', error);
+      console.error('Error updating progress:', error);
     }
   };
 
@@ -252,13 +217,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
             stateLabel = 'Cancelado';
           }
           
-          console.log(`📅 Día ${format(date, 'd')}:`, {
-            dayProgress,
-            hasProgress,
-            isCompleted,
-            buttonState,
-            stateLabel
-          });
 
           return (
             <div key={date.toISOString()} className="text-center">

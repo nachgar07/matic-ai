@@ -306,6 +306,7 @@ export type Database = {
           description: string | null
           end_date: string | null
           frequency: string
+          frequency_data: Json | null
           frequency_days: string[] | null
           icon: string
           id: string
@@ -324,6 +325,7 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           frequency?: string
+          frequency_data?: Json | null
           frequency_days?: string[] | null
           icon?: string
           id?: string
@@ -342,6 +344,7 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           frequency?: string
+          frequency_data?: Json | null
           frequency_days?: string[] | null
           icon?: string
           id?: string
