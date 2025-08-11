@@ -131,6 +131,14 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           if (frequencyData.type === 'repeat' && frequencyData.repeatInterval) {
             const diffInDays = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
             const isActiveDay = diffInDays >= 0 && diffInDays % frequencyData.repeatInterval === 0;
+            console.log(`🔍 DEBUG - Repeat logic para ${format(date, 'yyyy-MM-dd')}:`, {
+              startDate: format(startDate, 'yyyy-MM-dd'),
+              diffInDays,
+              repeatInterval: frequencyData.repeatInterval,
+              isActiveDay,
+              goalName: goal.name,
+              endDate: goal.end_date
+            });
             return isActiveDay;
           }
         } catch (error) {
