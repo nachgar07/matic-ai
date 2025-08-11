@@ -115,10 +115,15 @@ export const CreateGoalDialog = ({
       color: finalSelectedCategory?.color || priorities.find(p => p.value === priority)?.color || "#6366f1",
       priority,
       frequency: evaluationType === "boolean" 
-        ? (frequencyData.type === "daily" ? "daily" : frequencyData.type === "specific_weekdays" ? "custom" : "weekly")
+        ? (frequencyData.type === "daily" ? "daily" 
+           : frequencyData.type === "specific_weekdays" ? "custom"
+           : "custom") as "daily" | "weekly" | "monthly" | "custom"
         : (frequency as "daily" | "weekly" | "monthly" | "custom"),
       frequency_days: evaluationType === "boolean" 
-        ? (frequencyData.type === "specific_weekdays" ? frequencyData.weekdays : null)
+        ? (frequencyData.type === "specific_weekdays" ? frequencyData.weekdays 
+           : frequencyData.type === "specific_monthdays" ? frequencyData.monthdays?.map(String)
+           : frequencyData.type === "specific_yeardays" ? frequencyData.yeardays
+           : null)
         : (frequency === "custom" ? selectedDays : null),
       target_value: targetValue,
       start_date: format(startDate, "yyyy-MM-dd"),
