@@ -68,19 +68,28 @@ export const useGoals = () => {
 };
 
 // Hook para obtener progreso de objetivos
-export const useGoalProgress = (date?: string) => {
-  const targetDate = date || format(new Date(), 'yyyy-MM-dd');
+export const useGoalProgress = (startDate?: string, endDate?: string) => {
+  const defaultDate = format(new Date(), 'yyyy-MM-dd');
+  const queryStartDate = startDate || defaultDate;
+  const queryEndDate = endDate || defaultDate;
   
   return useQuery({
-    queryKey: ['goal-progress', targetDate],
+    queryKey: ['goal-progress', queryStartDate, queryEndDate],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('goal_progress')
         .select(`
           *,
           goals (*)
-        `)
-        .eq('date', targetDate);
+        `);
+      
+      if (startDate && endDate) {
+        query = query.gte('date', queryStartDate).lte('date', queryEndDate);
+      } else {
+        query = query.eq('date', queryStartDate);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       return data;

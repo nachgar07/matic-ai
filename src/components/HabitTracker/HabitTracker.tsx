@@ -13,25 +13,29 @@ interface HabitTrackerProps {
   goal: Goal;
 }
 
+// Generar días de la semana (función movida fuera para usar antes)
+function getWeekDays(currentWeek: Date) {
+  const startOfWeek = new Date(currentWeek);
+  startOfWeek.setDate(currentWeek.getDate() - currentWeek.getDay() + 1); // Lunes
+  
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(startOfWeek);
+    date.setDate(startOfWeek.getDate() + i);
+    return date;
+  });
+}
+
 export const HabitTracker = ({ goal }: HabitTrackerProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const { data: progressData } = useGoalProgress();
+  const weekDays = getWeekDays(currentWeek);
+  
+  // Obtener progreso para todos los días de la semana
+  const { data: progressData } = useGoalProgress(
+    format(weekDays[0], 'yyyy-MM-dd'),
+    format(weekDays[6], 'yyyy-MM-dd')
+  );
   const updateProgress = useUpdateGoalProgress();
   const deleteGoal = useDeleteGoal();
-
-  // Generar días de la semana
-  const getWeekDays = () => {
-    const startOfWeek = new Date(currentWeek);
-    startOfWeek.setDate(currentWeek.getDate() - currentWeek.getDay() + 1); // Lunes
-    
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      return date;
-    });
-  };
-
-  const weekDays = getWeekDays();
   const dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   // Obtener progreso para un día específico
@@ -74,6 +78,14 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dateString = format(date, 'yyyy-MM-dd');
     const currentProgress = getDayProgress(date);
     const isCompleted = currentProgress?.is_completed || false;
+
+    console.log('Toggle day complete:', {
+      date: dateString,
+      currentProgress,
+      isCompleted,
+      willSetCompleted: !isCompleted,
+      willSetValue: isCompleted ? 0 : goal.target_value
+    });
 
     await updateProgress.mutateAsync({
       goalId: goal.id,
