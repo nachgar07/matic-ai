@@ -121,13 +121,26 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       const completedActiveDays = activeDays.filter(day => {
         const dayNormalized = new Date(day);
         dayNormalized.setHours(0, 0, 0, 0);
-        return dayNormalized <= today && getDayProgress(day)?.is_completed;
+        const progress = getDayProgress(day);
+        const isCompleted = progress?.is_completed || false;
+        const isNotFuture = dayNormalized <= today;
+        
+        // Debug detallado para el cálculo del porcentaje
+        const dayString = format(day, 'yyyy-MM-dd');
+        console.log(`Evaluando día ${dayString} para porcentaje:`, {
+          isNotFuture,
+          isCompleted,
+          progress: progress ? { id: progress.id, completed_value: progress.completed_value, is_completed: progress.is_completed } : null
+        });
+        
+        return isNotFuture && isCompleted;
       });
       
       console.log(`Porcentaje para ${goal.name} (${format(startDate, 'dd/MM')} al ${format(endDate, 'dd/MM')}):`, {
         totalDaysInRange: allDays.length,
         activeDays: activeDays.length,
         completedDays: completedActiveDays.length,
+        completedDaysDetailed: completedActiveDays.map(d => format(d, 'yyyy-MM-dd')),
         percentage: activeDays.length > 0 ? Math.round((completedActiveDays.length / activeDays.length) * 100) : 0
       });
       
