@@ -174,15 +174,6 @@ export const Home = () => {
         </div>
       </div>
 
-      {/* Reminder Card */}
-      <div className="px-4 mb-6">
-        <div className="bg-card rounded-lg p-4 flex items-center">
-          <Sparkles className="text-primary mr-3" size={24} />
-          <span className="text-muted-foreground">
-            "Don't forget to log today's food!"
-          </span>
-        </div>
-      </div>
 
       {/* Daily Tasks Section */}
       <div className="px-4">
@@ -203,33 +194,47 @@ export const Home = () => {
               
               <div className="space-y-2">
                 {/* Tasks */}
-                {tasks.slice(0, 3).map((task) => (
-                  <div key={task.id} className="flex items-center gap-3 py-2">
-                    <div className={`p-1.5 rounded-full ${
-                      task.is_completed ? 'bg-green-100 text-green-600' : 
-                      task.priority === 3 ? 'bg-red-100 text-red-600' :
-                      task.priority === 2 ? 'bg-orange-100 text-orange-600' :
-                      'bg-blue-100 text-blue-600'
-                    }`}>
-                      {task.is_completed ? 
-                        <CheckCircle2 size={12} /> : 
-                        task.priority === 3 ? <AlertCircle size={12} /> : <Clock size={12} />
-                      }
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${
-                        task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'
-                      }`}>
-                        {task.title}
-                      </p>
-                      {task.due_time && (
-                        <p className="text-xs text-muted-foreground">
-                          {task.due_time}
+                {tasks.slice(0, 3).map((task) => {
+                  // Categorías de tareas con iconos originales
+                  const categories = [
+                    { value: "ejercicio", label: "Ejercicio", icon: "🏋️‍♂️", color: "#8b5cf6" },
+                    { value: "salud", label: "Salud", icon: "🏥", color: "#10b981" },
+                    { value: "educacion", label: "Educación", icon: "📚", color: "#3b82f6" },
+                    { value: "trabajo", label: "Trabajo", icon: "💼", color: "#a3a3a3" },
+                    { value: "nutricion", label: "Nutrición", icon: "🍽️", color: "#f59e0b" },
+                    { value: "hogar", label: "Hogar", icon: "🏠", color: "#f97316" },
+                    { value: "aire_libre", label: "Aire libre", icon: "⛰️", color: "#f97316" },
+                    { value: "otros", label: "Otros", icon: "🔲", color: "#ef4444" },
+                    { value: "personal", label: "Personal", icon: "👤", color: "#ec4899" },
+                    { value: "compras", label: "Compras", icon: "🛒", color: "#f59e0b" },
+                  ];
+                  
+                  const categoryData = categories.find(cat => cat.value === task.category) || 
+                    { icon: "📝", color: "#6b7280", label: "Otros" };
+
+                  return (
+                    <div key={task.id} className="flex items-center gap-3 py-2">
+                      <div 
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                        style={{ backgroundColor: categoryData.color }}
+                      >
+                        {categoryData.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${
+                          task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'
+                        }`}>
+                          {task.title}
                         </p>
-                      )}
+                        {task.due_time && (
+                          <p className="text-xs text-muted-foreground">
+                            {task.due_time}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 {/* Habits */}
                 {activeHabitsForDate.slice(0, 2).map((goal) => (
@@ -253,27 +258,6 @@ export const Home = () => {
                     </span>
                   </div>
                 )}
-              </div>
-            </div>
-            
-            {/* Meal Tracking Summary */}
-            <div className="bg-card rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-foreground">Estado nutricional</h3>
-                <span className="text-sm text-muted-foreground">
-                  {mealsData?.meals?.length || 0} comidas
-                </span>
-              </div>
-              <div className="mt-2 text-sm text-muted-foreground">
-                {caloriesConsumed} de {caloriesTarget} calorías
-              </div>
-              <div className="mt-1 w-full bg-secondary rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all" 
-                  style={{ 
-                    width: `${Math.min((caloriesConsumed / caloriesTarget) * 100, 100)}%` 
-                  }}
-                />
               </div>
             </div>
           </div>
