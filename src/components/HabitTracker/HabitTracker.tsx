@@ -34,21 +34,31 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
   // Determinar el rango de fechas para cargar datos de progreso
   const getProgressDateRange = () => {
     if (goal.end_date) {
-      // Para hábitos con fecha final, cargar desde inicio hasta fin (o hoy si es menor)
+      // Para hábitos con fecha final, cargar desde inicio hasta fin
       const startDate = new Date(goal.start_date);
       const endDate = new Date(goal.end_date);
-      const today = new Date();
-      const effectiveEndDate = today < endDate ? today : endDate;
       
       return {
         startDate: format(startDate, 'yyyy-MM-dd'),
-        endDate: format(effectiveEndDate, 'yyyy-MM-dd')
+        endDate: format(endDate, 'yyyy-MM-dd')
       };
     } else {
-      // Para hábitos sin fecha final, solo la semana actual
+      // Para hábitos sin fecha final, cargar un rango más amplio que incluya la semana actual
+      const today = new Date();
+      const startDate = new Date(goal.start_date);
+      
+      // Cargar desde la fecha de inicio del hábito o 30 días atrás, lo que sea más reciente
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      const effectiveStart = startDate > thirtyDaysAgo ? startDate : thirtyDaysAgo;
+      
+      // Cargar hasta 7 días en el futuro para permitir planificación
+      const sevenDaysFromNow = new Date(today);
+      sevenDaysFromNow.setDate(today.getDate() + 7);
+      
       return {
-        startDate: format(weekDays[0], 'yyyy-MM-dd'),
-        endDate: format(weekDays[6], 'yyyy-MM-dd')
+        startDate: format(effectiveStart, 'yyyy-MM-dd'),
+        endDate: format(sevenDaysFromNow, 'yyyy-MM-dd')
       };
     }
   };
