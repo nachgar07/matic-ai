@@ -9,10 +9,16 @@ import { Footprints, Flame, Sparkles, LogOut } from "lucide-react";
 import { User, Session } from '@supabase/supabase-js';
 import { useUserMeals, useNutritionGoals } from "@/hooks/useFatSecret";
 import { useWaterIntake } from "@/hooks/useWaterIntake";
+import { useGoals, useTasks } from "@/hooks/useGoals";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { isHabitActiveOnDate } from "@/utils/habitUtils";
 export const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   // Get real data from hooks
   const {
@@ -25,6 +31,13 @@ export const Home = () => {
   const {
     waterGlasses
   } = useWaterIntake();
+
+  // Get tasks and goals for selected date
+  const { data: tasks = [] } = useTasks(format(selectedDate, 'yyyy-MM-dd'));
+  const { data: goals = [] } = useGoals();
+  
+  // Filter active habits for selected date
+  const activeHabitsForDate = goals.filter(goal => isHabitActiveOnDate(goal, selectedDate));
 
   // Calculate real values from meal data
   const dailyTotals = mealsData?.dailyTotals || {
@@ -131,7 +144,12 @@ export const Home = () => {
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
-        <WeeklyCalendar selectedDate={new Date()} onDateChange={() => {}} />
+        <WeeklyCalendar 
+          selectedDate={selectedDate} 
+          onDateChange={setSelectedDate}
+          mealsData={mealsData}
+          tasksCount={tasks.length + activeHabitsForDate.length}
+        />
       </div>
 
       {/* Main Calorie Ring */}
@@ -166,24 +184,109 @@ export const Home = () => {
         </div>
       </div>
 
-      {/* Calorie Logs Section */}
+      {/* Daily Tasks Section */}
       <div className="px-4">
-        <h2 className="text-xl font-bold mb-4">Registro de calorías</h2>
-        {mealsData?.meals && mealsData.meals.length > 0 ? <div className="bg-card rounded-lg p-6 text-center">
+        <h2 className="text-xl font-bold mb-4">
+          Tareas de {format(selectedDate, "dd 'de' MMMM", { locale: es })}
+        </h2>
+        
+        {(tasks.length > 0 || activeHabitsForDate.length > 0) ? (
+          <div className="space-y-3">
+            {/* Upcoming Tasks Summary */}
+            <div className="bg-card rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-foreground">Resumen del día</h3>
+                <span className="text-sm text-muted-foreground">
+                  {tasks.length + activeHabitsForDate.length} actividades
+                </span>
+              </div>
+              
+              <div className="space-y-2">
+                {/* Tasks */}
+                {tasks.slice(0, 3).map((task) => (
+                  <div key={task.id} className="flex items-center gap-3 py-2">
+                    <div className={`p-1.5 rounded-full ${
+                      task.is_completed ? 'bg-green-100 text-green-600' : 
+                      task.priority === 3 ? 'bg-red-100 text-red-600' :
+                      task.priority === 2 ? 'bg-orange-100 text-orange-600' :
+                      'bg-blue-100 text-blue-600'
+                    }`}>
+                      {task.is_completed ? 
+                        <CheckCircle2 size={12} /> : 
+                        task.priority === 3 ? <AlertCircle size={12} /> : <Clock size={12} />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${
+                        task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'
+                      }`}>
+                        {task.title}
+                      </p>
+                      {task.due_time && (
+                        <p className="text-xs text-muted-foreground">
+                          {task.due_time}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Habits */}
+                {activeHabitsForDate.slice(0, 2).map((goal) => (
+                  <div key={goal.id} className="flex items-center gap-3 py-2">
+                    <div className="p-1.5 rounded-full bg-purple-100 text-purple-600">
+                      <span className="text-xs">{goal.icon}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate text-foreground">
+                        {goal.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Hábito</p>
+                    </div>
+                  </div>
+                ))}
+                
+                {tasks.length + activeHabitsForDate.length > 5 && (
+                  <div className="text-center pt-2">
+                    <span className="text-xs text-muted-foreground">
+                      y {tasks.length + activeHabitsForDate.length - 5} más...
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Meal Tracking Summary */}
+            <div className="bg-card rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium text-foreground">Estado nutricional</h3>
+                <span className="text-sm text-muted-foreground">
+                  {mealsData?.meals?.length || 0} comidas
+                </span>
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                {caloriesConsumed} de {caloriesTarget} calorías
+              </div>
+              <div className="mt-1 w-full bg-secondary rounded-full h-2">
+                <div 
+                  className="bg-primary h-2 rounded-full transition-all" 
+                  style={{ 
+                    width: `${Math.min((caloriesConsumed / caloriesTarget) * 100, 100)}%` 
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-card rounded-lg p-6 text-center">
             <div className="text-muted-foreground mb-2">
-              {mealsData.meals.length} comida{mealsData.meals.length === 1 ? '' : 's'} registrada{mealsData.meals.length === 1 ? '' : 's'} hoy
+              No tienes tareas o hábitos programados para este día
             </div>
             <div className="text-sm text-muted-foreground">
-              {caloriesConsumed} calorías consumidas de {caloriesTarget} objetivo
+              Ve a la sección de Objetivos para agregar nuevas actividades
             </div>
-          </div> : <div className="bg-card rounded-lg p-6 text-center">
-            <div className="text-muted-foreground mb-2">
-              No has registrado ninguna comida
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Comienza a hacer seguimiento tomando una foto rápida
-            </div>
-          </div>}
+          </div>
+        )}
       </div>
 
       <BottomNavigation />

@@ -5,9 +5,11 @@ import { es } from "date-fns/locale";
 interface WeeklyCalendarProps {
   selectedDate: Date;
   onDateChange: (date: Date) => void;
+  mealsData?: any;
+  tasksCount?: number;
 }
 
-export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarProps) => {
+export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, tasksCount }: WeeklyCalendarProps) => {
   const today = new Date();
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState(0);
@@ -140,6 +142,24 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
     handleEnd();
   };
 
+  // Verificar si un día tiene actividad (comidas o tareas)
+  const hasActivity = (date: Date) => {
+    const dateString = format(date, 'yyyy-MM-dd');
+    const todayString = format(new Date(), 'yyyy-MM-dd');
+    
+    // Si es hoy y hay tareas, mostrar indicador
+    if (dateString === todayString && tasksCount && tasksCount > 0) {
+      return true;
+    }
+    
+    // Si hay datos de comidas para este día
+    if (mealsData?.meals && mealsData.meals.length > 0) {
+      return dateString === todayString; // Por ahora solo para hoy, se puede expandir
+    }
+    
+    return false;
+  };
+
   // Click en día
   const handleDateClick = (date: Date) => {
     if (isDragging) return;
@@ -196,11 +216,12 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
           {days.map((date, index) => {
             const isToday = isSameDay(date, today);
             const isSelected = isSameDay(date, selectedDate);
+            const hasActivityIndicator = hasActivity(date);
             
             return (
               <div
                 key={`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`}
-                className={`flex flex-col items-center justify-center rounded-2xl cursor-pointer transition-all flex-shrink-0 ${
+                className={`flex flex-col items-center justify-center rounded-2xl cursor-pointer transition-all flex-shrink-0 relative ${
                   isSelected
                     ? "bg-primary text-primary-foreground shadow-lg"
                     : isToday && !isSelected
@@ -218,6 +239,11 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange }: WeeklyCalendarPro
                   {format(date, "EEE", { locale: es }).slice(0, 3)}
                 </span>
                 <span className="text-xl font-semibold">{format(date, "d")}</span>
+                
+                {/* Indicador de actividad */}
+                {hasActivityIndicator && (
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+                )}
               </div>
             );
           })}
