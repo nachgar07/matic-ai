@@ -245,8 +245,14 @@ export const Home = () => {
                 {/* Habits */}
                 {activeHabitsForDate.slice(0, 2).map((goal) => (
                   <div key={goal.id} className="flex items-center gap-3 py-2">
-                    <div className="p-1.5 rounded-full bg-purple-100 text-purple-600">
-                      <span className="text-xs">{goal.icon}</span>
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                      style={{ 
+                        backgroundColor: goal.color + '40', 
+                        color: goal.color 
+                      }}
+                    >
+                      {goal.icon}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate text-foreground">
