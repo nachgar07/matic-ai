@@ -187,7 +187,10 @@ export const Perfil = () => {
                 {theme === 'dark' ? <Moon className="mr-3" size={20} /> : <Sun className="mr-3" size={20} />}
                 <span>Tema oscuro</span>
               </div>
-              
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+              />
             </div>
           </div>
         </Card>
