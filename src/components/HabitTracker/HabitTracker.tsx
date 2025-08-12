@@ -74,7 +74,20 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
   // Obtener progreso para un día específico
   const getDayProgress = (date: Date) => {
     const dateString = format(date, 'yyyy-MM-dd');
-    return progressData?.find(p => p.date === dateString && p.goal_id === goal.id);
+    const progress = progressData?.find(p => p.date === dateString && p.goal_id === goal.id);
+    
+    // Debug log para ver qué está retornando
+    if (dateString === format(new Date(), 'yyyy-MM-dd') || progress) {
+      console.log(`Progreso para ${dateString}:`, {
+        progressData: progressData?.length || 0,
+        goalId: goal.id,
+        found: progress,
+        isCompleted: progress?.is_completed,
+        completedValue: progress?.completed_value
+      });
+    }
+    
+    return progress;
   };
 
   // Calcular porcentaje de cumplimiento 
