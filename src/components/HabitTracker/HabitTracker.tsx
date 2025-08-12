@@ -88,25 +88,30 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       // Normalizar todas las fechas a medianoche
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(23, 59, 59, 999); // Incluir todo el día final
-      today.setHours(23, 59, 59, 999);
+      today.setHours(0, 0, 0, 0);
       
-      // La fecha efectiva final es la menor entre hoy y la fecha final
-      const effectiveEndDate = today <= endDate ? today : endDate;
-      
-      // Generar todos los días desde inicio hasta la fecha efectiva (inclusive)
+      // Para el cálculo del porcentaje, usar todo el rango planificado
+      // pero solo considerar días completados hasta hoy
       const allDays = [];
       const current = new Date(startDate);
       
-      while (current <= effectiveEndDate) {
+      // Generar TODOS los días del rango planificado
+      while (current <= endDate) {
         allDays.push(new Date(current));
         current.setDate(current.getDate() + 1);
       }
       
       // Filtrar solo los días que son activos según la frecuencia
       const activeDays = allDays.filter(day => isDayActive(day));
-      const completedActiveDays = activeDays.filter(day => getDayProgress(day)?.is_completed);
       
-      console.log(`Porcentaje para ${goal.name} (${format(startDate, 'dd/MM')} al ${format(new Date(goal.end_date), 'dd/MM')}):`, {
+      // Para días completados, solo contar hasta hoy (no futuros)
+      const completedActiveDays = activeDays.filter(day => {
+        const dayNormalized = new Date(day);
+        dayNormalized.setHours(0, 0, 0, 0);
+        return dayNormalized <= today && getDayProgress(day)?.is_completed;
+      });
+      
+      console.log(`Porcentaje para ${goal.name} (${format(startDate, 'dd/MM')} al ${format(endDate, 'dd/MM')}):`, {
         totalDaysInRange: allDays.length,
         activeDays: activeDays.length,
         completedDays: completedActiveDays.length,
