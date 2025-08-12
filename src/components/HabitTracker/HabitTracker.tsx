@@ -305,6 +305,14 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           const isPastDay = date < new Date() && !isToday(date);
           const isActive = isDayActive(date);
 
+          console.log(`Día ${format(date, 'yyyy-MM-dd')}:`, {
+            isActive,
+            isInRange: date >= new Date(goal.start_date) && (!goal.end_date || date <= new Date(goal.end_date + 'T23:59:59')),
+            startDate: goal.start_date,
+            endDate: goal.end_date,
+            frequency: goal.frequency
+          });
+
           // Determinar el estado del botón
           let buttonState = 'normal';
           let stateLabel = 'Normal';
