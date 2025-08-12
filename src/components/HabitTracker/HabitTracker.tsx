@@ -75,18 +75,19 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       const endDate = new Date(goal.end_date);
       const today = new Date();
       
-      // Normalizar fechas eliminando horas
+      // Normalizar todas las fechas a medianoche para evitar problemas de horas
       startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
-      today.setHours(23, 59, 59, 999);
+      endDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
       
       // La fecha efectiva final es la menor entre hoy y la fecha final
-      const effectiveEndDate = today < endDate ? today : endDate;
+      const effectiveEndDate = today <= endDate ? today : endDate;
       
-      // Generar todos los días desde inicio hasta la fecha efectiva
+      // Generar todos los días desde inicio hasta la fecha efectiva (inclusive)
       const allDays = [];
       const current = new Date(startDate);
       
+      // Incluir todos los días hasta la fecha efectiva final (inclusive)
       while (current <= effectiveEndDate) {
         allDays.push(new Date(current));
         current.setDate(current.getDate() + 1);
@@ -100,6 +101,7 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
         hasEndDate: true,
         startDate: format(startDate, 'yyyy-MM-dd'),
         endDate: format(endDate, 'yyyy-MM-dd'),
+        today: format(today, 'yyyy-MM-dd'),
         effectiveEndDate: format(effectiveEndDate, 'yyyy-MM-dd'),
         totalDays: allDays.length,
         activeDays: activeDays.length,
@@ -117,12 +119,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       // Si no hay fecha de fin, calcular solo para la semana actual
       const activeDays = weekDays.filter(day => isDayActive(day));
       const completedActiveDays = activeDays.filter(day => getDayProgress(day)?.is_completed);
-      
-      console.log(`Calculando porcentaje semanal para ${goal.name}:`, {
-        hasEndDate: false,
-        activeDays: activeDays.length,
-        completedDays: completedActiveDays.length
-      });
       
       if (activeDays.length === 0) return 0;
       return Math.round((completedActiveDays.length / activeDays.length) * 100);
