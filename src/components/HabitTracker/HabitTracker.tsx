@@ -75,10 +75,10 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       const endDate = new Date(goal.end_date);
       const today = new Date();
       
-      // Normalizar todas las fechas a medianoche para evitar problemas de horas
+      // Normalizar todas las fechas a medianoche
       startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999); // Incluir todo el día final
+      today.setHours(23, 59, 59, 999);
       
       // La fecha efectiva final es la menor entre hoy y la fecha final
       const effectiveEndDate = today <= endDate ? today : endDate;
@@ -87,7 +87,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       const allDays = [];
       const current = new Date(startDate);
       
-      // Incluir todos los días hasta la fecha efectiva final (inclusive)
       while (current <= effectiveEndDate) {
         allDays.push(new Date(current));
         current.setDate(current.getDate() + 1);
@@ -97,24 +96,15 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       const activeDays = allDays.filter(day => isDayActive(day));
       const completedActiveDays = activeDays.filter(day => getDayProgress(day)?.is_completed);
       
-      console.log(`Calculando porcentaje para ${goal.name}:`, {
-        hasEndDate: true,
-        startDate: format(startDate, 'yyyy-MM-dd'),
-        endDate: format(endDate, 'yyyy-MM-dd'),
-        today: format(today, 'yyyy-MM-dd'),
-        effectiveEndDate: format(effectiveEndDate, 'yyyy-MM-dd'),
-        totalDays: allDays.length,
+      console.log(`Porcentaje para ${goal.name} (${format(startDate, 'dd/MM')} al ${format(new Date(goal.end_date), 'dd/MM')}):`, {
+        totalDaysInRange: allDays.length,
         activeDays: activeDays.length,
         completedDays: completedActiveDays.length,
-        allDaysRange: allDays.map(d => format(d, 'yyyy-MM-dd')),
-        activeDaysRange: activeDays.map(d => format(d, 'yyyy-MM-dd')),
-        completedDaysRange: completedActiveDays.map(d => format(d, 'yyyy-MM-dd'))
+        percentage: activeDays.length > 0 ? Math.round((completedActiveDays.length / activeDays.length) * 100) : 0
       });
       
       if (activeDays.length === 0) return 0;
-      const percentage = Math.round((completedActiveDays.length / activeDays.length) * 100);
-      console.log(`Porcentaje final calculado: ${percentage}%`);
-      return percentage;
+      return Math.round((completedActiveDays.length / activeDays.length) * 100);
     } else {
       // Si no hay fecha de fin, calcular solo para la semana actual
       const activeDays = weekDays.filter(day => isDayActive(day));
