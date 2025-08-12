@@ -117,5 +117,28 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-size: 16px; /* Prevent zoom on iOS */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* PWA safe area insets for notched devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Ensure touch targets are at least 44px */
+  button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better mobile scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
   }
 }
