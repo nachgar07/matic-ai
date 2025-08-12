@@ -131,8 +131,8 @@ All colors MUST be HSL.
     padding-bottom: env(safe-area-inset-bottom);
   }
   
-  /* Ensure touch targets are at least 44px (except for tabs) */
-  button:not([role="tab"]), [role="button"]:not([role="tab"]) {
+  /* Ensure touch targets are at least 44px (except for tabs and radio buttons) */
+  button:not([role="tab"]):not([role="radio"]), [role="button"]:not([role="tab"]):not([role="radio"]) {
     min-height: 44px;
     min-width: 44px;
   }
