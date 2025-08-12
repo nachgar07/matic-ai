@@ -76,16 +76,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dateString = format(date, 'yyyy-MM-dd');
     const progress = progressData?.find(p => p.date === dateString && p.goal_id === goal.id);
     
-    // Debug log para ver qué está retornando
-    if (dateString === format(new Date(), 'yyyy-MM-dd') || progress) {
-      console.log(`Progreso para ${dateString}:`, {
-        progressData: progressData?.length || 0,
-        goalId: goal.id,
-        found: progress,
-        isCompleted: progress?.is_completed,
-        completedValue: progress?.completed_value
-      });
-    }
     
     return progress;
   };
@@ -125,24 +115,10 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
         const isCompleted = progress?.is_completed || false;
         const isNotFuture = dayNormalized <= today;
         
-        // Debug detallado para el cálculo del porcentaje
-        const dayString = format(day, 'yyyy-MM-dd');
-        console.log(`Evaluando día ${dayString} para porcentaje:`, {
-          isNotFuture,
-          isCompleted,
-          progress: progress ? { id: progress.id, completed_value: progress.completed_value, is_completed: progress.is_completed } : null
-        });
         
         return isNotFuture && isCompleted;
       });
       
-      console.log(`Porcentaje para ${goal.name} (${format(startDate, 'dd/MM')} al ${format(endDate, 'dd/MM')}):`, {
-        totalDaysInRange: allDays.length,
-        activeDays: activeDays.length,
-        completedDays: completedActiveDays.length,
-        completedDaysDetailed: completedActiveDays.map(d => format(d, 'yyyy-MM-dd')),
-        percentage: activeDays.length > 0 ? Math.round((completedActiveDays.length / activeDays.length) * 100) : 0
-      });
       
       if (activeDays.length === 0) return 0;
       return Math.round((completedActiveDays.length / activeDays.length) * 100);
@@ -186,15 +162,11 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       if (goal.frequency_data) {
         try {
           const frequencyData = JSON.parse(goal.frequency_data);
-          
-          console.log(`Verificando día ${format(date, 'yyyy-MM-dd')} para frecuencia:`, frequencyData);
-          
-          // Días específicos de la semana
-          if (frequencyData.type === 'specific_weekdays' && frequencyData.weekdays) {
-            const isActive = frequencyData.weekdays.includes(dayName);
-            console.log(`Día ${dayName}, weekdays:`, frequencyData.weekdays, 'activo:', isActive);
-            return isActive;
-          }
+        
+        // Días específicos de la semana
+        if (frequencyData.type === 'specific_weekdays' && frequencyData.weekdays) {
+          return frequencyData.weekdays.includes(dayName);
+        }
           
           // Días específicos del mes
           if (frequencyData.type === 'specific_monthdays' && frequencyData.monthdays) {
@@ -217,19 +189,11 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
             const diffInDays = Math.floor((dateOnly.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
             const isActiveDay = diffInDays >= 0 && diffInDays % frequencyData.repeatInterval === 0;
             
-            console.log(`Cálculo repeat para ${format(date, 'yyyy-MM-dd')}:`, {
-              startDate: format(startDate, 'yyyy-MM-dd'),
-              currentDate: format(dateOnly, 'yyyy-MM-dd'),
-              diffInDays,
-              repeatInterval: frequencyData.repeatInterval,
-              remainder: diffInDays % frequencyData.repeatInterval,
-              isActiveDay
-            });
             
             return isActiveDay;
           }
           
-          console.log(`Tipo de frecuencia no reconocido: ${frequencyData.type}`);
+          
           
         } catch (error) {
           console.error('Error parsing frequency_data:', error);
@@ -237,9 +201,7 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       }
       
       // Fallback a frequency_days para días específicos de la semana
-      const fallbackActive = goal.frequency_days?.includes(dayName) || false;
-      console.log(`Fallback para ${dayName}, frequency_days:`, goal.frequency_days, 'activo:', fallbackActive);
-      return fallbackActive;
+      return goal.frequency_days?.includes(dayName) || false;
     }
     
     if (goal.frequency === 'weekly') {
@@ -276,30 +238,11 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     }
 
     try {
-      console.log('Actualizando progreso:', {
-        goalId: goal.id,
-        goalName: goal.name,
-        goalHasEndDate: !!goal.end_date,
-        date: dateString,
-        completedValue: nextCompletedValue,
-        isCompleted: nextIsCompleted,
-        currentProgress: currentProgress ? {
-          id: currentProgress.id,
-          current_completed: currentProgress.is_completed,
-          current_value: currentProgress.completed_value
-        } : null
-      });
-      
       await updateProgress.mutateAsync({
         goalId: goal.id,
         date: dateString,
         completedValue: nextCompletedValue,
         isCompleted: nextIsCompleted,
-      });
-      
-      console.log('Progreso actualizado exitosamente:', {
-        nuevoValor: nextCompletedValue,
-        nuevoCompletado: nextIsCompleted
       });
     } catch (error) {
       console.error('Error updating progress:', error);
@@ -368,13 +311,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           const isPastDay = date < new Date() && !isToday(date);
           const isActive = isDayActive(date);
 
-          console.log(`Día ${format(date, 'yyyy-MM-dd')}:`, {
-            isActive,
-            isInRange: date >= new Date(goal.start_date) && (!goal.end_date || date <= new Date(goal.end_date + 'T23:59:59')),
-            startDate: goal.start_date,
-            endDate: goal.end_date,
-            frequency: goal.frequency
-          });
 
           // Determinar el estado del botón
           let buttonState = 'normal';

@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Calendar, Filter, Search, Settings } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { isHabitActiveOnDate } from "@/utils/habitUtils";
 
 export const Objetivos = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -20,6 +21,9 @@ export const Objetivos = () => {
 
   const { data: tasks = [] } = useTasks(format(selectedDate, 'yyyy-MM-dd'));
   const { data: goals = [] } = useGoals();
+
+  // Filtrar hábitos que deben mostrarse en la fecha seleccionada
+  const activeHabitsForDate = goals.filter(goal => isHabitActiveOnDate(goal, selectedDate));
 
   // Función para obtener el título del header basado en la fecha seleccionada
   const getHeaderTitle = () => {
@@ -84,7 +88,7 @@ export const Objetivos = () => {
 
           <div className="pt-4">
             <TabsContent value="tasks" className="m-0">
-              {(tasks.length > 0 || goals.length > 0) ? (
+              {(tasks.length > 0 || activeHabitsForDate.length > 0) ? (
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground">
                     Tareas y hábitos para {format(selectedDate, "dd 'de' MMMM", { locale: es })}
@@ -93,8 +97,8 @@ export const Objetivos = () => {
                   {tasks.map((task) => (
                     <TaskCard key={`task-${task.id}`} task={task} itemType="tarea" />
                   ))}
-                  {/* Hábitos convertidos a formato de tarea */}
-                  {goals.map((goal) => (
+                  {/* Solo hábitos activos para la fecha seleccionada */}
+                  {activeHabitsForDate.map((goal) => (
                     <TaskCard 
                       key={`habit-${goal.id}`} 
                       task={{
@@ -133,12 +137,12 @@ export const Objetivos = () => {
             </TabsContent>
 
             <TabsContent value="habits" className="m-0">
-              {goals.length > 0 ? (
+              {activeHabitsForDate.length > 0 ? (
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium text-muted-foreground">
-                    Hábitos activos
+                    Hábitos activos para {format(selectedDate, "dd 'de' MMMM", { locale: es })}
                   </h3>
-                  {goals.map((goal) => (
+                  {activeHabitsForDate.map((goal) => (
                     <HabitTracker key={goal.id} goal={goal} />
                   ))}
                 </div>
@@ -148,9 +152,9 @@ export const Objetivos = () => {
                     <div className="w-20 h-20 mx-auto mb-6 bg-secondary/10 rounded-2xl flex items-center justify-center">
                       <Calendar className="text-secondary" size={32} />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2 text-foreground">No hay hábitos configurados</h3>
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">No hay hábitos para este día</h3>
                     <p className="text-muted-foreground">
-                      Prueba crear nuevos hábitos
+                      Los hábitos se muestran solo en los días programados
                     </p>
                   </div>
                 </div>
