@@ -133,27 +133,37 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     
     // Verificar si la fecha está dentro del rango del hábito
     const startDate = new Date(goal.start_date);
-    if (date < startDate) return false;
+    startDate.setHours(0, 0, 0, 0);
     
-    // Si hay fecha de fin, verificar que no la exceda (incluir el día final)
+    const dateOnly = new Date(date);
+    dateOnly.setHours(0, 0, 0, 0);
+    
+    if (dateOnly < startDate) return false;
+    
+    // Si hay fecha de fin, verificar que no la exceda
     if (goal.end_date) {
       const endDate = new Date(goal.end_date);
-      // WORKAROUND: Agregar 1 día a la fecha final para compensar problema de zona horaria
-      endDate.setDate(endDate.getDate() + 1);
+      endDate.setHours(23, 59, 59, 999);
       
-      // Comparar solo las fechas sin la hora para incluir todo el día final
-      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-      
-      if (dateOnly > endDateOnly) return false;
+      if (dateOnly > endDate) return false;
     }
     
     if (goal.frequency === 'daily') return true;
+    
     if (goal.frequency === 'custom') {
       // Verificar si hay frequency_data con configuraciones avanzadas
       if (goal.frequency_data) {
         try {
           const frequencyData = JSON.parse(goal.frequency_data);
+          
+          console.log(`Verificando día ${format(date, 'yyyy-MM-dd')} para frecuencia:`, frequencyData);
+          
+          // Días específicos de la semana
+          if (frequencyData.type === 'specific_weekdays' && frequencyData.weekdays) {
+            const isActive = frequencyData.weekdays.includes(dayName);
+            console.log(`Día ${dayName}, weekdays:`, frequencyData.weekdays, 'activo:', isActive);
+            return isActive;
+          }
           
           // Días específicos del mes
           if (frequencyData.type === 'specific_monthdays' && frequencyData.monthdays) {
@@ -163,36 +173,40 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           
           // Días específicos del año
           if (frequencyData.type === 'specific_yeardays' && frequencyData.yeardays) {
-            // Verificar si algún yearday coincide con la fecha actual
-            // Pueden venir en formato completo (yyyy-MM-dd) o solo mes-día (MM-dd)
             const currentFullDate = format(date, 'yyyy-MM-dd');
             const currentMonthDay = format(date, 'MM-dd');
             
             return frequencyData.yeardays.some(yearday => {
-              // Comparar fecha completa o solo mes-día
               return yearday === currentFullDate || yearday.endsWith(currentMonthDay);
             });
           }
           
           // Repetir cada X días
           if (frequencyData.type === 'repeat' && frequencyData.repeatInterval) {
-            const diffInDays = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+            const diffInDays = Math.floor((dateOnly.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
             const isActiveDay = diffInDays >= 0 && diffInDays % frequencyData.repeatInterval === 0;
             return isActiveDay;
           }
+          
+          console.log(`Tipo de frecuencia no reconocido: ${frequencyData.type}`);
+          
         } catch (error) {
           console.error('Error parsing frequency_data:', error);
         }
       }
       
       // Fallback a frequency_days para días específicos de la semana
-      return goal.frequency_days?.includes(dayName) || false;
+      const fallbackActive = goal.frequency_days?.includes(dayName) || false;
+      console.log(`Fallback para ${dayName}, frequency_days:`, goal.frequency_days, 'activo:', fallbackActive);
+      return fallbackActive;
     }
+    
     if (goal.frequency === 'weekly') {
       // Para semanal, solo los lunes están activos
       return dayOfWeek === 1;
     }
-    return false;
+    
+    return true; // Por defecto, permitir todos los días
   };
   // Marcar día con 3 estados: normal → verde (completado) → rojo (cancelado) → normal
   const toggleDayComplete = async (date: Date) => {
