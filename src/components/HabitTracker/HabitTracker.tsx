@@ -283,6 +283,11 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
         date: dateString,
         completedValue: nextCompletedValue,
         isCompleted: nextIsCompleted,
+        currentProgress: currentProgress ? {
+          id: currentProgress.id,
+          current_completed: currentProgress.is_completed,
+          current_value: currentProgress.completed_value
+        } : null
       });
       
       await updateProgress.mutateAsync({
@@ -292,7 +297,10 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
         isCompleted: nextIsCompleted,
       });
       
-      console.log('Progreso actualizado exitosamente');
+      console.log('Progreso actualizado exitosamente:', {
+        nuevoValor: nextCompletedValue,
+        nuevoCompletado: nextIsCompleted
+      });
     } catch (error) {
       console.error('Error updating progress:', error);
     }
