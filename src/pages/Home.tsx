@@ -14,6 +14,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { isHabitActiveOnDate } from "@/utils/habitUtils";
+import { useExpenses } from "@/hooks/useExpenses";
+import { ExpenseChart } from "@/components/ExpenseChart/ExpenseChart";
 export const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -38,6 +40,9 @@ export const Home = () => {
   
   // Filter active habits for selected date
   const activeHabitsForDate = goals.filter(goal => isHabitActiveOnDate(goal, selectedDate));
+
+  // Get expenses for selected date
+  const { expenses, chartData, totalAmount, loading: expensesLoading } = useExpenses(selectedDate);
 
   // Calculate real values from meal data
   const dailyTotals = mealsData?.dailyTotals || {
@@ -149,6 +154,7 @@ export const Home = () => {
           onDateChange={setSelectedDate}
           mealsData={mealsData}
           tasksCount={tasks.length + activeHabitsForDate.length}
+          expensesCount={expenses.length}
         />
       </div>
 
@@ -268,6 +274,87 @@ export const Home = () => {
             </div>
             <div className="text-sm text-muted-foreground">
               Ve a la sección de Objetivos para agregar nuevas actividades
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Expenses Section */}
+      <div className="px-4 mt-6">
+        <h2 className="text-xl font-bold mb-4">
+          Gastos de {format(selectedDate, "dd 'de' MMMM", { locale: es })}
+        </h2>
+        
+        {expensesLoading ? (
+          <div className="bg-card rounded-lg p-6 text-center">
+            <div className="text-muted-foreground">Cargando gastos...</div>
+          </div>
+        ) : expenses.length > 0 ? (
+          <div className="space-y-4">
+            {/* Expense Summary */}
+            <div className="bg-card rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-foreground">Resumen de gastos</h3>
+                <span className="text-lg font-bold text-foreground">
+                  ${totalAmount.toLocaleString()}
+                </span>
+              </div>
+              
+              <div className="space-y-2">
+                {expenses.slice(0, 3).map((expense) => (
+                  <div key={expense.id} className="flex items-center gap-3 py-2">
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                      style={{ backgroundColor: expense.category_color }}
+                    >
+                      {expense.category_icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate text-foreground">
+                        {expense.store_name || 'Establecimiento desconocido'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {expense.category_name}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-foreground">
+                        ${expense.total_amount.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                
+                {expenses.length > 3 && (
+                  <div className="text-center pt-2">
+                    <span className="text-xs text-muted-foreground">
+                      y {expenses.length - 3} gastos más...
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Expense Chart */}
+            {chartData.length > 0 && (
+              <div className="mt-4">
+                <ExpenseChart 
+                  data={chartData}
+                  totalAmount={totalAmount}
+                  chartPeriod="day"
+                  onPeriodChange={() => {}} // No permitir cambio de período en Home
+                  referenceDate={selectedDate}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-card rounded-lg p-6 text-center">
+            <div className="text-muted-foreground mb-2">
+              No tienes gastos registrados para este día
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Ve a la sección de Gastos para agregar nuevos gastos
             </div>
           </div>
         )}

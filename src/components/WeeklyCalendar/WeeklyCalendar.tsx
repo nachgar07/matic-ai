@@ -7,9 +7,10 @@ interface WeeklyCalendarProps {
   onDateChange: (date: Date) => void;
   mealsData?: any;
   tasksCount?: number;
+  expensesCount?: number;
 }
 
-export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, tasksCount }: WeeklyCalendarProps) => {
+export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, tasksCount, expensesCount }: WeeklyCalendarProps) => {
   const today = new Date();
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState(0);
@@ -142,13 +143,18 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, tasksCou
     handleEnd();
   };
 
-  // Verificar si un día tiene actividad (comidas o tareas)
+  // Verificar si un día tiene actividad (comidas, tareas o gastos)
   const hasActivity = (date: Date) => {
     const dateString = format(date, 'yyyy-MM-dd');
     const todayString = format(new Date(), 'yyyy-MM-dd');
     
     // Si es hoy y hay tareas, mostrar indicador
     if (dateString === todayString && tasksCount && tasksCount > 0) {
+      return true;
+    }
+    
+    // Si es hoy y hay gastos, mostrar indicador
+    if (dateString === todayString && expensesCount && expensesCount > 0) {
       return true;
     }
     
