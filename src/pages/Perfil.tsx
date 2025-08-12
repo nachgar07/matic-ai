@@ -3,7 +3,7 @@ import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+
 import { Input } from "@/components/ui/input";
 import { User, Settings, Target, TrendingDown, TrendingUp, Scale, Activity, Moon, Sun, Camera, Flag } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -187,10 +187,14 @@ export const Perfil = () => {
                 {theme === 'dark' ? <Moon className="mr-3" size={20} /> : <Sun className="mr-3" size={20} />}
                 <span>Tema oscuro</span>
               </div>
-              <Switch
-                checked={theme === 'dark'}
-                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="h-8 w-16"
+              >
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              </Button>
             </div>
           </div>
         </Card>
