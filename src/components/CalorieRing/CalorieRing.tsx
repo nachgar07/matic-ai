@@ -15,6 +15,14 @@ interface CalorieRingProps {
 
 export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200, waterGlasses = 0, onWaterClick, simple = false, waterTarget = 12 }: CalorieRingProps) => {
   const [showWaterAnimation, setShowWaterAnimation] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Mark as initialized after first render with actual data
+  useEffect(() => {
+    if (consumed > 0 || protein > 0 || carbs > 0 || fat > 0) {
+      setIsInitialized(true);
+    }
+  }, [consumed, protein, carbs, fat]);
   
   const remaining = Math.max(0, target - consumed);
   const percentage = Math.min(100, (consumed / target) * 100);
@@ -174,7 +182,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
                   strokeWidth="8"
                   fill="transparent"
                   strokeLinecap="round"
-                  className="transition-all duration-500 ease-in-out"
+                  className={isInitialized ? "transition-all duration-500 ease-in-out" : ""}
                 />
               )}
               {carbsProgress > 0 && (
@@ -184,7 +192,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
                   strokeWidth="8"
                   fill="transparent"
                   strokeLinecap="round"
-                  className="transition-all duration-500 ease-in-out"
+                  className={isInitialized ? "transition-all duration-500 ease-in-out" : ""}
                 />
               )}
               {fatProgress > 0 && (
@@ -194,7 +202,7 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
                   strokeWidth="8"
                   fill="transparent"
                   strokeLinecap="round"
-                  className="transition-all duration-500 ease-in-out"
+                  className={isInitialized ? "transition-all duration-500 ease-in-out" : ""}
                 />
               )}
             </>
