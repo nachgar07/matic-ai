@@ -644,8 +644,8 @@ INFORMACION DEL USUARIO:
       body: JSON.stringify({
         model: 'gpt-4.1-2025-04-14',
         messages: messages,
-        functions: functions,
-        function_call: "auto",
+        tools: tools,
+        tool_choice: "auto",
         temperature: 0.7,
         max_tokens: 1000,
       }),
@@ -666,12 +666,12 @@ INFORMACION DEL USUARIO:
     console.log('OpenAI conversation response:', JSON.stringify(data, null, 2));
 
     // Check if OpenAI wants to call a function
-    if (data.choices[0].message.function_call) {
-      const functionCall = data.choices[0].message.function_call;
-      console.log('OpenAI requested function call:', functionCall);
+    if (data.choices[0].message.tool_calls && data.choices[0].message.tool_calls.length > 0) {
+      const toolCall = data.choices[0].message.tool_calls[0];
+      console.log('OpenAI requested function call:', toolCall);
 
-      if (functionCall.name === 'create_meal') {
-        const functionArgs = JSON.parse(functionCall.arguments);
+      if (toolCall.function.name === 'create_meal') {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
         console.log('Function arguments:', functionArgs);
         
         try {
@@ -688,8 +688,8 @@ INFORMACION DEL USUARIO:
             functionCalled: false
           };
         }
-      } else if (functionCall.name === 'create_plate') {
-        const functionArgs = JSON.parse(functionCall.arguments);
+      } else if (toolCall.function.name === 'create_plate') {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
         console.log('🍽️ CREATE_PLATE - Function arguments:', JSON.stringify(functionArgs, null, 2));
         
         try {
@@ -706,8 +706,8 @@ INFORMACION DEL USUARIO:
             functionCalled: false
           };
         }
-      } else if (functionCall.name === 'create_meal_plan') {
-        const functionArgs = JSON.parse(functionCall.arguments);
+      } else if (toolCall.function.name === 'create_meal_plan') {
+        const functionArgs = JSON.parse(toolCall.function.arguments);
         console.log('🍽️ CREATE_MEAL_PLAN - Function arguments:', JSON.stringify(functionArgs, null, 2));
         
         try {
