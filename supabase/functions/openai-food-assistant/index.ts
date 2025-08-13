@@ -663,41 +663,39 @@ async function executeCreateMeal(args: any, userContext: any) {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Extract user ID from auth token using the same pattern as create-meal-from-chat
+    // Extract user ID from auth token - FIXED METHOD
     console.log('🔍 CREATE_MEAL - Attempting user authentication...');
     console.log('🔑 CREATE_MEAL - Auth header present:', !!userContext.authHeader);
-    console.log('🔑 CREATE_MEAL - Auth header preview:', userContext.authHeader?.substring(0, 50) + '...');
     
     if (!userContext.authHeader) {
       console.error('🚨 CREATE_MEAL - No auth header provided in userContext');
       throw new Error('No authorization header provided');
     }
 
-    const userClient = createClient(
+    // Use the service role client to verify the JWT token directly
+    const serviceClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { 
-        global: { 
-          headers: { 
-            Authorization: userContext.authHeader 
-          } 
-        } 
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('📞 CREATE_MEAL - Making getUser() call...');
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    console.log('📞 CREATE_MEAL - Verifying JWT token...');
     
-    console.log('🔍 CREATE_MEAL - getUser() result:', { 
+    // Extract the JWT token from the Authorization header
+    const token = userContext.authHeader.replace('Bearer ', '');
+    
+    // Verify the JWT token using the service role client
+    const { data: { user }, error: userError } = await serviceClient.auth.getUser(token);
+    
+    console.log('🔍 CREATE_MEAL - Token verification result:', { 
       hasUser: !!user, 
       hasError: !!userError,
-      errorMessage: userError?.message 
+      errorMessage: userError?.message,
+      userId: user?.id
     });
     
     if (userError || !user) {
-      console.error('🚨 CREATE_MEAL - User authentication failed:', userError);
-      console.error('🚨 CREATE_MEAL - Full error object:', JSON.stringify(userError, null, 2));
-      throw new Error('User not authenticated');
+      console.error('🚨 CREATE_MEAL - JWT token verification failed:', userError);
+      throw new Error('User not authenticated - invalid or expired token');
     }
 
     console.log('✅ CREATE_MEAL - User authenticated successfully:', user.id);
@@ -847,41 +845,39 @@ async function executeCreatePlate(args: any, userContext: any) {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Extract user ID from auth token
+    // Extract user ID from auth token - FIXED METHOD
     console.log('🔍 CREATE_PLATE - Attempting user authentication...');
     console.log('🔑 CREATE_PLATE - Auth header present:', !!userContext.authHeader);
-    console.log('🔑 CREATE_PLATE - Auth header preview:', userContext.authHeader?.substring(0, 50) + '...');
     
     if (!userContext.authHeader) {
       console.error('🚨 CREATE_PLATE - No auth header provided in userContext');
       throw new Error('No authorization header provided');
     }
     
-    const userClient = createClient(
+    // Use the service role client to verify the JWT token directly
+    const serviceClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { 
-        global: { 
-          headers: { 
-            Authorization: userContext.authHeader 
-          } 
-        } 
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('📞 CREATE_PLATE - Making getUser() call...');
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    console.log('📞 CREATE_PLATE - Verifying JWT token...');
     
-    console.log('🔍 CREATE_PLATE - getUser() result:', { 
+    // Extract the JWT token from the Authorization header
+    const token = userContext.authHeader.replace('Bearer ', '');
+    
+    // Verify the JWT token using the service role client
+    const { data: { user }, error: userError } = await serviceClient.auth.getUser(token);
+    
+    console.log('🔍 CREATE_PLATE - Token verification result:', { 
       hasUser: !!user, 
       hasError: !!userError,
-      errorMessage: userError?.message 
+      errorMessage: userError?.message,
+      userId: user?.id
     });
     
     if (userError || !user) {
-      console.error('🚨 CREATE_PLATE - User authentication failed:', userError);
-      console.error('🚨 CREATE_PLATE - Full error object:', JSON.stringify(userError, null, 2));
-      throw new Error('User not authenticated');
+      console.error('🚨 CREATE_PLATE - JWT token verification failed:', userError);
+      throw new Error('User not authenticated - invalid or expired token');
     }
 
     console.log('✅ CREATE_PLATE - User authenticated successfully:', user.id);
