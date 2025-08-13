@@ -1486,24 +1486,25 @@ async function executeCreateMealPlan(args: any, userContext: any) {
       message += `\n\n🍽️ **${mealTypeNames[plateResult.meal_type] || plateResult.meal_type}: ${plateResult.plate_name}**`;
       
       plateResult.foods.forEach((food: any) => {
-        const totalCals = Math.round(food.calories_per_serving * food.servings);
-        const totalProtein = Math.round(food.protein_per_serving * food.servings * 10) / 10;
-        const totalCarbs = Math.round(food.carbs_per_serving * food.servings * 10) / 10;
-        const totalFat = Math.round(food.fat_per_serving * food.servings * 10) / 10;
+        // VALORES EXACTOS - NO redondear para que coincidan con la BD
+        const totalCals = food.calories_per_serving * food.servings;
+        const totalProtein = food.protein_per_serving * food.servings;
+        const totalCarbs = food.carbs_per_serving * food.servings;
+        const totalFat = food.fat_per_serving * food.servings;
         
         message += `\n• ${food.food_name} (${food.servings} porción${food.servings === 1 ? '' : 'es'})`;
         message += `\n  ${totalCals} kcal | ${totalProtein}g proteína | ${totalCarbs}g carbohidratos | ${totalFat}g grasas`;
       });
 
       message += `\n📊 **Subtotal:**`;
-      message += ` ${Math.round(plateResult.totals.calories)} kcal, ${Math.round(plateResult.totals.protein * 10) / 10}g proteína, ${Math.round(plateResult.totals.carbs * 10) / 10}g carbohidratos, ${Math.round(plateResult.totals.fat * 10) / 10}g grasas`;
+      message += ` ${plateResult.totals.calories} kcal, ${plateResult.totals.protein}g proteína, ${plateResult.totals.carbs}g carbohidratos, ${plateResult.totals.fat}g grasas`;
     });
 
     message += `\n\n📊 **TOTALES DEL PLAN COMPLETO:**`;
-    message += `\n🔥 Calorías: ${Math.round(planTotals.calories)} kcal`;
-    message += `\n💪 Proteína: ${Math.round(planTotals.protein * 10) / 10}g`;
-    message += `\n🍞 Carbohidratos: ${Math.round(planTotals.carbs * 10) / 10}g`;
-    message += `\n🥑 Grasas: ${Math.round(planTotals.fat * 10) / 10}g`;
+    message += `\n🔥 Calorías: ${planTotals.calories} kcal`;
+    message += `\n💪 Proteína: ${planTotals.protein}g`;
+    message += `\n🍞 Carbohidratos: ${planTotals.carbs}g`;
+    message += `\n🥑 Grasas: ${planTotals.fat}g`;
 
     // Calculate updated progress if possible
     let updatedProgress = null;
@@ -1518,27 +1519,27 @@ async function executeCreateMealPlan(args: any, userContext: any) {
       const goals = userContext.goals;
       updatedProgress = {
         calories: {
-          consumed: Math.round(newConsumed.calories * 10) / 10,
+          consumed: newConsumed.calories,
           goal: goals.daily_calories,
-          remaining: Math.max(0, goals.daily_calories - Math.round(newConsumed.calories * 10) / 10),
+          remaining: Math.max(0, goals.daily_calories - newConsumed.calories),
           percentage: Math.round((newConsumed.calories / goals.daily_calories) * 100)
         },
         protein: {
-          consumed: Math.round(newConsumed.protein * 10) / 10,
+          consumed: newConsumed.protein,
           goal: goals.daily_protein,
-          remaining: Math.max(0, goals.daily_protein - Math.round(newConsumed.protein * 10) / 10),
+          remaining: Math.max(0, goals.daily_protein - newConsumed.protein),
           percentage: Math.round((newConsumed.protein / goals.daily_protein) * 100)
         },
         carbs: {
-          consumed: Math.round(newConsumed.carbs * 10) / 10,
+          consumed: newConsumed.carbs,
           goal: goals.daily_carbs,
-          remaining: Math.max(0, goals.daily_carbs - Math.round(newConsumed.carbs * 10) / 10),
+          remaining: Math.max(0, goals.daily_carbs - newConsumed.carbs),
           percentage: Math.round((newConsumed.carbs / goals.daily_carbs) * 100)
         },
         fat: {
-          consumed: Math.round(newConsumed.fat * 10) / 10,
+          consumed: newConsumed.fat,
           goal: goals.daily_fat,
-          remaining: Math.max(0, goals.daily_fat - Math.round(newConsumed.fat * 10) / 10),
+          remaining: Math.max(0, goals.daily_fat - newConsumed.fat),
           percentage: Math.round((newConsumed.fat / goals.daily_fat) * 100)
         }
       };
