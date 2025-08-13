@@ -38,8 +38,15 @@ serve(async (req) => {
     // Get OpenAI API key
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
+      console.error('🚨 OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
+    
+    console.log('🔑 OpenAI API Key check:', {
+      hasKey: !!openAIApiKey,
+      keyLength: openAIApiKey?.length,
+      keyPreview: openAIApiKey?.substring(0, 8) + '...'
+    });
 
     // Get auth header for user authentication
     const authHeader = req.headers.get('Authorization');
@@ -169,16 +176,23 @@ Instrucciones importantes:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
+      console.error('🚨 OpenAI API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        errorBody: errorText
+      });
       
       if (response.status === 429) {
-        throw new Error('Se ha excedido el limite de solicitudes de OpenAI. Por favor, verifica tu plan de facturacion.');
+        throw new Error('Se ha excedido el limite de solicitudes de OpenAI. Verifica tu plan de facturacion o espera unos minutos.');
       } else if (response.status === 401) {
-        throw new Error('API key de OpenAI invalida. Por favor, verifica tu configuracion.');
+        throw new Error('API key de OpenAI invalida. Por favor, verifica que la clave este configurada correctamente en Supabase.');
       } else if (response.status === 403) {
         throw new Error('Acceso denegado. Verifica que tu cuenta de OpenAI tenga creditos disponibles.');
+      } else if (response.status >= 500) {
+        throw new Error('Error del servidor de OpenAI. El servicio puede estar temporalmente sobrecargado. Intenta nuevamente en unos minutos.');
       } else {
-        throw new Error(`Error del servicio de OpenAI: ${response.status}`);
+        throw new Error(`Error del servicio de OpenAI (${response.status}): ${errorText}`);
       }
     }
 
@@ -561,7 +575,14 @@ INFORMACION DEL USUARIO:
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('🚨 OpenAI Chat API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        errorBody: errorText
+      });
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
