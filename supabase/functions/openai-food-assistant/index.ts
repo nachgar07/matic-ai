@@ -186,7 +186,7 @@ Instrucciones importantes:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'o3-2025-04-16', // Modelo de reasoning para cálculos matemáticos precisos
         messages: [
           {
             role: 'user',
@@ -421,6 +421,20 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 🎯 REGLA DE ORO - PRECISION MATEMATICA ABSOLUTA:
 ¡OBLIGATORIO! NUNCA muestres un plan que no esté entre 98-102% de TODOS los macronutrientes del usuario.
 ¡CRITICO! Los valores que muestres DEBEN coincidir EXACTAMENTE con los guardados en la base de datos.
+
+🧮 INSTRUCCIONES MATEMATICAS CRITICAS:
+DEBES hacer TODOS los cálculos PASO A PASO manualmente:
+1. Para cada alimento: porciones × valor_nutricional_por_porción = total_alimento
+2. Para cada plato: suma todos los totales de sus alimentos 
+3. Para el plan completo: suma todos los totales de los platos
+4. VERIFICA cada suma antes de continuar
+5. NO confíes en estimaciones - calcula cada número exactamente
+
+EJEMPLO DE CALCULO CORRECTO:
+Pollo (2 porciones × 165 kcal) = 330 kcal
+Arroz (1.5 porciones × 110 kcal) = 165 kcal  
+Ensalada (1 porción × 50 kcal) = 50 kcal
+TOTAL PLATO = 330 + 165 + 50 = 545 kcal ✅
 
 🤝 FLUJO OBLIGATORIO DE CONFIRMACIÓN DEL USUARIO:
 NUNCA ejecutes create_meal_plan directamente. SIEMPRE sigue este proceso:
@@ -750,7 +764,7 @@ INFORMACION DEL USUARIO:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'o3-2025-04-16', // Modelo de reasoning para cálculos matemáticos precisos
         messages: messages,
         tools: tools,
         tool_choice: "auto",
