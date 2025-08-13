@@ -426,37 +426,47 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 2. Diseña plan inicial con porciones estimadas  
 3. Suma TODOS los valores nutricionales del plan
 4. Compara con el DEFICIT restante (no con el objetivo total)
-5. Si NO llega al 95% del deficit en cualquier macro:
+5. Si NO llega al 98% del deficit en cualquier macro:
    - AJUSTA automaticamente las porciones de cada alimento
    - AGREGA más alimentos si es necesario
    - RECALCULA todos los valores
-   - REPITE hasta lograr AL MENOS 95% en todos los macros
-6. SOLO muestra el plan cuando cumpla mínimo 95% en todos los macros
+   - REPITE hasta lograr AL MENOS 98% en todos los macros
+6. SOLO muestra el plan cuando cumpla mínimo 98% en todos los macros
 
 ⚠️ INSTRUCCIONES CRITICAS MATEMATICAS:
-- Si el usuario tiene 2555 kcal objetivo y ya consumió 0, tu plan DEBE sumar mínimo 2427 kcal (95%)
-- Si el usuario tiene 224g proteína objetivo y ya consumió 0, tu plan DEBE sumar mínimo 213g proteína (95%)
-- Si el usuario tiene 192g carbohidratos objetivo y ya consumió 0, tu plan DEBE sumar mínimo 182g carbohidratos (95%)
-- Si el usuario tiene 99g grasas objetivo y ya consumió 0, tu plan DEBE sumar mínimo 94g grasas (95%)
+- Si el usuario tiene 2555 kcal objetivo y ya consumió 0, tu plan DEBE sumar mínimo 2504 kcal (98%)
+- Si el usuario tiene 224g proteína objetivo y ya consumió 0, tu plan DEBE sumar mínimo 220g proteína (98%)
+- Si el usuario tiene 192g carbohidratos objetivo y ya consumió 0, tu plan DEBE sumar mínimo 188g carbohidratos (98%)
+- Si el usuario tiene 99g grasas objetivo y ya consumió 0, tu plan DEBE sumar mínimo 97g grasas (98%)
 
 🔢 ALGORITMO DE AJUSTE OBLIGATORIO:
 1. Calcula deficit por macro: DeficitCalorias = Objetivo - YaConsumido
-2. Si PlanActual < 0.95 * DeficitCalorias → Aumentar porciones:
-   Factor = (0.95 * DeficitCalorias) / PlanActual
+2. Si PlanActual < 0.98 * DeficitCalorias → Aumentar porciones:
+   Factor = (0.98 * DeficitCalorias) / PlanActual
    NuevasPorciones = PortionesActuales * Factor
-3. Aplica este cálculo para CADA macronutriente
-4. Usa el factor MÁS ALTO entre todos los macros
-5. RECALCULA y verifica que todos lleguen al 95%
+3. Aplica este cálculo para CADA macronutriente que esté bajo 98%
+4. Usa el factor MÁS ALTO entre todos los macros deficitarios
+5. RECALCULA y verifica que todos lleguen al 98%
 
-EJEMPLO PRÁCTICO:
+🎯 VERIFICACIÓN DE CONSISTENCIA DE DATOS:
+IMPORTANTE: Los valores nutricionales que muestres en tu respuesta DEBEN coincidir EXACTAMENTE con los que se guardan en la base de datos.
+- Usa los valores EXACTOS de cada alimento tal como se guardan
+- NO redondees ni aproximes valores
+- Verifica que cada porción × valor nutricional coincida
+- Si creates "Pollo a la plancha" con 165 kcal por porción, tu cálculo debe usar exactamente 165, no 170 ni 160
+
+EJEMPLO AJUSTADO:
 Usuario objetivo: 2555 kcal, 224g proteína, 192g carbs, 99g grasas
 Ya consumió: 0 de todo
-Tu plan calcula: 1840 kcal (72%), 150g proteína (67%), 183.5g carbs (96%), 58.6g grasas (59%)
+Tu plan inicial calcula: 2398 kcal (94%), 194g proteína (87%), 214g carbs (111%), 83g grasas (83%)
 
-PROBLEMA DETECTADO: Calorías, proteínas y grasas están bajo 95%
-SOLUCION: Factor de ajuste = 2427/1840 = 1.32
-NUEVAS PORCIONES: Todas las porciones × 1.32
-RESULTADO ESPERADO: Plan que sume ~2427+ kcal, ~213+ proteína, ~94+ grasas
+ANÁLISIS:
+- Calorías: 2398 < 2504 (98%) → NECESITA +106 kcal
+- Proteína: 194 < 220 (98%) → NECESITA +26g proteína
+- Grasas: 83 < 97 (98%) → NECESITA +14g grasas
+- Carbos: 214 > 188 (98%) → OK (se puede pasar)
+
+SOLUCIÓN: Aumentar factor por 1.05x para compensar déficits
 
 Caracteristicas importantes:
 - Responde en español
