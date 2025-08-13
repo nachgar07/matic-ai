@@ -348,6 +348,16 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 4. Responder preguntas sobre nutricion de manera clara y util
 5. Mantener un tono conversacional, amigable y motivador
 6. Crear planes de comidas balanceados que cumplan con los objetivos nutricionales
+7. Registrar comidas y platos cuando el usuario lo solicite
+
+🍽️ FUNCIONES DISPONIBLES:
+- create_meal: Para registrar una comida INDIVIDUAL (ej: "registra una manzana", "agrega 100g de pollo")
+- create_plate: Para crear un PLATO COMPLETO con múltiples ingredientes (ej: "crea un desayuno con huevos, pan y aguacate", "hacer una ensalada con pollo, lechuga y tomate")
+
+🎯 CUANDO USAR CADA FUNCIÓN:
+- Usa create_meal cuando el usuario quiera registrar UN SOLO alimento
+- Usa create_plate cuando el usuario quiera crear una comida con VARIOS ingredientes o mencione "plato", "comida completa", "receta", etc.
+- Si no estás seguro, pregunta al usuario si quiere registrar un alimento individual o crear un plato completo
 
 🎯 REGLA DE ORO - PRECISION MATEMATICA ABSOLUTA:
 NUNCA muestres un plan que no coincida EXACTAMENTE con los objetivos del usuario.
@@ -475,6 +485,59 @@ INFORMACION DEL USUARIO:
         },
         required: ["meal_type", "food_name", "servings", "calories_per_serving", "protein_per_serving", "carbs_per_serving", "fat_per_serving"]
       }
+    },
+    {
+      name: "create_plate",
+      description: "Crea un plato completo con múltiples alimentos. Úsalo cuando el usuario quiera crear un plato con varios ingredientes.",
+      parameters: {
+        type: "object",
+        properties: {
+          meal_type: {
+            type: "string",
+            enum: ["breakfast", "lunch", "dinner", "snack"],
+            description: "Tipo de comida (breakfast, lunch, dinner, snack)"
+          },
+          plate_name: {
+            type: "string",
+            description: "Nombre descriptivo del plato (ej: 'Desayuno mediterráneo', 'Ensalada de pollo')"
+          },
+          foods: {
+            type: "array",
+            description: "Lista de alimentos que componen el plato",
+            items: {
+              type: "object",
+              properties: {
+                food_name: {
+                  type: "string",
+                  description: "Nombre del alimento"
+                },
+                servings: {
+                  type: "number",
+                  description: "Cantidad de porciones de este alimento"
+                },
+                calories_per_serving: {
+                  type: "number",
+                  description: "Calorías por porción"
+                },
+                protein_per_serving: {
+                  type: "number",
+                  description: "Proteína en gramos por porción"
+                },
+                carbs_per_serving: {
+                  type: "number",
+                  description: "Carbohidratos en gramos por porción"
+                },
+                fat_per_serving: {
+                  type: "number",
+                  description: "Grasas en gramos por porción"
+                }
+              },
+              required: ["food_name", "servings", "calories_per_serving", "protein_per_serving", "carbs_per_serving", "fat_per_serving"]
+            }
+          }
+        },
+        required: ["meal_type", "plate_name", "foods"]
+      }
     }
   ];
 
@@ -524,6 +587,24 @@ INFORMACION DEL USUARIO:
           console.error('Error executing create_meal function:', error);
           return {
             reply: `Lo siento, hubo un error al intentar guardar la comida: ${error.message}. Por favor, intenta nuevamente.`,
+            functionCalled: false
+          };
+        }
+      } else if (functionCall.name === 'create_plate') {
+        const functionArgs = JSON.parse(functionCall.arguments);
+        console.log('🍽️ CREATE_PLATE - Function arguments:', JSON.stringify(functionArgs, null, 2));
+        
+        try {
+          const plateResult = await executeCreatePlate(functionArgs, userContext);
+          return {
+            reply: plateResult.message,
+            functionCalled: true,
+            updatedProgress: plateResult.updatedProgress
+          };
+        } catch (error) {
+          console.error('🚨 CREATE_PLATE - Error executing create_plate function:', error);
+          return {
+            reply: `Lo siento, hubo un error al intentar crear el plato: ${error.message}. Por favor, intenta nuevamente.`,
             functionCalled: false
           };
         }
@@ -698,6 +779,204 @@ async function executeCreateMeal(args: any, userContext: any) {
 
   } catch (error) {
     console.error('Error in executeCreateMeal:', error);
+    throw error;
+  }
+}
+
+async function executeCreatePlate(args: any, userContext: any) {
+  console.log('🍽️ CREATE_PLATE - Executing create_plate with args:', JSON.stringify(args, null, 2));
+  
+  try {
+    // Create Supabase client using service role key for database operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Extract user ID from auth token
+    const userClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: userContext.authHeader } } }
+    );
+
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      console.error('🚨 CREATE_PLATE - User authentication failed:', userError);
+      throw new Error('User not authenticated');
+    }
+
+    console.log('✅ CREATE_PLATE - User authenticated successfully:', user.id);
+    console.log('🍽️ CREATE_PLATE - Creating plate with', args.foods.length, 'foods');
+
+    // Process each food in the plate
+    const mealEntries = [];
+    const consumedTotals = {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0
+    };
+
+    for (let i = 0; i < args.foods.length; i++) {
+      const food = args.foods[i];
+      console.log(`🥘 CREATE_PLATE - Processing food ${i + 1}/${args.foods.length}: ${food.food_name}`);
+
+      // Create or find the food entry
+      const { data: existingFood } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('food_name', food.food_name)
+        .limit(1);
+
+      let foodId;
+      if (existingFood && existingFood.length > 0) {
+        foodId = existingFood[0].id;
+        console.log(`🔍 CREATE_PLATE - Found existing food: ${food.food_name}`);
+      } else {
+        // Create new food entry
+        const { data: newFood, error: insertError } = await supabase
+          .from('foods')
+          .insert({
+            food_id: `openai_plate_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            food_name: food.food_name,
+            calories_per_serving: food.calories_per_serving,
+            protein_per_serving: food.protein_per_serving,
+            carbs_per_serving: food.carbs_per_serving,
+            fat_per_serving: food.fat_per_serving,
+            serving_description: 'Porción estándar'
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('🚨 CREATE_PLATE - Error inserting food:', insertError);
+          throw new Error(`Error creating food entry for ${food.food_name}: ${insertError.message}`);
+        }
+
+        foodId = newFood.id;
+        console.log(`➕ CREATE_PLATE - Created new food: ${food.food_name}`);
+      }
+
+      // Create meal entry for this food
+      const { data: mealEntry, error: mealError } = await supabase
+        .from('meal_entries')
+        .insert({
+          user_id: user.id,
+          food_id: foodId,
+          servings: food.servings || 1,
+          meal_type: args.meal_type,
+          consumed_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (mealError) {
+        console.error('🚨 CREATE_PLATE - Error creating meal entry:', mealError);
+        throw new Error(`Error creating meal entry for ${food.food_name}: ${mealError.message}`);
+      }
+
+      mealEntries.push(mealEntry);
+      
+      // Add to totals
+      const foodTotals = {
+        calories: food.calories_per_serving * food.servings,
+        protein: food.protein_per_serving * food.servings,
+        carbs: food.carbs_per_serving * food.servings,
+        fat: food.fat_per_serving * food.servings
+      };
+      
+      consumedTotals.calories += foodTotals.calories;
+      consumedTotals.protein += foodTotals.protein;
+      consumedTotals.carbs += foodTotals.carbs;
+      consumedTotals.fat += foodTotals.fat;
+
+      console.log(`✅ CREATE_PLATE - Meal entry created for ${food.food_name}:`, foodTotals);
+    }
+
+    console.log('🎉 CREATE_PLATE - All meal entries created successfully. Total foods:', mealEntries.length);
+    console.log('📊 CREATE_PLATE - Plate totals:', consumedTotals);
+
+    // Format a nice response for the user
+    let message = `¡Excelente! He creado tu plato "${args.plate_name}" con éxito:
+
+🍽️ **${args.plate_name}**
+`;
+
+    args.foods.forEach((food: any) => {
+      const totalCals = Math.round(food.calories_per_serving * food.servings);
+      const totalProtein = Math.round(food.protein_per_serving * food.servings * 10) / 10;
+      const totalCarbs = Math.round(food.carbs_per_serving * food.servings * 10) / 10;
+      const totalFat = Math.round(food.fat_per_serving * food.servings * 10) / 10;
+      
+      message += `\n• ${food.food_name} (${food.servings} porción${food.servings === 1 ? '' : 'es'})`;
+      message += `\n  ${totalCals} kcal | ${totalProtein}g proteína | ${totalCarbs}g carbohidratos | ${totalFat}g grasas`;
+    });
+
+    message += `\n\n📊 **Totales del plato:**`;
+    message += `\n🔥 Calorías: ${Math.round(consumedTotals.calories)} kcal`;
+    message += `\n💪 Proteína: ${Math.round(consumedTotals.protein * 10) / 10}g`;
+    message += `\n🍞 Carbohidratos: ${Math.round(consumedTotals.carbs * 10) / 10}g`;
+    message += `\n🥑 Grasas: ${Math.round(consumedTotals.fat * 10) / 10}g`;
+
+    // Calculate updated progress if possible
+    let updatedProgress = null;
+    if (userContext?.goals && userContext?.today) {
+      const newConsumed = {
+        calories: (userContext.today.consumed.calories || 0) + consumedTotals.calories,
+        protein: (userContext.today.consumed.protein || 0) + consumedTotals.protein,
+        carbs: (userContext.today.consumed.carbs || 0) + consumedTotals.carbs,
+        fat: (userContext.today.consumed.fat || 0) + consumedTotals.fat
+      };
+
+      const goals = userContext.goals;
+      updatedProgress = {
+        calories: {
+          consumed: Math.round(newConsumed.calories * 10) / 10,
+          goal: goals.daily_calories,
+          remaining: Math.max(0, goals.daily_calories - Math.round(newConsumed.calories * 10) / 10),
+          percentage: Math.round((newConsumed.calories / goals.daily_calories) * 100)
+        },
+        protein: {
+          consumed: Math.round(newConsumed.protein * 10) / 10,
+          goal: goals.daily_protein,
+          remaining: Math.max(0, goals.daily_protein - Math.round(newConsumed.protein * 10) / 10),
+          percentage: Math.round((newConsumed.protein / goals.daily_protein) * 100)
+        },
+        carbs: {
+          consumed: Math.round(newConsumed.carbs * 10) / 10,
+          goal: goals.daily_carbs,
+          remaining: Math.max(0, goals.daily_carbs - Math.round(newConsumed.carbs * 10) / 10),
+          percentage: Math.round((newConsumed.carbs / goals.daily_carbs) * 100)
+        },
+        fat: {
+          consumed: Math.round(newConsumed.fat * 10) / 10,
+          goal: goals.daily_fat,
+          remaining: Math.max(0, goals.daily_fat - Math.round(newConsumed.fat * 10) / 10),
+          percentage: Math.round((newConsumed.fat / goals.daily_fat) * 100)
+        }
+      };
+
+      message += `\n\n📈 **Tu progreso actualizado:**`;
+      message += `\n🔥 Calorías: ${updatedProgress.calories.consumed}/${goals.daily_calories} (${updatedProgress.calories.percentage}%)`;
+      message += `\n💪 Proteína: ${updatedProgress.protein.consumed}g/${goals.daily_protein}g (${updatedProgress.protein.percentage}%)`;
+      message += `\n🍞 Carbohidratos: ${updatedProgress.carbs.consumed}g/${goals.daily_carbs}g (${updatedProgress.carbs.percentage}%)`;
+      message += `\n🥑 Grasas: ${updatedProgress.fat.consumed}g/${goals.daily_fat}g (${updatedProgress.fat.percentage}%)`;
+
+      console.log('📈 CREATE_PLATE - Updated progress calculated:', updatedProgress);
+    }
+
+    console.log('✨ CREATE_PLATE - Success! Plate created with', mealEntries.length, 'foods');
+
+    return {
+      message,
+      mealEntries,
+      updatedProgress,
+      plateTotals: consumedTotals
+    };
+
+  } catch (error) {
+    console.error('🚨 CREATE_PLATE - Error in executeCreatePlate:', error);
     throw error;
   }
 }
