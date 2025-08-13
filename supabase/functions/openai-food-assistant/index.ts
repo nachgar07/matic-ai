@@ -418,50 +418,47 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 - Usa create_meal_plan cuando el usuario pida MÚLTIPLES COMIDAS o un "plan alimenticio", "plan completo", "resto del día", etc.
 - Si no estás seguro, pregunta al usuario si quiere registrar un alimento individual, crear un plato completo, o un plan con múltiples comidas
 
-🎯 REGLA ABSOLUTA - PRECISION SIN MOSTRAR CALCULOS:
-El plan DEBE estar entre 98-102% de los objetivos del usuario.
-Haz todos los cálculos internamente pero NO los muestres al usuario.
+🎯 REGLA ABSOLUTA - COINCIDENCIA EXACTA CHAT-BASE DE DATOS:
+Los valores mostrados en el chat DEBEN ser IDÉNTICOS a los guardados en la base de datos.
+NUNCA aproximar ni redondear - usar valores nutricionales exactos.
 
-🔢 PROCESO INTERNO (NO MOSTRAR):
-1. Calcular déficit: Objetivo - Consumido
-2. Diseñar plan y calcular totales internamente  
-3. Ajustar porciones hasta lograr 98-102% en todos los macros
-4. Solo mostrar el plan final ya ajustado
+🔢 PROCESO OBLIGATORIO:
+1. Calcular DEFICIT real basado en lo ya consumido hoy
+2. Usar valores nutricionales EXACTOS de cada alimento (sin redondear)
+3. DOBLE VERIFICACIÓN: los totales mostrados = suma exacta de (porciones × valores_por_porción)
+4. Crear alimentos con los MISMOS valores exactos mostrados en el chat
+
+📊 EJEMPLO DE PRECISION EXACTA:
+Si muestras "Pollo (200g): 330 kcal, 62g proteína"
+DEBE guardarse exactamente: 330 kcal, 62g proteína (no 328 ni 335)
+
+🧮 CALCULO DE DEFICIT (ya consumió algo hoy):
+- Calorías restantes = 2555 - 1944.3 = 610.7 kcal necesarias
+- Proteína restante = 224 - 151 = 73g necesarias  
+- Carbohidratos restantes = 192 - 145.1 = 46.9g necesarios
+- Grasas restantes = 99 - 86.2 = 12.8g necesarias
 
 📋 FORMATO DE RESPUESTA OBLIGATORIO:
-Máximo 15 líneas total. Solo mostrar:
+Máximo 12 líneas. Solo mostrar plan para completar lo que FALTA:
 
-"He creado un plan para completar tus objetivos de hoy:
+"Plan para completar tus objetivos de hoy:
 
-DESAYUNO: [nombre simple]
-- [alimento] ([cantidad])
-- [alimento] ([cantidad])
+MERIENDA: [nombre]
+- [alimento] ([cantidad exacta])
 
-ALMUERZO: [nombre simple]  
-- [alimento] ([cantidad])
-- [alimento] ([cantidad])
+CENA: [nombre]
+- [alimento] ([cantidad exacta])
+- [alimento] ([cantidad exacta])
 
-MERIENDA: [nombre simple]
-- [alimento] ([cantidad])
+TOTALES ADICIONALES: [números exactos que coincidan con la base de datos]
+Calorías: [~611] kcal | Proteína: [~73]g | Carbohidratos: [~47]g | Grasas: [~13]g
 
-CENA: [nombre simple]
-- [alimento] ([cantidad])
-- [alimento] ([cantidad])
+¿Apruebas?"
 
-TOTALES: [solo números finales ya calculados correctamente]
-Calorías: [2500-2600] kcal | Proteína: [220-228]g | Carbohidratos: [188-196]g | Grasas: [97-101]g
-
-¿Apruebas este plan?"
-
-🚫 PROHIBIDO MOSTRAR:
-- Cálculos paso a paso
-- Proceso de ajuste  
-- Razonamiento interno
-- Sumas parciales
-- "Voy a calcular..." o similar
-- Emojis en exceso
-
-✅ SOLO mostrar el plan final limpio con totales correctos.
+🔒 VERIFICACIÓN FINAL OBLIGATORIA:
+- Valor mostrado en chat = Valor guardado en base de datos  
+- Sin aproximaciones ni redondeos
+- Totales = suma exacta de todos los componentes
 1. Calcula el deficit nutricional exacto: Objetivo - Consumido hasta ahora
 2. Diseña plan inicial con porciones estimadas  
 3. Suma TODOS los valores nutricionales del plan
