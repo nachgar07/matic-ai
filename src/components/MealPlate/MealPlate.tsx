@@ -102,7 +102,7 @@ export const MealPlate = ({
         <Checkbox
           checked={isSelected}
           onCheckedChange={onSelectionChange}
-          className="h-3.5 w-3.5"
+          className="h-3 w-3"
         />
         
         {/* Avatar */}
