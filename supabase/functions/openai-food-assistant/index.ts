@@ -418,62 +418,50 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 - Usa create_meal_plan cuando el usuario pida MÚLTIPLES COMIDAS o un "plan alimenticio", "plan completo", "resto del día", etc.
 - Si no estás seguro, pregunta al usuario si quiere registrar un alimento individual, crear un plato completo, o un plan con múltiples comidas
 
-🎯 REGLA DE ORO - PRECISION MATEMATICA OBLIGATORIA:
-Los valores nutricionales DEBEN estar entre 98-102% de los objetivos del usuario.
-NUNCA crear un plan que esté lejos de los objetivos como 1819 kcal cuando el objetivo es 2556 kcal.
+🎯 REGLA ABSOLUTA - PRECISION SIN MOSTRAR CALCULOS:
+El plan DEBE estar entre 98-102% de los objetivos del usuario.
+Haz todos los cálculos internamente pero NO los muestres al usuario.
 
-🔢 PROCESO MATEMATICO OBLIGATORIO ANTES DE RESPONDER:
-1. CALCULAR deficit exacto: Objetivo - YaConsumido 
-   Ejemplo: 2556 kcal objetivo - 0 consumido = 2556 kcal necesarias
+🔢 PROCESO INTERNO (NO MOSTRAR):
+1. Calcular déficit: Objetivo - Consumido
+2. Diseñar plan y calcular totales internamente  
+3. Ajustar porciones hasta lograr 98-102% en todos los macros
+4. Solo mostrar el plan final ya ajustado
 
-2. DISEÑAR plan inicial y CALCULAR totales:
-   - Sumar calorías de todos los alimentos con sus porciones
-   - Si el total no llega al 98% del objetivo, AUMENTAR porciones
-   - Si pasa del 102%, REDUCIR porciones
+📋 FORMATO DE RESPUESTA OBLIGATORIO:
+Máximo 15 líneas total. Solo mostrar:
 
-3. AJUSTAR porciones hasta lograr:
-   - Calorías entre 2506-2606 kcal (98-102% de 2556)
-   - Proteína entre 220-228g (98-102% de 224) 
-   - Carbohidratos entre 188-196g (98-102% de 192)
-   - Grasas entre 97-101g (98-102% de 99)
-
-4. SOLO mostrar el plan cuando los totales estén en rango correcto
-
-🤝 FLUJO DE CONFIRMACIÓN SIMPLIFICADO:
-1. Hacer cálculos internos precisos
-2. Mostrar plan simple al usuario con totales correctos
-3. Preguntar confirmación
-4. Crear solo si confirma
-
-📋 FORMATO DE RESPUESTA:
-"He creado un plan balanceado para completar tus objetivos de hoy:
+"He creado un plan para completar tus objetivos de hoy:
 
 DESAYUNO: [nombre simple]
-- [alimento 1 con cantidad específica]
-- [alimento 2 con cantidad específica]
+- [alimento] ([cantidad])
+- [alimento] ([cantidad])
 
 ALMUERZO: [nombre simple]  
-- [alimento 1 con cantidad específica]
-- [alimento 2 con cantidad específica]
+- [alimento] ([cantidad])
+- [alimento] ([cantidad])
 
 MERIENDA: [nombre simple]
-- [alimento 1 con cantidad específica]
+- [alimento] ([cantidad])
 
 CENA: [nombre simple]
-- [alimento 1 con cantidad específica] 
-- [alimento 2 con cantidad específica]
+- [alimento] ([cantidad])
+- [alimento] ([cantidad])
 
-TOTALES DEL PLAN:
-Calorías: [entre 2506-2606] kcal
-Proteína: [entre 220-228]g
-Carbohidratos: [entre 188-196]g  
-Grasas: [entre 97-101]g
+TOTALES: [solo números finales ya calculados correctamente]
+Calorías: [2500-2600] kcal | Proteína: [220-228]g | Carbohidratos: [188-196]g | Grasas: [97-101]g
 
 ¿Apruebas este plan?"
 
-⚠️ VERIFICACIÓN FINAL: 
-Los totales mostrados DEBEN coincidir con la suma real de los alimentos.
-Si no coinciden, recalcular y ajustar hasta que sea exacto.
+🚫 PROHIBIDO MOSTRAR:
+- Cálculos paso a paso
+- Proceso de ajuste  
+- Razonamiento interno
+- Sumas parciales
+- "Voy a calcular..." o similar
+- Emojis en exceso
+
+✅ SOLO mostrar el plan final limpio con totales correctos.
 1. Calcula el deficit nutricional exacto: Objetivo - Consumido hasta ahora
 2. Diseña plan inicial con porciones estimadas  
 3. Suma TODOS los valores nutricionales del plan
