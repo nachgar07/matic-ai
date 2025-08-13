@@ -638,7 +638,13 @@ async function executeCreateMeal(args: any, userContext: any) {
     // Extract user ID from auth token using the same pattern as create-meal-from-chat
     console.log('🔍 CREATE_MEAL - Attempting user authentication...');
     console.log('🔑 CREATE_MEAL - Auth header present:', !!userContext.authHeader);
+    console.log('🔑 CREATE_MEAL - Auth header preview:', userContext.authHeader?.substring(0, 50) + '...');
     
+    if (!userContext.authHeader) {
+      console.error('🚨 CREATE_MEAL - No auth header provided in userContext');
+      throw new Error('No authorization header provided');
+    }
+
     const userClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -662,7 +668,7 @@ async function executeCreateMeal(args: any, userContext: any) {
     
     if (userError || !user) {
       console.error('🚨 CREATE_MEAL - User authentication failed:', userError);
-      console.error('🚨 CREATE_MEAL - Auth header was:', userContext.authHeader?.substring(0, 20) + '...');
+      console.error('🚨 CREATE_MEAL - Full error object:', JSON.stringify(userError, null, 2));
       throw new Error('User not authenticated');
     }
 
@@ -816,6 +822,12 @@ async function executeCreatePlate(args: any, userContext: any) {
     // Extract user ID from auth token
     console.log('🔍 CREATE_PLATE - Attempting user authentication...');
     console.log('🔑 CREATE_PLATE - Auth header present:', !!userContext.authHeader);
+    console.log('🔑 CREATE_PLATE - Auth header preview:', userContext.authHeader?.substring(0, 50) + '...');
+    
+    if (!userContext.authHeader) {
+      console.error('🚨 CREATE_PLATE - No auth header provided in userContext');
+      throw new Error('No authorization header provided');
+    }
     
     const userClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -840,7 +852,7 @@ async function executeCreatePlate(args: any, userContext: any) {
     
     if (userError || !user) {
       console.error('🚨 CREATE_PLATE - User authentication failed:', userError);
-      console.error('🚨 CREATE_PLATE - Auth header was:', userContext.authHeader?.substring(0, 20) + '...');
+      console.error('🚨 CREATE_PLATE - Full error object:', JSON.stringify(userError, null, 2));
       throw new Error('User not authenticated');
     }
 
