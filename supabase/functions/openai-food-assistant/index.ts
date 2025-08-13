@@ -27,13 +27,29 @@ interface FoodAnalysisResult {
 }
 
 serve(async (req) => {
+  console.log('🚀 FUNCTION START - Method:', req.method);
+  console.log('🚀 FUNCTION START - URL:', req.url);
+  console.log('🚀 FUNCTION START - Headers:', Object.fromEntries(req.headers.entries()));
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('✅ CORS - Handling OPTIONS request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, image, text, conversationHistory, userContext } = await req.json();
+    console.log('📥 PARSING REQUEST BODY...');
+    const body = await req.text();
+    console.log('📥 RAW BODY:', body.substring(0, 200) + '...');
+    
+    const { action, image, text, conversationHistory, userContext } = JSON.parse(body);
+    console.log('📥 PARSED DATA:', {
+      action,
+      hasImage: !!image,
+      textLength: text?.length,
+      historyLength: conversationHistory?.length,
+      hasUserContext: !!userContext
+    });
 
     // Get auth header for user authentication
     const authHeader = req.headers.get('Authorization');
@@ -49,6 +65,7 @@ serve(async (req) => {
     }
 
     // Get OpenAI API key
+    console.log('🔑 CHECKING OPENAI API KEY...');
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       console.error('🚨 OpenAI API key not configured');
@@ -61,21 +78,29 @@ serve(async (req) => {
       keyPreview: openAIApiKey?.substring(0, 8) + '...'
     });
 
+    console.log('🔄 ROUTING ACTION:', action);
+
     if (action === 'analyze-food') {
-      console.log('Analyzing food image...');
+      console.log('📸 ANALYZING FOOD IMAGE...');
       
       if (!image) {
+        console.error('🚨 NO IMAGE DATA PROVIDED');
         throw new Error('No image data provided');
       }
       
       const result = await analyzeFoodImage(image, openAIApiKey);
-      console.log('Analysis completed successfully:', result);
+      console.log('📸 ANALYSIS COMPLETED SUCCESSFULLY:', result);
       
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } else if (action === 'chat') {
-      console.log('Handling conversation with OpenAI GPT-4...');
+      console.log('💬 HANDLING CHAT CONVERSATION...');
+      
+      if (!text) {
+        console.error('🚨 NO TEXT PROVIDED FOR CHAT');
+        throw new Error('No text provided for chat');
+      }
       
       // Add auth info to userContext for functions that need it
       const enrichedUserContext = {
@@ -83,11 +108,15 @@ serve(async (req) => {
         authHeader: authHeader
       };
       
+      console.log('💬 CALLING HANDLE CONVERSATION...');
       const result = await handleConversation(text, conversationHistory, openAIApiKey, enrichedUserContext);
+      console.log('💬 CONVERSATION RESULT:', result);
+      
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } else {
+      console.error('🚨 INVALID ACTION SPECIFIED:', action);
       throw new Error('Invalid action specified');
     }
 
@@ -360,6 +389,12 @@ Instrucciones importantes:
 }
 
 async function handleConversation(text: string, conversationHistory: any[], apiKey: string, userContext: any) {
+  console.log('🗨️ HANDLE CONVERSATION START');
+  console.log('🗨️ TEXT LENGTH:', text?.length);
+  console.log('🗨️ HISTORY LENGTH:', conversationHistory?.length);
+  console.log('🗨️ USER CONTEXT:', userContext ? 'present' : 'missing');
+  
+  try {
   console.log('User context received:', userContext ? 'yes' : 'no');
   
   let systemPrompt = `Eres un asistente nutricional inteligente y amigable llamado NutriAI. Tu trabajo es:
@@ -641,9 +676,14 @@ INFORMACION DEL USUARIO:
     }
   ];
 
+  console.log('🤖 PREPARING OPENAI REQUEST...');
+  console.log('🤖 MESSAGES COUNT:', messages.length);
+  console.log('🤖 TOOLS COUNT:', tools.length);
+
   console.log('Sending conversation to OpenAI...');
 
   try {
+    console.log('🔄 FETCHING FROM OPENAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -737,16 +777,26 @@ INFORMACION DEL USUARIO:
     }
 
     // Return the regular conversation response
+    console.log('💬 RETURNING REGULAR CONVERSATION RESPONSE');
     const responseData: any = {
       reply: data.choices[0].message.content,
       functionCalled: false
     };
 
+    console.log('💬 RESPONSE DATA:', responseData);
     return responseData;
 
   } catch (error) {
-    console.error('Error in handleConversation:', error);
+    console.error('🚨🚨🚨 ERROR IN HANDLE CONVERSATION:', error);
+    console.error('🚨 ERROR NAME:', error.name);
+    console.error('🚨 ERROR MESSAGE:', error.message);
+    console.error('🚨 ERROR STACK:', error.stack);
     throw error;
+  }
+  
+  } catch (outerError) {
+    console.error('🚨🚨🚨 OUTER ERROR IN HANDLE CONVERSATION:', outerError);
+    throw outerError;
   }
 }
 
