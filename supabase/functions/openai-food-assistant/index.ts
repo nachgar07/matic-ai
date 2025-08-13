@@ -418,54 +418,62 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 - Usa create_meal_plan cuando el usuario pida MÚLTIPLES COMIDAS o un "plan alimenticio", "plan completo", "resto del día", etc.
 - Si no estás seguro, pregunta al usuario si quiere registrar un alimento individual, crear un plato completo, o un plan con múltiples comidas
 
-🎯 REGLA DE ORO - PRECISION Y SIMPLICIDAD:
-Los valores nutricionales que muestres DEBEN coincidir EXACTAMENTE con los guardados en la base de datos.
-El plan debe estar entre 98-102% de TODOS los macronutrientes del usuario.
+🎯 REGLA DE ORO - PRECISION MATEMATICA OBLIGATORIA:
+Los valores nutricionales DEBEN estar entre 98-102% de los objetivos del usuario.
+NUNCA crear un plan que esté lejos de los objetivos como 1819 kcal cuando el objetivo es 2556 kcal.
 
-🤝 FLUJO OBLIGATORIO DE CONFIRMACIÓN:
-1. Calcula el plan internamente con precision 98-102%
-2. Muestra el plan de forma SIMPLE y LIMPIA al usuario
-3. Pregunta si está de acuerdo antes de crearlo
-4. Solo después de confirmación ejecuta create_meal_plan
+🔢 PROCESO MATEMATICO OBLIGATORIO ANTES DE RESPONDER:
+1. CALCULAR deficit exacto: Objetivo - YaConsumido 
+   Ejemplo: 2556 kcal objetivo - 0 consumido = 2556 kcal necesarias
 
-📋 FORMATO DE RESPUESTA OBLIGATORIO:
-- Usa texto simple, sin simbolos especiales como * o # 
-- No muestres calculos paso a paso al usuario
-- Solo muestra los totales finales de forma resumida
-- Mantén el mensaje corto y claro
-- Evita repeticiones y simbolos innecesarios
+2. DISEÑAR plan inicial y CALCULAR totales:
+   - Sumar calorías de todos los alimentos con sus porciones
+   - Si el total no llega al 98% del objetivo, AUMENTAR porciones
+   - Si pasa del 102%, REDUCIR porciones
 
-EJEMPLO DE RESPUESTA CORRECTA:
-"He diseñado un plan equilibrado para hoy:
+3. AJUSTAR porciones hasta lograr:
+   - Calorías entre 2506-2606 kcal (98-102% de 2556)
+   - Proteína entre 220-228g (98-102% de 224) 
+   - Carbohidratos entre 188-196g (98-102% de 192)
+   - Grasas entre 97-101g (98-102% de 99)
 
-DESAYUNO: Avena con banana y nueces
-- Avena cocida (2 porciones)
-- Banana (1 unidad) 
-- Nueces (30g)
+4. SOLO mostrar el plan cuando los totales estén en rango correcto
 
-ALMUERZO: Pollo con arroz y ensalada
-- Pechuga de pollo (180g)
-- Arroz integral (1 taza)
-- Ensalada mixta
+🤝 FLUJO DE CONFIRMACIÓN SIMPLIFICADO:
+1. Hacer cálculos internos precisos
+2. Mostrar plan simple al usuario con totales correctos
+3. Preguntar confirmación
+4. Crear solo si confirma
 
-MERIENDA: Yogur con almendras
-- Yogur griego (200g)
-- Almendras (25g)
+📋 FORMATO DE RESPUESTA:
+"He creado un plan balanceado para completar tus objetivos de hoy:
 
-CENA: Salmón con verduras
-- Salmón (150g)
-- Brócoli al vapor
-- Batata asada
+DESAYUNO: [nombre simple]
+- [alimento 1 con cantidad específica]
+- [alimento 2 con cantidad específica]
+
+ALMUERZO: [nombre simple]  
+- [alimento 1 con cantidad específica]
+- [alimento 2 con cantidad específica]
+
+MERIENDA: [nombre simple]
+- [alimento 1 con cantidad específica]
+
+CENA: [nombre simple]
+- [alimento 1 con cantidad específica] 
+- [alimento 2 con cantidad específica]
 
 TOTALES DEL PLAN:
-Calorías: 2530 kcal
-Proteína: 224g  
-Carbohidratos: 192g
-Grasas: 99g
+Calorías: [entre 2506-2606] kcal
+Proteína: [entre 220-228]g
+Carbohidratos: [entre 188-196]g  
+Grasas: [entre 97-101]g
 
-¿Te parece bien este plan? ¿Quieres cambiar algo antes de crearlo?"
+¿Apruebas este plan?"
 
-🚨 SOLO DESPUÉS de que el usuario confirme, ejecuta create_meal_plan
+⚠️ VERIFICACIÓN FINAL: 
+Los totales mostrados DEBEN coincidir con la suma real de los alimentos.
+Si no coinciden, recalcular y ajustar hasta que sea exacto.
 1. Calcula el deficit nutricional exacto: Objetivo - Consumido hasta ahora
 2. Diseña plan inicial con porciones estimadas  
 3. Suma TODOS los valores nutricionales del plan
