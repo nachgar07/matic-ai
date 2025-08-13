@@ -132,10 +132,10 @@ All colors MUST be HSL.
   }
   
   /* Ensure touch targets are at least 44px (except for tabs and radio buttons) */
-  button:not([role="tab"]):not([role="radio"]), [role="button"]:not([role="tab"]):not([role="radio"]) {
-    min-height: 44px;
-    min-width: 44px;
-  }
+button:not([role="tab"]):not([role="radio"]), [role="button"]:not([role="tab"]):not([role="radio"]) {
+  min-height: 20px;
+  min-width: 20px;
+}
   
   /* Better mobile scrolling */
   * {
