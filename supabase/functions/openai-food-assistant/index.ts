@@ -121,18 +121,44 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Error in openai-food-assistant function:', error);
-    console.error('Error stack:', error.stack);
+    console.error('🚨 Error in openai-food-assistant function:', error);
+    console.error('🚨 Error stack:', error.stack?.substring(0, 1000));
     
-    const errorMessage = error.message || 'Error desconocido al procesar la imagen';
+    // More detailed error responses based on error type
+    let status = 500;
+    let errorType = 'Internal server error';
+    let userMessage = 'Error interno del servidor. Intenta nuevamente en unos minutos.';
+    
+    if (error.message?.includes('API key') || error.message?.includes('authentication') || error.message?.includes('Unauthorized')) {
+      status = 401;
+      errorType = 'Authentication error';
+      userMessage = 'Error de configuración del servicio de IA. Contacta al soporte.';
+    } else if (error.message?.includes('rate limit') || error.message?.includes('quota') || error.message?.includes('429')) {
+      status = 429;
+      errorType = 'Rate limit exceeded';
+      userMessage = 'Demasiadas consultas. Espera un momento antes de intentar nuevamente.';
+    } else if (error.message?.includes('network') || error.message?.includes('timeout') || error.name === 'NetworkError') {
+      status = 503;
+      errorType = 'Service unavailable';
+      userMessage = 'Servicio de IA temporalmente no disponible. Usa las opciones manuales mientras tanto.';
+    } else if (error.message?.includes('OpenAI') || error.message?.includes('model') || error.message?.includes('completion')) {
+      status = 502;
+      errorType = 'AI service error';
+      userMessage = 'El servicio de IA está temporalmente sobrecargado. Intenta nuevamente o usa las opciones manuales.';
+    }
+    
+    console.error(`🚨 RETURNING ERROR RESPONSE: Status ${status}, Type: ${errorType}, Message: ${userMessage}`);
     
     return new Response(
       JSON.stringify({ 
-        error: errorMessage,
-        details: error.stack ? error.stack.split('\n').slice(0, 5) : 'No stack trace available'
+        error: errorType,
+        message: userMessage,
+        status,
+        timestamp: new Date().toISOString(),
+        details: error.stack ? error.stack.split('\n').slice(0, 3) : 'No stack trace available'
       }),
       { 
-        status: 500,
+        status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );

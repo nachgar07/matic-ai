@@ -429,28 +429,45 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
         window.dispatchEvent(new CustomEvent('meal-created'));
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error sending message:', error);
       
-      // Try to provide a more helpful error message
+      // More detailed error handling
       let errorMessage = "Disculpa, tengo problemas técnicos en este momento. ¿Puedes intentar de nuevo?";
       let toastMessage = "Error de comunicación";
+      let toastDescription = "Intenta de nuevo en unos segundos";
       
-      if (error.message?.includes('non-2xx') || error.message?.includes('500')) {
-        errorMessage = "El servicio de IA está temporalmente sobrecargado. Mientras tanto, puedes usar el botón 'Buscar comida' para agregar alimentos manualmente.";
-        toastMessage = "Servicio temporalmente sobrecargado";
-      } else if (error.message?.includes('sesión')) {
-        errorMessage = "Tu sesión ha expirado. Por favor recarga la página e intenta nuevamente.";
+      // Log the full error for debugging
+      console.error('Full error details:', {
+        message: error.message,
+        status: error.status,
+        stack: error.stack,
+        response: error.response
+      });
+      
+      if (error.message?.includes('non-2xx') || error.message?.includes('500') || error.status === 500) {
+        errorMessage = "🤖 El asistente de IA está temporalmente no disponible.\n\n✅ Alternativas que puedes usar:\n• Botón 'Buscar comida' para agregar alimentos\n• 'Capturar foto' para analizar tus comidas\n• Intenta nuevamente en unos minutos";
+        toastMessage = "Servicio IA no disponible";
+        toastDescription = "Usa las opciones manuales mientras tanto";
+      } else if (error.message?.includes('401') || error.status === 401) {
+        errorMessage = "Tu sesión ha expirado. Recarga la página e inicia sesión nuevamente.";
         toastMessage = "Sesión expirada";
-      } else if (error.message?.includes('respuesta válida')) {
-        errorMessage = "Hubo un problema con la respuesta del asistente. ¿Puedes reformular tu pregunta?";
-        toastMessage = "Error en la respuesta";
+        toastDescription = "Recarga la página";
+      } else if (error.message?.includes('429') || error.status === 429) {
+        errorMessage = "Has hecho muchas consultas muy rápido. Espera un momento antes de intentar nuevamente.";
+        toastMessage = "Límite alcanzado";
+        toastDescription = "Espera un momento";
+      } else if (error.message?.includes('network') || error.name === 'NetworkError') {
+        errorMessage = "Problema de conexión a internet. Verifica tu conexión e intenta nuevamente.";
+        toastMessage = "Error de conexión";
+        toastDescription = "Verifica tu internet";
       }
 
       toast({
         title: toastMessage,
-        description: "Intenta de nuevo en unos segundos",
-        variant: "destructive"
+        description: toastDescription,
+        variant: "destructive",
+        duration: 6000,
       });
 
       const assistantMessage: Message = {
