@@ -472,162 +472,171 @@ INFORMACION DEL USUARIO:
 
   const tools = [
     {
-      name: "create_meal",
-      description: "Registra una comida específica en la base de datos del usuario",
-      parameters: {
-        type: "object",
-        properties: {
-          meal_type: {
-            type: "string",
-            enum: ["breakfast", "lunch", "dinner", "snack"],
-            description: "Tipo de comida (breakfast, lunch, dinner, snack)"
-          },
-          food_name: {
-            type: "string",
-            description: "Nombre del alimento a registrar"
-          },
-          servings: {
-            type: "number",
-            description: "Cantidad de porciones"
-          },
-          calories_per_serving: {
-            type: "number",
-            description: "Calorías por porción"
-          },
-          protein_per_serving: {
-            type: "number",
-            description: "Proteína en gramos por porción"
-          },
-          carbs_per_serving: {
-            type: "number",
-            description: "Carbohidratos en gramos por porción"
-          },
-          fat_per_serving: {
-            type: "number",
-            description: "Grasas en gramos por porción"
-          }
-        },
-        required: ["meal_type", "food_name", "servings", "calories_per_serving", "protein_per_serving", "carbs_per_serving", "fat_per_serving"]
-      }
-    },
-    {
-      name: "create_plate",
-      description: "Crea un plato completo con múltiples alimentos. Úsalo cuando el usuario quiera crear un plato con varios ingredientes.",
-      parameters: {
-        type: "object",
-        properties: {
-          meal_type: {
-            type: "string",
-            enum: ["breakfast", "lunch", "dinner", "snack"],
-            description: "Tipo de comida (breakfast, lunch, dinner, snack)"
-          },
-          plate_name: {
-            type: "string",
-            description: "Nombre descriptivo del plato (ej: 'Desayuno mediterráneo', 'Ensalada de pollo')"
-          },
-          foods: {
-            type: "array",
-            description: "Lista de alimentos que componen el plato",
-            items: {
-              type: "object",
-              properties: {
-                food_name: {
-                  type: "string",
-                  description: "Nombre del alimento"
-                },
-                servings: {
-                  type: "number",
-                  description: "Cantidad de porciones de este alimento"
-                },
-                calories_per_serving: {
-                  type: "number",
-                  description: "Calorías por porción"
-                },
-                protein_per_serving: {
-                  type: "number",
-                  description: "Proteína en gramos por porción"
-                },
-                carbs_per_serving: {
-                  type: "number",
-                  description: "Carbohidratos en gramos por porción"
-                },
-                fat_per_serving: {
-                  type: "number",
-                  description: "Grasas en gramos por porción"
-                }
-              },
-              required: ["food_name", "servings", "calories_per_serving", "protein_per_serving", "carbs_per_serving", "fat_per_serving"]
+      type: 'function',
+      function: {
+        name: "create_meal",
+        description: "Registra una comida específica en la base de datos del usuario",
+        parameters: {
+          type: "object",
+          properties: {
+            meal_type: {
+              type: "string",
+              enum: ["breakfast", "lunch", "dinner", "snack"],
+              description: "Tipo de comida (breakfast, lunch, dinner, snack)"
+            },
+            food_name: {
+              type: "string",
+              description: "Nombre del alimento a registrar"
+            },
+            servings: {
+              type: "number",
+              description: "Cantidad de porciones"
+            },
+            calories_per_serving: {
+              type: "number",
+              description: "Calorías por porción"
+            },
+            protein_per_serving: {
+              type: "number",
+              description: "Proteína en gramos por porción"
+            },
+            carbs_per_serving: {
+              type: "number",
+              description: "Carbohidratos en gramos por porción"
+            },
+            fat_per_serving: {
+              type: "number",
+              description: "Grasas en gramos por porción"
             }
-          }
-        },
-        required: ["meal_type", "plate_name", "foods"]
+          },
+          required: ["meal_type", "food_name", "servings", "calories_per_serving", "protein_per_serving", "carbs_per_serving", "fat_per_serving"]
+        }
       }
     },
     {
-      name: "create_meal_plan",
-      description: "Crea múltiples platos de una vez para un plan alimenticio completo (ej: almuerzo + merienda + cena). Usar cuando el usuario pida un plan completo o múltiples comidas.",
-      parameters: {
-        type: "object",
-        properties: {
-          plan_name: {
-            type: "string",
-            description: "Nombre del plan (ej: 'Plan para completar el día', 'Plan alimenticio de hoy')"
-          },
-          plates: {
-            type: "array",
-            description: "Lista de platos que componen el plan completo",
-            items: {
-              type: "object",
-              properties: {
-                meal_type: {
-                  type: "string",
-                  enum: ["breakfast", "lunch", "dinner", "snack"],
-                  description: "Tipo de comida (breakfast, lunch, dinner, snack)"
-                },
-                plate_name: {
-                  type: "string",
-                  description: "Nombre descriptivo del plato"
-                },
-                foods: {
-                  type: "array",
-                  description: "Lista de alimentos que componen este plato",
-                  items: {
-                    type: "object",
-                    properties: {
-                      food_name: {
-                        type: "string",
-                        description: "Nombre del alimento"
-                      },
-                      servings: {
-                        type: "number",
-                        description: "Cantidad de porciones de este alimento"
-                      },
-                      calories_per_serving: {
-                        type: "number",
-                        description: "Calorías por porción"
-                      },
-                      protein_per_serving: {
-                        type: "number",
-                        description: "Proteína en gramos por porción"
-                      },
-                      carbs_per_serving: {
-                        type: "number",
-                        description: "Carbohidratos en gramos por porción"
-                      },
-                      fat_per_serving: {
-                        type: "number",
-                        description: "Grasas en gramos por porción"
-                      }
-                    },
-                    required: ["food_name", "servings", "calories_per_serving", "protein_per_serving", "carbs_per_serving", "fat_per_serving"]
+      type: 'function',
+      function: {
+        name: "create_plate",
+        description: "Crea un plato completo con múltiples alimentos. Úsalo cuando el usuario quiera crear un plato con varios ingredientes.",
+        parameters: {
+          type: "object",
+          properties: {
+            meal_type: {
+              type: "string",
+              enum: ["breakfast", "lunch", "dinner", "snack"],
+              description: "Tipo de comida (breakfast, lunch, dinner, snack)"
+            },
+            plate_name: {
+              type: "string",
+              description: "Nombre descriptivo del plato (ej: 'Desayuno mediterráneo', 'Ensalada de pollo')"
+            },
+            foods: {
+              type: "array",
+              description: "Lista de alimentos que componen el plato",
+              items: {
+                type: "object",
+                properties: {
+                  food_name: {
+                    type: "string",
+                    description: "Nombre del alimento"
+                  },
+                  servings: {
+                    type: "number",
+                    description: "Cantidad de porciones de este alimento"
+                  },
+                  calories_per_serving: {
+                    type: "number",
+                    description: "Calorías por porción"
+                  },
+                  protein_per_serving: {
+                    type: "number",
+                    description: "Proteína en gramos por porción"
+                  },
+                  carbs_per_serving: {
+                    type: "number",
+                    description: "Carbohidratos en gramos por porción"
+                  },
+                  fat_per_serving: {
+                    type: "number",
+                    description: "Grasas en gramos por porción"
                   }
-                }
-              },
-              required: ["meal_type", "plate_name", "foods"]
+                },
+                required: ["food_name", "servings", "calories_per_serving", "protein_per_serving", "carbs_per_serving", "fat_per_serving"]
+              }
             }
-          }
-        },
-        required: ["plan_name", "plates"]
+          },
+          required: ["meal_type", "plate_name", "foods"]
+        }
+      }
+    },
+    {
+      type: 'function',
+      function: {
+        name: "create_meal_plan",
+        description: "Crea múltiples platos de una vez para un plan alimenticio completo (ej: almuerzo + merienda + cena). Usar cuando el usuario pida un plan completo o múltiples comidas.",
+        parameters: {
+          type: "object",
+          properties: {
+            plan_name: {
+              type: "string",
+              description: "Nombre del plan (ej: 'Plan para completar el día', 'Plan alimenticio de hoy')"
+            },
+            plates: {
+              type: "array",
+              description: "Lista de platos que componen el plan completo",
+              items: {
+                type: "object",
+                properties: {
+                  meal_type: {
+                    type: "string",
+                    enum: ["breakfast", "lunch", "dinner", "snack"],
+                    description: "Tipo de comida (breakfast, lunch, dinner, snack)"
+                  },
+                  plate_name: {
+                    type: "string",
+                    description: "Nombre descriptivo del plato"
+                  },
+                  foods: {
+                    type: "array",
+                    description: "Lista de alimentos que componen este plato",
+                    items: {
+                      type: "object",
+                      properties: {
+                        food_name: {
+                          type: "string",
+                          description: "Nombre del alimento"
+                        },
+                        servings: {
+                          type: "number",
+                          description: "Cantidad de porciones de este alimento"
+                        },
+                        calories_per_serving: {
+                          type: "number",
+                          description: "Calorías por porción"
+                        },
+                        protein_per_serving: {
+                          type: "number",
+                          description: "Proteína en gramos por porción"
+                        },
+                        carbs_per_serving: {
+                          type: "number",
+                          description: "Carbohidratos en gramos por porción"
+                        },
+                        fat_per_serving: {
+                          type: "number",
+                          description: "Grasas en gramos por porción"
+                        }
+                      },
+                      required: ["food_name", "servings", "calories_per_serving", "protein_per_serving", "carbs_per_serving", "fat_per_serving"]
+                    }
+                  }
+                },
+                required: ["meal_type", "plate_name", "foods"]
+              }
+            }
+          },
+          required: ["plan_name", "plates"]
+        }
       }
     }
   ];
