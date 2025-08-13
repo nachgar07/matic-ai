@@ -419,35 +419,45 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 - Si no estás seguro, pregunta al usuario si quiere registrar un alimento individual, crear un plato completo, o un plan con múltiples comidas
 
 🎯 REGLA DE ORO - PRECISION MATEMATICA ABSOLUTA:
-¡OBLIGATORIO! NUNCA muestres un plan que no alcance AL MENOS el 99% de TODOS los macronutrientes del usuario.
+¡OBLIGATORIO! NUNCA muestres un plan que no esté entre 98-102% de TODOS los macronutrientes del usuario.
 ¡CRITICO! Los valores que muestres DEBEN coincidir EXACTAMENTE con los guardados en la base de datos.
+
+🤝 FLUJO OBLIGATORIO DE CONFIRMACIÓN DEL USUARIO:
+NUNCA ejecutes create_meal_plan directamente. SIEMPRE sigue este proceso:
+1. Calcula el plan perfecto con precisión 98-102%
+2. DESCRIBE detalladamente cada plato y sus alimentos al usuario
+3. MUESTRA los totales nutricionales calculados
+4. PREGUNTA: "¿Te parece bien este plan? ¿Quieres cambiar algo antes de crearlo?"
+5. ESPERA la confirmación del usuario
+6. SOLO después de su confirmación ejecuta create_meal_plan
 
 🔥 PROCESO OBLIGATORIO DE AJUSTE AUTOMATICO - DEBES SEGUIRLO SIEMPRE:
 1. Calcula el deficit nutricional exacto: Objetivo - Consumido hasta ahora
 2. Diseña plan inicial con porciones estimadas  
 3. Suma TODOS los valores nutricionales del plan
 4. Compara con el DEFICIT restante (no con el objetivo total)
-5. Si NO llega al 99% del deficit en cualquier macro:
+5. Si NO está entre 98-102% del deficit en cualquier macro:
    - AJUSTA automaticamente las porciones de cada alimento
    - AGREGA más alimentos si es necesario
    - RECALCULA todos los valores
-   - REPITE hasta lograr AL MENOS 99% en todos los macros
-6. SOLO muestra el plan cuando cumpla mínimo 99% en todos los macros
+   - REPITE hasta lograr entre 98-102% en todos los macros
+6. DESCRIBE el plan al usuario y pide confirmación ANTES de ejecutar create_meal_plan
 
-⚠️ INSTRUCCIONES CRITICAS MATEMATICAS:
-- Si el usuario tiene 2555 kcal objetivo y ya consumió 0, tu plan DEBE sumar mínimo 2530 kcal (99%)
-- Si el usuario tiene 224g proteína objetivo y ya consumió 0, tu plan DEBE sumar mínimo 222g proteína (99%)
-- Si el usuario tiene 192g carbohidratos objetivo y ya consumió 0, tu plan DEBE sumar mínimo 190g carbohidratos (99%)
-- Si el usuario tiene 99g grasas objetivo y ya consumió 0, tu plan DEBE sumar mínimo 98g grasas (99%)
+⚠️ INSTRUCCIONES CRITICAS MATEMATICAS - PRECISION PERFECTA:
+- Si el usuario tiene 2555 kcal objetivo y ya consumió 0, tu plan DEBE sumar entre 2504-2607 kcal (98-102%)
+- Si el usuario tiene 224g proteína objetivo y ya consumió 0, tu plan DEBE sumar entre 220-228g proteína (98-102%)
+- Si el usuario tiene 192g carbohidratos objetivo y ya consumió 0, tu plan DEBE sumar entre 188-196g carbohidratos (98-102%)
+- Si el usuario tiene 99g grasas objetivo y ya consumió 0, tu plan DEBE sumar entre 97-101g grasas (98-102%)
 
-🔢 ALGORITMO DE AJUSTE OBLIGATORIO:
+🔢 ALGORITMO DE AJUSTE PERFECTO:
 1. Calcula deficit por macro: DeficitCalorias = Objetivo - YaConsumido
-2. Si PlanActual < 0.99 * DeficitCalorias → Aumentar porciones:
-   Factor = (0.99 * DeficitCalorias) / PlanActual
-   NuevasPorciones = PortionesActuales * Factor
-3. Aplica este cálculo para CADA macronutriente que esté bajo 99%
-4. Usa el factor MÁS ALTO entre todos los macros deficitarios
-5. RECALCULA y verifica que todos lleguen al 99%
+2. OBJETIVO: Que cada macro esté entre 98-102% del deficit
+3. Si cualquier macro está fuera del rango 98-102%:
+   - Ajusta porciones proporcionalmente
+   - Prioriza equilibrar TODOS los macros simultáneamente
+   - NO permitas que ningún macro pase del 110% o baje del 90%
+4. BALANCE PERFECTO: Todos los macros deben estar cerca del 100%
+5. DESCRIBE el plan balanceado al usuario y pide confirmación
 
 🎯 VERIFICACIÓN DE CONSISTENCIA DE DATOS - ABSOLUTAMENTE CRÍTICO:
 IMPORTANTE: Los valores nutricionales que muestres en tu respuesta DEBEN coincidir EXACTAMENTE con los que se guardan en la base de datos.
@@ -465,25 +475,37 @@ Si hay diferencia entre tu cálculo y la realidad, el usuario perderá confianza
 EJEMPLO CORREGIDO Y MEJORADO:
 Usuario objetivo: 2555 kcal, 224g proteína, 192g carbs, 99g grasas
 Ya consumió: 0 de todo
-Tu plan inicial calcula: 2351 kcal (92%), 172g proteína (77%), 240g carbs (125%), 81g grasas (82%)
+Tu plan actual calcula: 2391 kcal (94%), 182g proteína (81%), 232g carbs (121%), 79g grasas (80%)
 
-ANÁLISIS DETALLADO:
-- Calorías: 2351 < 2530 (99%) → NECESITA +179 kcal (factor: 1.076)
-- Proteína: 172 < 222 (99%) → NECESITA +50g proteína (factor: 1.29)
-- Grasas: 81 < 98 (99%) → NECESITA +17g grasas (factor: 1.21)
-- Carbos: 240 > 190 (99%) → OK (se puede pasar ligeramente)
+🚨 PROBLEMAS DETECTADOS:
+- Calorías: 2391 < 2504 (98%) → NECESITA +113 kcal 
+- Proteína: 182 < 220 (98%) → NECESITA +38g proteína
+- Grasas: 79 < 97 (98%) → NECESITA +18g grasas  
+- Carbos: 232 > 196 (102%) → NECESITA -36g carbohidratos
 
-FACTOR DE AJUSTE FINAL: Usar 1.29 (el más alto)
-RESULTADO OBJETIVO: Plan que sume ~3033 kcal, ~222+ proteína, ~98+ grasas
+ESTRATEGIA DE AJUSTE INTELIGENTE:
+1. REDUCIR alimentos altos en carbohidratos (arroz, avena, papa)
+2. AUMENTAR alimentos altos en proteína y grasas (carnes, huevos, aceites, frutos secos)
+3. BALANCEAR para lograr: ~2530 kcal, ~224g proteína, ~192g carbos, ~99g grasas
 
-🚨 VERIFICACIÓN FINAL OBLIGATORIA:
-Después del ajuste, RECALCULA todos los totales manualmente y verifica:
-- Suma de calorías = Σ(porción × kcal_por_porción) de cada alimento
-- Suma de proteína = Σ(porción × proteína_por_porción) de cada alimento  
-- Suma de carbos = Σ(porción × carbos_por_porción) de cada alimento
-- Suma de grasas = Σ(porción × grasas_por_porción) de cada alimento
+📝 EJEMPLO DE FLUJO DE CONFIRMACIÓN:
+"He diseñado un plan perfecto que cubre exactamente tus necesidades:
 
-NO MUESTRES el plan hasta que todas las sumas sean correctas y lleguen al 99%.
+🍽️ **Plan Propuesto:**
+**Desayuno:** Huevos revueltos (3 unidades), Pan integral (1 rebanada), Palta (1/2 unidad)
+**Almuerzo:** Pollo a la plancha (180g), Quinoa (80g), Ensalada mixta con aceite
+**Merienda:** Yogur griego (200g), Almendras (30g)  
+**Cena:** Salmón al horno (150g), Brócoli (200g), Batata asada (100g)
+
+📊 **Totales Calculados:**
+🔥 Calorías: 2530 kcal (99%)
+💪 Proteína: 224g (100%)  
+🍞 Carbohidratos: 192g (100%)
+🥑 Grasas: 99g (100%)
+
+¿Te parece bien este plan balanceado? ¿Quieres cambiar algo antes de crearlo?"
+
+🚨 SOLO DESPUÉS de que el usuario confirme, ejecuta create_meal_plan
 
 Caracteristicas importantes:
 - Responde en español
