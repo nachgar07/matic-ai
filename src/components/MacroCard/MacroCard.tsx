@@ -9,8 +9,7 @@ interface MacroCardProps {
 
 export const MacroCard = ({ icon, label, current, target, unit, color = "#6366f1" }: MacroCardProps) => {
   const percentage = (current / target) * 100;
-  const isCompleted = percentage >= 100;
-  const displayWidth = Math.min(100, percentage);
+  const displayWidth = percentage >= 100 ? 100 : percentage;
 
   return (
     <div className="flex-1 bg-card rounded-lg p-4">
@@ -25,21 +24,12 @@ export const MacroCard = ({ icon, label, current, target, unit, color = "#6366f1
         </div>
         <div className="w-full bg-muted rounded-full h-2">
           <div
-            className="h-2 rounded-full transition-all duration-300"
+            className="h-2 rounded-full"
             style={{ 
-              width: `100%`,
-              backgroundColor: isCompleted ? color : 'transparent'
+              width: `${displayWidth}%`,
+              backgroundColor: color
             }}
           />
-          {!isCompleted && (
-            <div
-              className="h-2 rounded-full transition-all duration-300 -mt-2"
-              style={{ 
-                width: `${displayWidth}%`,
-                backgroundColor: color
-              }}
-            />
-          )}
         </div>
       </div>
     </div>
