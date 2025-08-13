@@ -703,7 +703,7 @@ INFORMACION DEL USUARIO:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o4-mini-2025-04-16', // O4-mini para cálculos nutricionales precisos
+        model: 'gpt-4.1-2025-04-14', // Volviendo a GPT-4.1 por compatibilidad
         messages: messages,
         tools: tools,
         tool_choice: "auto",
