@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MealEntry } from "@/hooks/useFatSecret";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Check } from "lucide-react";
 import { Trash2 } from "lucide-react";
 import { MealPlate } from "@/components/MealPlate/MealPlate";
 
@@ -91,11 +91,13 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
       <Card className="p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Checkbox
-              checked={isAllSelected || (isSomeSelected && !isAllSelected)}
-              onCheckedChange={handleSelectAll}
-              className="!h-2.5 !w-2.5 shrink-0"
-            />
+            <button
+              onClick={() => handleSelectAll(!isAllSelected)}
+              className="h-4 w-4 shrink-0 border border-primary rounded-sm flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              {isAllSelected && <Check size={12} className="text-primary" />}
+              {isSomeSelected && !isAllSelected && <div className="h-1.5 w-1.5 bg-primary rounded-sm" />}
+            </button>
             <span className="text-sm font-medium">
               {isSomeSelected 
                 ? `${selectedPlates.size} plato${selectedPlates.size === 1 ? '' : 's'} seleccionado${selectedPlates.size === 1 ? '' : 's'}`

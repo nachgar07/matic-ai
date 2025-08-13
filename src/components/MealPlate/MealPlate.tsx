@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronDown, ChevronRight, Edit2, Check, X, Trash2 } from "lucide-react";
@@ -99,11 +99,12 @@ export const MealPlate = ({
       {/* Header Section - Perfectly aligned */}
       <div className="flex items-center gap-4 min-h-[60px]">
         {/* Checkbox */}
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={onSelectionChange}
-          className="!h-2.5 !w-2.5"
-        />
+        <button
+          onClick={() => onSelectionChange(!isSelected)}
+          className="h-4 w-4 shrink-0 border border-primary rounded-sm flex items-center justify-center hover:bg-muted transition-colors"
+        >
+          {isSelected && <Check size={12} className="text-primary" />}
+        </button>
         
         {/* Avatar */}
         <Dialog>
