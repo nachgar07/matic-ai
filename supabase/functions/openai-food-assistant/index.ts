@@ -626,7 +626,7 @@ INFORMACION DEL USUARIO:
 }
 
 async function executeCreateMeal(args: any, userContext: any) {
-  console.log('Executing create_meal with args:', args);
+  console.log('🍽️ CREATE_MEAL - Executing create_meal with args:', args);
   
   try {
     // Create Supabase client using service role key for database operations
@@ -636,19 +636,39 @@ async function executeCreateMeal(args: any, userContext: any) {
     );
 
     // Extract user ID from auth token using the same pattern as create-meal-from-chat
+    console.log('🔍 CREATE_MEAL - Attempting user authentication...');
+    console.log('🔑 CREATE_MEAL - Auth header present:', !!userContext.authHeader);
+    
     const userClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: userContext.authHeader } } }
+      { 
+        global: { 
+          headers: { 
+            Authorization: userContext.authHeader 
+          } 
+        } 
+      }
     );
 
+    console.log('📞 CREATE_MEAL - Making getUser() call...');
     const { data: { user }, error: userError } = await userClient.auth.getUser();
+    
+    console.log('🔍 CREATE_MEAL - getUser() result:', { 
+      hasUser: !!user, 
+      hasError: !!userError,
+      errorMessage: userError?.message 
+    });
+    
     if (userError || !user) {
-      console.error('User authentication failed:', userError);
+      console.error('🚨 CREATE_MEAL - User authentication failed:', userError);
+      console.error('🚨 CREATE_MEAL - Auth header was:', userContext.authHeader?.substring(0, 20) + '...');
       throw new Error('User not authenticated');
     }
 
-    console.log('User authenticated successfully:', user.id);
+    console.log('✅ CREATE_MEAL - User authenticated successfully:', user.id);
+    console.log('👤 CREATE_MEAL - User ID from auth:', user.id);
+    console.log('📋 CREATE_MEAL - User email:', user.email);
 
     // Create or find the food entry
     const { data: existingFood } = await supabase
@@ -794,20 +814,43 @@ async function executeCreatePlate(args: any, userContext: any) {
     );
 
     // Extract user ID from auth token
+    console.log('🔍 CREATE_PLATE - Attempting user authentication...');
+    console.log('🔑 CREATE_PLATE - Auth header present:', !!userContext.authHeader);
+    
     const userClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: userContext.authHeader } } }
+      { 
+        global: { 
+          headers: { 
+            Authorization: userContext.authHeader 
+          } 
+        } 
+      }
     );
 
+    console.log('📞 CREATE_PLATE - Making getUser() call...');
     const { data: { user }, error: userError } = await userClient.auth.getUser();
+    
+    console.log('🔍 CREATE_PLATE - getUser() result:', { 
+      hasUser: !!user, 
+      hasError: !!userError,
+      errorMessage: userError?.message 
+    });
+    
     if (userError || !user) {
       console.error('🚨 CREATE_PLATE - User authentication failed:', userError);
+      console.error('🚨 CREATE_PLATE - Auth header was:', userContext.authHeader?.substring(0, 20) + '...');
       throw new Error('User not authenticated');
     }
 
     console.log('✅ CREATE_PLATE - User authenticated successfully:', user.id);
     console.log('🍽️ CREATE_PLATE - Creating plate with', args.foods.length, 'foods');
+    console.log('🔑 CREATE_PLATE - Auth header check:', userContext.authHeader ? 'present' : 'missing');
+
+    // Debug: Log the user ID for verification
+    console.log('👤 CREATE_PLATE - User ID from auth:', user.id);
+    console.log('📋 CREATE_PLATE - User email:', user.email);
 
     // Process each food in the plate
     const mealEntries = [];
@@ -821,6 +864,14 @@ async function executeCreatePlate(args: any, userContext: any) {
     for (let i = 0; i < args.foods.length; i++) {
       const food = args.foods[i];
       console.log(`🥘 CREATE_PLATE - Processing food ${i + 1}/${args.foods.length}: ${food.food_name}`);
+      console.log(`🍽️ CREATE_PLATE - Food details:`, {
+        name: food.food_name,
+        servings: food.servings,
+        calories: food.calories_per_serving,
+        protein: food.protein_per_serving,
+        carbs: food.carbs_per_serving,
+        fat: food.fat_per_serving
+      });
 
       // Create or find the food entry
       const { data: existingFood } = await supabase
