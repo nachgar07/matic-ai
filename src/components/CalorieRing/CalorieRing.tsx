@@ -40,10 +40,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const centerX = size / 2;
   const centerY = size / 2;
   
-  // Calculate progress percentages
-  const proteinProgress = Math.min(100, (proteinCals / proteinTarget) * 100);
-  const carbsProgress = Math.min(100, (carbsCals / carbsTarget) * 100);
-  const fatProgress = Math.min(100, (fatCals / fatTarget) * 100);
+  // Calculate progress percentages (allow over 100% for full circle display)
+  const proteinProgress = (proteinCals / proteinTarget) * 100;
+  const carbsProgress = (carbsCals / carbsTarget) * 100;
+  const fatProgress = (fatCals / fatTarget) * 100;
   
   // Each segment is 110 degrees with 10 degree gaps
   const segmentAngle = 110;
@@ -54,10 +54,10 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const carbsStartAngle = proteinStartAngle + segmentAngle + gapAngle;
   const fatStartAngle = carbsStartAngle + segmentAngle + gapAngle;
   
-  // Calculate end angles based on progress
-  const proteinEndAngle = proteinStartAngle + (proteinProgress / 100) * segmentAngle;
-  const carbsEndAngle = carbsStartAngle + (carbsProgress / 100) * segmentAngle;
-  const fatEndAngle = fatStartAngle + (fatProgress / 100) * segmentAngle;
+  // Calculate end angles based on progress (cap at 100% for visual display)
+  const proteinEndAngle = proteinStartAngle + (Math.min(100, proteinProgress) / 100) * segmentAngle;
+  const carbsEndAngle = carbsStartAngle + (Math.min(100, carbsProgress) / 100) * segmentAngle;
+  const fatEndAngle = fatStartAngle + (Math.min(100, fatProgress) / 100) * segmentAngle;
   
   // Helper function to create arc path
   const createArcPath = (startAngle: number, endAngle: number, radius: number) => {
