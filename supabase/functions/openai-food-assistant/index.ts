@@ -212,7 +212,7 @@ Instrucciones importantes:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14', // Modelo estable y confiable
+        model: 'gpt-4.1-2025-04-14', // GPT-4.1 para análisis de imágenes
         messages: [
           {
             role: 'user',
@@ -415,7 +415,7 @@ Instrucciones importantes:
 }
 
 async function handleConversation(text: string, conversationHistory: any[], apiKey: string, userContext: any) {
-  console.log('🗨️ HANDLE CONVERSATION START');
+  console.log('🗨️ HANDLE CONVERSATION START - Using O4-mini for precise calculations');
   console.log('🗨️ TEXT LENGTH:', text?.length);
   console.log('🗨️ HISTORY LENGTH:', conversationHistory?.length);
   console.log('🗨️ USER CONTEXT:', userContext ? 'present' : 'missing');
@@ -703,7 +703,7 @@ INFORMACION DEL USUARIO:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14', // Modelo estable y confiable
+        model: 'o4-mini-2025-04-16', // O4-mini para cálculos nutricionales precisos
         messages: messages,
         tools: tools,
         tool_choice: "auto",
