@@ -470,7 +470,7 @@ INFORMACION DEL USUARIO:
     { role: 'user', content: text }
   ];
 
-  const functions = [
+  const tools = [
     {
       name: "create_meal",
       description: "Registra una comida específica en la base de datos del usuario",
