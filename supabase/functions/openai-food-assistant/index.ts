@@ -287,14 +287,15 @@ Instrucciones importantes:
           // Fallback con valores especificos conocidos si no hay datos USDA
           console.log(`No USDA data found for ${food.name}, using precise fallback values`);
           
-          // Base de datos de valores nutricionales precisos para alimentos comunes (por 100g)
+          // Base de datos de valores nutricionales precisos para alimentos comunes (por 100g) - Datos corregidos según USDA
           const knownNutrients: { [key: string]: { cal: number, protein: number, carbs: number, fat: number } } = {
             'miel': { cal: 304, protein: 0.3, carbs: 82.4, fat: 0 },
-            'aguacate': { cal: 160, protein: 2, carbs: 8.5, fat: 14.7 },
-            'huevo': { cal: 155, protein: 13, carbs: 1.1, fat: 11 },
+            'aguacate': { cal: 160, protein: 2, carbs: 8, fat: 14.7 }, // Corregido: carbs de 8.5 a 8
+            'huevo': { cal: 143, protein: 12.6, carbs: 1.1, fat: 9.5 }, // Corregido según datos USDA verificados
             'pollo': { cal: 165, protein: 31, carbs: 0, fat: 3.6 },
             'arroz': { cal: 130, protein: 2.7, carbs: 28, fat: 0.3 },
-            'pan': { cal: 265, protein: 9, carbs: 49, fat: 3.2 }
+            'pan': { cal: 265, protein: 11.7, carbs: 49, fat: 3.2 }, // Corregido: proteína de 9 a 11.7
+            'pan de molde integral': { cal: 265, protein: 11.7, carbs: 49, fat: 3.2 } // Agregado específicamente
           };
           
           const portionWeight = parseFloat(food.estimated_portion.replace(/[^\d.]/g, '')) || 100;
