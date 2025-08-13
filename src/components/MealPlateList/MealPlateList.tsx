@@ -94,7 +94,7 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
             <Checkbox
               checked={isAllSelected || (isSomeSelected && !isAllSelected)}
               onCheckedChange={handleSelectAll}
-              className="h-4 w-4 shrink-0"
+              className="h-3.5 w-3.5 shrink-0"
             />
             <span className="text-sm font-medium">
               {isSomeSelected 
