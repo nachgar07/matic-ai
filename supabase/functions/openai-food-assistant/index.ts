@@ -1432,7 +1432,7 @@ async function executeCreateMealPlan(args: any, userContext: any) {
         plateMealEntries.push(mealEntry);
         allMealEntries.push(mealEntry);
         
-        // Add to plate totals
+        // Add to plate totals - VALORES EXACTOS GUARDADOS EN BD
         const foodTotals = {
           calories: food.calories_per_serving * food.servings,
           protein: food.protein_per_serving * food.servings,
@@ -1445,7 +1445,20 @@ async function executeCreateMealPlan(args: any, userContext: any) {
         plateTotals.carbs += foodTotals.carbs;
         plateTotals.fat += foodTotals.fat;
 
-        console.log(`✅ CREATE_MEAL_PLAN - Meal entry created for ${food.food_name} in plate "${plate.plate_name}":`, foodTotals);
+        // LOG DETALLADO: Valores que se muestran vs valores guardados
+        console.log(`✅ CREATE_MEAL_PLAN - FOOD ${food.food_name}:`);
+        console.log(`   • Servings: ${food.servings}`);
+        console.log(`   • Per serving: ${food.calories_per_serving} kcal, ${food.protein_per_serving}g proteína, ${food.carbs_per_serving}g carbos, ${food.fat_per_serving}g grasas`);
+        console.log(`   • CALCULATED TOTALS: ${foodTotals.calories} kcal, ${foodTotals.protein}g proteína, ${foodTotals.carbs}g carbos, ${foodTotals.fat}g grasas`);
+        
+        // Verificar que los datos en BD coincidan
+        const { data: savedFood } = await supabase.from('foods').select('*').eq('id', foodId).single();
+        if (savedFood) {
+          console.log(`   • BD VALUES: ${savedFood.calories_per_serving} kcal/porción, ${savedFood.protein_per_serving}g, ${savedFood.carbs_per_serving}g, ${savedFood.fat_per_serving}g`);
+          if (savedFood.calories_per_serving !== food.calories_per_serving) {
+            console.error(`   ❌ MISMATCH! Chat shows ${food.calories_per_serving} but BD has ${savedFood.calories_per_serving}`);
+          }
+        }
       }
 
       // Add plate totals to plan totals
