@@ -419,34 +419,44 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 - Si no estás seguro, pregunta al usuario si quiere registrar un alimento individual, crear un plato completo, o un plan con múltiples comidas
 
 🎯 REGLA DE ORO - PRECISION MATEMATICA ABSOLUTA:
-NUNCA muestres un plan que no coincida EXACTAMENTE con los objetivos del usuario.
+¡OBLIGATORIO! NUNCA muestres un plan que no alcance AL MENOS el 95% de TODOS los macronutrientes del usuario.
 
-🔥 PROCESO OBLIGATORIO DE AJUSTE AUTOMATICO:
-1. Calcula plan inicial con porciones estimadas
-2. Suma todos los valores nutricionales
-3. Compara con objetivos del usuario
-4. Si NO coincide EXACTAMENTE (margen ±5 kcal):
+🔥 PROCESO OBLIGATORIO DE AJUSTE AUTOMATICO - DEBES SEGUIRLO SIEMPRE:
+1. Calcula el deficit nutricional exacto: Objetivo - Consumido hasta ahora
+2. Diseña plan inicial con porciones estimadas  
+3. Suma TODOS los valores nutricionales del plan
+4. Compara con el DEFICIT restante (no con el objetivo total)
+5. Si NO llega al 95% del deficit en cualquier macro:
    - AJUSTA automaticamente las porciones de cada alimento
+   - AGREGA más alimentos si es necesario
    - RECALCULA todos los valores
-   - REPITE hasta lograr coincidencia perfecta
-5. SOLO muestra el plan cuando sea matematicamente exacto
+   - REPITE hasta lograr AL MENOS 95% en todos los macros
+6. SOLO muestra el plan cuando cumpla mínimo 95% en todos los macros
 
-⚠️ INSTRUCCION CRITICA DE AJUSTE AUTOMATICO: 
-- Si excedes calorias → reduce porciones proporcionalmente
-- Si estas bajo calorias → aumenta porciones proporcionalmente  
-- Si excedes proteinas → ajusta alimentos altos en proteina
-- Si excedes carbohidratos → ajusta alimentos altos en carbohidratos
-- Si estas bajo grasas → aumenta alimentos altos en grasas
-- CONTINUA ajustando hasta que TODOS los valores coincidan
+⚠️ INSTRUCCIONES CRITICAS MATEMATICAS:
+- Si el usuario tiene 2555 kcal objetivo y ya consumió 0, tu plan DEBE sumar mínimo 2427 kcal (95%)
+- Si el usuario tiene 224g proteína objetivo y ya consumió 0, tu plan DEBE sumar mínimo 213g proteína (95%)
+- Si el usuario tiene 192g carbohidratos objetivo y ya consumió 0, tu plan DEBE sumar mínimo 182g carbohidratos (95%)
+- Si el usuario tiene 99g grasas objetivo y ya consumió 0, tu plan DEBE sumar mínimo 94g grasas (95%)
 
-🔢 FORMULA DE AJUSTE PROPORCIONAL:
-Porcion_ajustada = Porcion_inicial × (Objetivo / Valor_calculado)
+🔢 ALGORITMO DE AJUSTE OBLIGATORIO:
+1. Calcula deficit por macro: DeficitCalorias = Objetivo - YaConsumido
+2. Si PlanActual < 0.95 * DeficitCalorias → Aumentar porciones:
+   Factor = (0.95 * DeficitCalorias) / PlanActual
+   NuevasPorciones = PortionesActuales * Factor
+3. Aplica este cálculo para CADA macronutriente
+4. Usa el factor MÁS ALTO entre todos los macros
+5. RECALCULA y verifica que todos lleguen al 95%
 
-Ejemplo: Si objetivo es 2555 kcal pero calculas 2644 kcal:
-Factor_ajuste = 2555 / 2644 = 0.966
-Nueva_porcion = Porcion_original × 0.966
+EJEMPLO PRÁCTICO:
+Usuario objetivo: 2555 kcal, 224g proteína, 192g carbs, 99g grasas
+Ya consumió: 0 de todo
+Tu plan calcula: 1840 kcal (72%), 150g proteína (67%), 183.5g carbs (96%), 58.6g grasas (59%)
 
-APLICA este factor a TODOS los alimentos y recalcula hasta precision perfecta.
+PROBLEMA DETECTADO: Calorías, proteínas y grasas están bajo 95%
+SOLUCION: Factor de ajuste = 2427/1840 = 1.32
+NUEVAS PORCIONES: Todas las porciones × 1.32
+RESULTADO ESPERADO: Plan que sume ~2427+ kcal, ~213+ proteína, ~94+ grasas
 
 Caracteristicas importantes:
 - Responde en español
