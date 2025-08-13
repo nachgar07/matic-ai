@@ -35,6 +35,19 @@ serve(async (req) => {
   try {
     const { action, image, text, conversationHistory, userContext } = await req.json();
 
+    // Get auth header for user authentication
+    const authHeader = req.headers.get('Authorization');
+    console.log('🔑 AUTH DEBUG - Header capture:', {
+      hasAuthHeader: !!authHeader,
+      headerValue: authHeader ? authHeader.substring(0, 20) + '...' : 'NO HEADER',
+      allHeaders: Object.fromEntries(req.headers.entries())
+    });
+    
+    if (!authHeader) {
+      console.error('🚨 AUTH DEBUG - No Authorization header found in request');
+      throw new Error('Authorization header is required');
+    }
+
     // Get OpenAI API key
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
@@ -47,12 +60,6 @@ serve(async (req) => {
       keyLength: openAIApiKey?.length,
       keyPreview: openAIApiKey?.substring(0, 8) + '...'
     });
-
-    // Get auth header for user authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Authorization header is required');
-    }
 
     if (action === 'analyze-food') {
       console.log('Analyzing food image...');
