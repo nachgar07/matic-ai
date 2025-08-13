@@ -186,7 +186,7 @@ Instrucciones importantes:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3-2025-04-16', // Modelo de reasoning para cálculos matemáticos precisos
+        model: 'gpt-4.1-2025-04-14', // Modelo estable y confiable
         messages: [
           {
             role: 'user',
@@ -205,7 +205,7 @@ Instrucciones importantes:
             ]
           }
         ],
-        max_tokens: 1000,
+        max_completion_tokens: 1000, // Parámetro correcto para GPT-4.1
         temperature: 0.1,
       })
     });
@@ -430,22 +430,20 @@ DEBES hacer TODOS los cálculos PASO A PASO manualmente:
 4. VERIFICA cada suma antes de continuar
 5. NO confíes en estimaciones - calcula cada número exactamente
 
-EJEMPLO DE CALCULO CORRECTO:
-Pollo (2 porciones × 165 kcal) = 330 kcal
-Arroz (1.5 porciones × 110 kcal) = 165 kcal  
-Ensalada (1 porción × 50 kcal) = 50 kcal
-TOTAL PLATO = 330 + 165 + 50 = 545 kcal ✅
-
 🤝 FLUJO OBLIGATORIO DE CONFIRMACIÓN DEL USUARIO:
 NUNCA ejecutes create_meal_plan directamente. SIEMPRE sigue este proceso:
 1. Calcula el plan perfecto con precisión 98-102%
 2. DESCRIBE detalladamente cada plato y sus alimentos al usuario
-3. MUESTRA los totales nutricionales calculados
+3. MUESTRA los totales nutricionales calculados paso a paso
 4. PREGUNTA: "¿Te parece bien este plan? ¿Quieres cambiar algo antes de crearlo?"
 5. ESPERA la confirmación del usuario
 6. SOLO después de su confirmación ejecuta create_meal_plan
 
 🔥 PROCESO OBLIGATORIO DE AJUSTE AUTOMATICO - DEBES SEGUIRLO SIEMPRE:
+1. Calcula el deficit nutricional exacto: Objetivo - Consumido hasta ahora
+2. Diseña plan inicial con porciones estimadas  
+3. CALCULA MANUALMENTE todos los valores nutricionales del plan
+4. Compara con el DEFICIT restante (no con el objetivo total)
 1. Calcula el deficit nutricional exacto: Objetivo - Consumido hasta ahora
 2. Diseña plan inicial con porciones estimadas  
 3. Suma TODOS los valores nutricionales del plan
@@ -764,12 +762,12 @@ INFORMACION DEL USUARIO:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3-2025-04-16', // Modelo de reasoning para cálculos matemáticos precisos
+        model: 'gpt-4.1-2025-04-14', // Modelo estable y confiable
         messages: messages,
         tools: tools,
         tool_choice: "auto",
-        temperature: 0.7,
-        max_tokens: 1000,
+        temperature: 0.1, // Baja temperatura para precisión matemática
+        max_completion_tokens: 1000, // Parámetro correcto para GPT-4.1
       }),
     });
 
