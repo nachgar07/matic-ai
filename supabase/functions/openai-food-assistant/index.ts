@@ -375,11 +375,13 @@ async function handleConversation(text: string, conversationHistory: any[], apiK
 🍽️ FUNCIONES DISPONIBLES:
 - create_meal: Para registrar una comida INDIVIDUAL (ej: "registra una manzana", "agrega 100g de pollo")
 - create_plate: Para crear un PLATO COMPLETO con múltiples ingredientes (ej: "crea un desayuno con huevos, pan y aguacate", "hacer una ensalada con pollo, lechuga y tomate")
+- create_meal_plan: Para crear MÚLTIPLES PLATOS DE UNA VEZ cuando el usuario pida un plan completo (ej: "crea un plan para el resto del día", "arma almuerzo, merienda y cena")
 
 🎯 CUANDO USAR CADA FUNCIÓN:
 - Usa create_meal cuando el usuario quiera registrar UN SOLO alimento
 - Usa create_plate cuando el usuario quiera crear una comida con VARIOS ingredientes o mencione "plato", "comida completa", "receta", etc.
-- Si no estás seguro, pregunta al usuario si quiere registrar un alimento individual o crear un plato completo
+- Usa create_meal_plan cuando el usuario pida MÚLTIPLES COMIDAS o un "plan alimenticio", "plan completo", "resto del día", etc.
+- Si no estás seguro, pregunta al usuario si quiere registrar un alimento individual, crear un plato completo, o un plan con múltiples comidas
 
 🎯 REGLA DE ORO - PRECISION MATEMATICA ABSOLUTA:
 NUNCA muestres un plan que no coincida EXACTAMENTE con los objetivos del usuario.
@@ -560,6 +562,73 @@ INFORMACION DEL USUARIO:
         },
         required: ["meal_type", "plate_name", "foods"]
       }
+    },
+    {
+      name: "create_meal_plan",
+      description: "Crea múltiples platos de una vez para un plan alimenticio completo (ej: almuerzo + merienda + cena). Usar cuando el usuario pida un plan completo o múltiples comidas.",
+      parameters: {
+        type: "object",
+        properties: {
+          plan_name: {
+            type: "string",
+            description: "Nombre del plan (ej: 'Plan para completar el día', 'Plan alimenticio de hoy')"
+          },
+          plates: {
+            type: "array",
+            description: "Lista de platos que componen el plan completo",
+            items: {
+              type: "object",
+              properties: {
+                meal_type: {
+                  type: "string",
+                  enum: ["breakfast", "lunch", "dinner", "snack"],
+                  description: "Tipo de comida (breakfast, lunch, dinner, snack)"
+                },
+                plate_name: {
+                  type: "string",
+                  description: "Nombre descriptivo del plato"
+                },
+                foods: {
+                  type: "array",
+                  description: "Lista de alimentos que componen este plato",
+                  items: {
+                    type: "object",
+                    properties: {
+                      food_name: {
+                        type: "string",
+                        description: "Nombre del alimento"
+                      },
+                      servings: {
+                        type: "number",
+                        description: "Cantidad de porciones de este alimento"
+                      },
+                      calories_per_serving: {
+                        type: "number",
+                        description: "Calorías por porción"
+                      },
+                      protein_per_serving: {
+                        type: "number",
+                        description: "Proteína en gramos por porción"
+                      },
+                      carbs_per_serving: {
+                        type: "number",
+                        description: "Carbohidratos en gramos por porción"
+                      },
+                      fat_per_serving: {
+                        type: "number",
+                        description: "Grasas en gramos por porción"
+                      }
+                    },
+                    required: ["food_name", "servings", "calories_per_serving", "protein_per_serving", "carbs_per_serving", "fat_per_serving"]
+                  }
+                }
+              },
+              required: ["meal_type", "plate_name", "foods"]
+            }
+          }
+        },
+        required: ["plan_name", "plates"]
+      }
     }
   ];
 
@@ -634,6 +703,24 @@ INFORMACION DEL USUARIO:
           console.error('🚨 CREATE_PLATE - Error executing create_plate function:', error);
           return {
             reply: `Lo siento, hubo un error al intentar crear el plato: ${error.message}. Por favor, intenta nuevamente.`,
+            functionCalled: false
+          };
+        }
+      } else if (functionCall.name === 'create_meal_plan') {
+        const functionArgs = JSON.parse(functionCall.arguments);
+        console.log('🍽️ CREATE_MEAL_PLAN - Function arguments:', JSON.stringify(functionArgs, null, 2));
+        
+        try {
+          const planResult = await executeCreateMealPlan(functionArgs, userContext);
+          return {
+            reply: planResult.message,
+            functionCalled: true,
+            updatedProgress: planResult.updatedProgress
+          };
+        } catch (error) {
+          console.error('🚨 CREATE_MEAL_PLAN - Error executing create_meal_plan function:', error);
+          return {
+            reply: `Lo siento, hubo un error al intentar crear el plan alimenticio: ${error.message}. Por favor, intenta nuevamente.`,
             functionCalled: false
           };
         }
@@ -1065,6 +1152,542 @@ async function executeCreatePlate(args: any, userContext: any) {
 
   } catch (error) {
     console.error('🚨 CREATE_PLATE - Error in executeCreatePlate:', error);
+    throw error;
+  }
+}
+
+async function executeCreateMealPlan(args: any, userContext: any) {
+  console.log('🍽️ CREATE_MEAL_PLAN - Executing create_meal_plan with args:', JSON.stringify(args, null, 2));
+  
+  try {
+    // Create Supabase client using service role key for database operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Extract user ID from auth token
+    console.log('🔍 CREATE_MEAL_PLAN - Attempting user authentication...');
+    
+    if (!userContext.authHeader) {
+      console.error('🚨 CREATE_MEAL_PLAN - No auth header provided in userContext');
+      throw new Error('No authorization header provided');
+    }
+    
+    // Use the service role client to verify the JWT token directly
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    console.log('📞 CREATE_MEAL_PLAN - Verifying JWT token...');
+    
+    // Extract the JWT token from the Authorization header
+    const token = userContext.authHeader.replace('Bearer ', '');
+    
+    // Verify the JWT token using the service role client
+    const { data: { user }, error: userError } = await serviceClient.auth.getUser(token);
+    
+    console.log('🔍 CREATE_MEAL_PLAN - Token verification result:', { 
+      hasUser: !!user, 
+      hasError: !!userError,
+      errorMessage: userError?.message,
+      userId: user?.id
+    });
+    
+    if (userError || !user) {
+      console.error('🚨 CREATE_MEAL_PLAN - JWT token verification failed:', userError);
+      throw new Error('User not authenticated - invalid or expired token');
+    }
+
+    console.log('✅ CREATE_MEAL_PLAN - User authenticated successfully:', user.id);
+    console.log('🍽️ CREATE_MEAL_PLAN - Creating meal plan with', args.plates.length, 'plates');
+
+    // Process each plate in the meal plan
+    const allMealEntries = [];
+    const planTotals = {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0
+    };
+    const plateResults = [];
+
+    for (let plateIndex = 0; plateIndex < args.plates.length; plateIndex++) {
+      const plate = args.plates[plateIndex];
+      console.log(`🥘 CREATE_MEAL_PLAN - Processing plate ${plateIndex + 1}/${args.plates.length}: ${plate.plate_name}`);
+      
+      const plateMealEntries = [];
+      const plateTotals = {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0
+      };
+
+      // Process each food in this plate
+      for (let i = 0; i < plate.foods.length; i++) {
+        const food = plate.foods[i];
+        console.log(`🍽️ CREATE_MEAL_PLAN - Processing food ${i + 1}/${plate.foods.length} in plate "${plate.plate_name}": ${food.food_name}`);
+
+        // Create or find the food entry
+        const { data: existingFood } = await supabase
+          .from('foods')
+          .select('*')
+          .eq('food_name', food.food_name)
+          .limit(1);
+
+        let foodId;
+        if (existingFood && existingFood.length > 0) {
+          foodId = existingFood[0].id;
+          console.log(`🔍 CREATE_MEAL_PLAN - Found existing food: ${food.food_name}`);
+        } else {
+          // Create new food entry
+          const { data: newFood, error: insertError } = await supabase
+            .from('foods')
+            .insert({
+              food_id: `openai_plan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              food_name: food.food_name,
+              calories_per_serving: food.calories_per_serving,
+              protein_per_serving: food.protein_per_serving,
+              carbs_per_serving: food.carbs_per_serving,
+              fat_per_serving: food.fat_per_serving,
+              serving_description: 'Porción estándar'
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('🚨 CREATE_MEAL_PLAN - Error inserting food:', insertError);
+            throw new Error(`Error creating food entry for ${food.food_name}: ${insertError.message}`);
+          }
+
+          foodId = newFood.id;
+          console.log(`➕ CREATE_MEAL_PLAN - Created new food: ${food.food_name}`);
+        }
+
+        // Create meal entry for this food
+        const { data: mealEntry, error: mealError } = await supabase
+          .from('meal_entries')
+          .insert({
+            user_id: user.id,
+            food_id: foodId,
+            servings: food.servings || 1,
+            meal_type: plate.meal_type,
+            consumed_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (mealError) {
+          console.error('🚨 CREATE_MEAL_PLAN - Error creating meal entry:', mealError);
+          throw new Error(`Error creating meal entry for ${food.food_name}: ${mealError.message}`);
+        }
+
+        plateMealEntries.push(mealEntry);
+        allMealEntries.push(mealEntry);
+        
+        // Add to plate totals
+        const foodTotals = {
+          calories: food.calories_per_serving * food.servings,
+          protein: food.protein_per_serving * food.servings,
+          carbs: food.carbs_per_serving * food.servings,
+          fat: food.fat_per_serving * food.servings
+        };
+        
+        plateTotals.calories += foodTotals.calories;
+        plateTotals.protein += foodTotals.protein;
+        plateTotals.carbs += foodTotals.carbs;
+        plateTotals.fat += foodTotals.fat;
+
+        console.log(`✅ CREATE_MEAL_PLAN - Meal entry created for ${food.food_name} in plate "${plate.plate_name}":`, foodTotals);
+      }
+
+      // Add plate totals to plan totals
+      planTotals.calories += plateTotals.calories;
+      planTotals.protein += plateTotals.protein;
+      planTotals.carbs += plateTotals.carbs;
+      planTotals.fat += plateTotals.fat;
+
+      plateResults.push({
+        plate_name: plate.plate_name,
+        meal_type: plate.meal_type,
+        foods: plate.foods,
+        totals: plateTotals,
+        mealEntries: plateMealEntries
+      });
+
+      console.log(`🎉 CREATE_MEAL_PLAN - Plate "${plate.plate_name}" created successfully with ${plateMealEntries.length} foods`);
+      console.log('📊 CREATE_MEAL_PLAN - Plate totals:', plateTotals);
+    }
+
+    console.log('🌟 CREATE_MEAL_PLAN - All plates created successfully. Total plates:', plateResults.length);
+    console.log('📊 CREATE_MEAL_PLAN - Plan totals:', planTotals);
+
+    // Format a comprehensive response for the user
+    let message = `🎉 ¡Excelente! He creado tu plan alimenticio "${args.plan_name}" completo:
+
+📋 **${args.plan_name}**
+`;
+
+    plateResults.forEach((plateResult) => {
+      const mealTypeNames: { [key: string]: string } = {
+        'breakfast': 'Desayuno',
+        'lunch': 'Almuerzo',
+        'dinner': 'Cena',
+        'snack': 'Merienda'
+      };
+
+      message += `\n\n🍽️ **${mealTypeNames[plateResult.meal_type] || plateResult.meal_type}: ${plateResult.plate_name}**`;
+      
+      plateResult.foods.forEach((food: any) => {
+        const totalCals = Math.round(food.calories_per_serving * food.servings);
+        const totalProtein = Math.round(food.protein_per_serving * food.servings * 10) / 10;
+        const totalCarbs = Math.round(food.carbs_per_serving * food.servings * 10) / 10;
+        const totalFat = Math.round(food.fat_per_serving * food.servings * 10) / 10;
+        
+        message += `\n• ${food.food_name} (${food.servings} porción${food.servings === 1 ? '' : 'es'})`;
+        message += `\n  ${totalCals} kcal | ${totalProtein}g proteína | ${totalCarbs}g carbohidratos | ${totalFat}g grasas`;
+      });
+
+      message += `\n📊 **Subtotal:**`;
+      message += ` ${Math.round(plateResult.totals.calories)} kcal, ${Math.round(plateResult.totals.protein * 10) / 10}g proteína, ${Math.round(plateResult.totals.carbs * 10) / 10}g carbohidratos, ${Math.round(plateResult.totals.fat * 10) / 10}g grasas`;
+    });
+
+    message += `\n\n📊 **TOTALES DEL PLAN COMPLETO:**`;
+    message += `\n🔥 Calorías: ${Math.round(planTotals.calories)} kcal`;
+    message += `\n💪 Proteína: ${Math.round(planTotals.protein * 10) / 10}g`;
+    message += `\n🍞 Carbohidratos: ${Math.round(planTotals.carbs * 10) / 10}g`;
+    message += `\n🥑 Grasas: ${Math.round(planTotals.fat * 10) / 10}g`;
+
+    // Calculate updated progress if possible
+    let updatedProgress = null;
+    if (userContext?.goals && userContext?.today) {
+      const newConsumed = {
+        calories: (userContext.today.consumed.calories || 0) + planTotals.calories,
+        protein: (userContext.today.consumed.protein || 0) + planTotals.protein,
+        carbs: (userContext.today.consumed.carbs || 0) + planTotals.carbs,
+        fat: (userContext.today.consumed.fat || 0) + planTotals.fat
+      };
+
+      const goals = userContext.goals;
+      updatedProgress = {
+        calories: {
+          consumed: Math.round(newConsumed.calories * 10) / 10,
+          goal: goals.daily_calories,
+          remaining: Math.max(0, goals.daily_calories - Math.round(newConsumed.calories * 10) / 10),
+          percentage: Math.round((newConsumed.calories / goals.daily_calories) * 100)
+        },
+        protein: {
+          consumed: Math.round(newConsumed.protein * 10) / 10,
+          goal: goals.daily_protein,
+          remaining: Math.max(0, goals.daily_protein - Math.round(newConsumed.protein * 10) / 10),
+          percentage: Math.round((newConsumed.protein / goals.daily_protein) * 100)
+        },
+        carbs: {
+          consumed: Math.round(newConsumed.carbs * 10) / 10,
+          goal: goals.daily_carbs,
+          remaining: Math.max(0, goals.daily_carbs - Math.round(newConsumed.carbs * 10) / 10),
+          percentage: Math.round((newConsumed.carbs / goals.daily_carbs) * 100)
+        },
+        fat: {
+          consumed: Math.round(newConsumed.fat * 10) / 10,
+          goal: goals.daily_fat,
+          remaining: Math.max(0, goals.daily_fat - Math.round(newConsumed.fat * 10) / 10),
+          percentage: Math.round((newConsumed.fat / goals.daily_fat) * 100)
+        }
+      };
+
+      message += `\n\n📈 **Tu progreso actualizado:**`;
+      message += `\n🔥 Calorías: ${updatedProgress.calories.consumed}/${goals.daily_calories} (${updatedProgress.calories.percentage}%)`;
+      message += `\n💪 Proteína: ${updatedProgress.protein.consumed}g/${goals.daily_protein}g (${updatedProgress.protein.percentage}%)`;
+      message += `\n🍞 Carbohidratos: ${updatedProgress.carbs.consumed}g/${goals.daily_carbs}g (${updatedProgress.carbs.percentage}%)`;
+      message += `\n🥑 Grasas: ${updatedProgress.fat.consumed}g/${goals.daily_fat}g (${updatedProgress.fat.percentage}%)`;
+
+      console.log('📈 CREATE_MEAL_PLAN - Updated progress calculated:', updatedProgress);
+    }
+
+    console.log('✨ CREATE_MEAL_PLAN - Success! Meal plan created with', plateResults.length, 'plates and', allMealEntries.length, 'total meal entries');
+
+    return {
+      message,
+      plateResults,
+      allMealEntries,
+      updatedProgress,
+      planTotals
+    };
+
+  } catch (error) {
+    console.error('🚨 CREATE_MEAL_PLAN - Error in executeCreateMealPlan:', error);
+    throw error;
+  }
+}
+
+async function executeCreateMealPlan(args: any, userContext: any) {
+  console.log('🍽️ CREATE_MEAL_PLAN - Executing create_meal_plan with args:', JSON.stringify(args, null, 2));
+  
+  try {
+    // Create Supabase client using service role key for database operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Extract user ID from auth token
+    console.log('🔍 CREATE_MEAL_PLAN - Attempting user authentication...');
+    
+    if (!userContext.authHeader) {
+      console.error('🚨 CREATE_MEAL_PLAN - No auth header provided in userContext');
+      throw new Error('No authorization header provided');
+    }
+    
+    // Use the service role client to verify the JWT token directly
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    console.log('📞 CREATE_MEAL_PLAN - Verifying JWT token...');
+    
+    // Extract the JWT token from the Authorization header
+    const token = userContext.authHeader.replace('Bearer ', '');
+    
+    // Verify the JWT token using the service role client
+    const { data: { user }, error: userError } = await serviceClient.auth.getUser(token);
+    
+    console.log('🔍 CREATE_MEAL_PLAN - Token verification result:', { 
+      hasUser: !!user, 
+      hasError: !!userError,
+      errorMessage: userError?.message,
+      userId: user?.id
+    });
+    
+    if (userError || !user) {
+      console.error('🚨 CREATE_MEAL_PLAN - JWT token verification failed:', userError);
+      throw new Error('User not authenticated - invalid or expired token');
+    }
+
+    console.log('✅ CREATE_MEAL_PLAN - User authenticated successfully:', user.id);
+    console.log('🍽️ CREATE_MEAL_PLAN - Creating meal plan with', args.plates.length, 'plates');
+
+    // Process each plate in the meal plan
+    const allMealEntries = [];
+    const planTotals = {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0
+    };
+    const plateResults = [];
+
+    for (let plateIndex = 0; plateIndex < args.plates.length; plateIndex++) {
+      const plate = args.plates[plateIndex];
+      console.log(`🥘 CREATE_MEAL_PLAN - Processing plate ${plateIndex + 1}/${args.plates.length}: ${plate.plate_name}`);
+      
+      const plateMealEntries = [];
+      const plateTotals = {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0
+      };
+
+      // Process each food in this plate
+      for (let i = 0; i < plate.foods.length; i++) {
+        const food = plate.foods[i];
+        console.log(`🍽️ CREATE_MEAL_PLAN - Processing food ${i + 1}/${plate.foods.length} in plate "${plate.plate_name}": ${food.food_name}`);
+
+        // Create or find the food entry
+        const { data: existingFood } = await supabase
+          .from('foods')
+          .select('*')
+          .eq('food_name', food.food_name)
+          .limit(1);
+
+        let foodId;
+        if (existingFood && existingFood.length > 0) {
+          foodId = existingFood[0].id;
+          console.log(`🔍 CREATE_MEAL_PLAN - Found existing food: ${food.food_name}`);
+        } else {
+          // Create new food entry
+          const { data: newFood, error: insertError } = await supabase
+            .from('foods')
+            .insert({
+              food_id: `openai_plan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              food_name: food.food_name,
+              calories_per_serving: food.calories_per_serving,
+              protein_per_serving: food.protein_per_serving,
+              carbs_per_serving: food.carbs_per_serving,
+              fat_per_serving: food.fat_per_serving,
+              serving_description: 'Porción estándar'
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('🚨 CREATE_MEAL_PLAN - Error inserting food:', insertError);
+            throw new Error(`Error creating food entry for ${food.food_name}: ${insertError.message}`);
+          }
+
+          foodId = newFood.id;
+          console.log(`➕ CREATE_MEAL_PLAN - Created new food: ${food.food_name}`);
+        }
+
+        // Create meal entry for this food
+        const { data: mealEntry, error: mealError } = await supabase
+          .from('meal_entries')
+          .insert({
+            user_id: user.id,
+            food_id: foodId,
+            servings: food.servings || 1,
+            meal_type: plate.meal_type,
+            consumed_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (mealError) {
+          console.error('🚨 CREATE_MEAL_PLAN - Error creating meal entry:', mealError);
+          throw new Error(`Error creating meal entry for ${food.food_name}: ${mealError.message}`);
+        }
+
+        plateMealEntries.push(mealEntry);
+        allMealEntries.push(mealEntry);
+        
+        // Add to plate totals
+        const foodTotals = {
+          calories: food.calories_per_serving * food.servings,
+          protein: food.protein_per_serving * food.servings,
+          carbs: food.carbs_per_serving * food.servings,
+          fat: food.fat_per_serving * food.servings
+        };
+        
+        plateTotals.calories += foodTotals.calories;
+        plateTotals.protein += foodTotals.protein;
+        plateTotals.carbs += foodTotals.carbs;
+        plateTotals.fat += foodTotals.fat;
+
+        console.log(`✅ CREATE_MEAL_PLAN - Meal entry created for ${food.food_name} in plate "${plate.plate_name}":`, foodTotals);
+      }
+
+      // Add plate totals to plan totals
+      planTotals.calories += plateTotals.calories;
+      planTotals.protein += plateTotals.protein;
+      planTotals.carbs += plateTotals.carbs;
+      planTotals.fat += plateTotals.fat;
+
+      plateResults.push({
+        plate_name: plate.plate_name,
+        meal_type: plate.meal_type,
+        foods: plate.foods,
+        totals: plateTotals,
+        mealEntries: plateMealEntries
+      });
+
+      console.log(`🎉 CREATE_MEAL_PLAN - Plate "${plate.plate_name}" created successfully with ${plateMealEntries.length} foods`);
+      console.log('📊 CREATE_MEAL_PLAN - Plate totals:', plateTotals);
+    }
+
+    console.log('🌟 CREATE_MEAL_PLAN - All plates created successfully. Total plates:', plateResults.length);
+    console.log('📊 CREATE_MEAL_PLAN - Plan totals:', planTotals);
+
+    // Format a comprehensive response for the user
+    let message = `🎉 ¡Excelente! He creado tu plan alimenticio "${args.plan_name}" completo:
+
+📋 **${args.plan_name}**
+`;
+
+    plateResults.forEach((plateResult) => {
+      const mealTypeNames: { [key: string]: string } = {
+        'breakfast': 'Desayuno',
+        'morning_snack': 'Media Mañana',
+        'lunch': 'Almuerzo',
+        'afternoon_snack': 'Merienda',
+        'dinner': 'Cena',
+        'late_snack': 'Cena Tardía'
+      };
+
+      message += `\n\n🍽️ **${mealTypeNames[plateResult.meal_type] || plateResult.meal_type}: ${plateResult.plate_name}**`;
+      
+      plateResult.foods.forEach((food: any) => {
+        const totalCals = Math.round(food.calories_per_serving * food.servings);
+        const totalProtein = Math.round(food.protein_per_serving * food.servings * 10) / 10;
+        const totalCarbs = Math.round(food.carbs_per_serving * food.servings * 10) / 10;
+        const totalFat = Math.round(food.fat_per_serving * food.servings * 10) / 10;
+        
+        message += `\n• ${food.food_name} (${food.servings} porción${food.servings === 1 ? '' : 'es'})`;
+        message += `\n  ${totalCals} kcal | ${totalProtein}g proteína | ${totalCarbs}g carbohidratos | ${totalFat}g grasas`;
+      });
+
+      message += `\n📊 **Subtotal:**`;
+      message += ` ${Math.round(plateResult.totals.calories)} kcal, ${Math.round(plateResult.totals.protein * 10) / 10}g proteína, ${Math.round(plateResult.totals.carbs * 10) / 10}g carbohidratos, ${Math.round(plateResult.totals.fat * 10) / 10}g grasas`;
+    });
+
+    message += `\n\n📊 **TOTALES DEL PLAN COMPLETO:**`;
+    message += `\n🔥 Calorías: ${Math.round(planTotals.calories)} kcal`;
+    message += `\n💪 Proteína: ${Math.round(planTotals.protein * 10) / 10}g`;
+    message += `\n🍞 Carbohidratos: ${Math.round(planTotals.carbs * 10) / 10}g`;
+    message += `\n🥑 Grasas: ${Math.round(planTotals.fat * 10) / 10}g`;
+
+    // Calculate updated progress if possible
+    let updatedProgress = null;
+    if (userContext?.goals && userContext?.today) {
+      const newConsumed = {
+        calories: (userContext.today.consumed.calories || 0) + planTotals.calories,
+        protein: (userContext.today.consumed.protein || 0) + planTotals.protein,
+        carbs: (userContext.today.consumed.carbs || 0) + planTotals.carbs,
+        fat: (userContext.today.consumed.fat || 0) + planTotals.fat
+      };
+
+      const goals = userContext.goals;
+      updatedProgress = {
+        calories: {
+          consumed: Math.round(newConsumed.calories * 10) / 10,
+          goal: goals.daily_calories,
+          remaining: Math.max(0, goals.daily_calories - Math.round(newConsumed.calories * 10) / 10),
+          percentage: Math.round((newConsumed.calories / goals.daily_calories) * 100)
+        },
+        protein: {
+          consumed: Math.round(newConsumed.protein * 10) / 10,
+          goal: goals.daily_protein,
+          remaining: Math.max(0, goals.daily_protein - Math.round(newConsumed.protein * 10) / 10),
+          percentage: Math.round((newConsumed.protein / goals.daily_protein) * 100)
+        },
+        carbs: {
+          consumed: Math.round(newConsumed.carbs * 10) / 10,
+          goal: goals.daily_carbs,
+          remaining: Math.max(0, goals.daily_carbs - Math.round(newConsumed.carbs * 10) / 10),
+          percentage: Math.round((newConsumed.carbs / goals.daily_carbs) * 100)
+        },
+        fat: {
+          consumed: Math.round(newConsumed.fat * 10) / 10,
+          goal: goals.daily_fat,
+          remaining: Math.max(0, goals.daily_fat - Math.round(newConsumed.fat * 10) / 10),
+          percentage: Math.round((newConsumed.fat / goals.daily_fat) * 100)
+        }
+      };
+
+      message += `\n\n📈 **Tu progreso actualizado:**`;
+      message += `\n🔥 Calorías: ${updatedProgress.calories.consumed}/${goals.daily_calories} (${updatedProgress.calories.percentage}%)`;
+      message += `\n💪 Proteína: ${updatedProgress.protein.consumed}g/${goals.daily_protein}g (${updatedProgress.protein.percentage}%)`;
+      message += `\n🍞 Carbohidratos: ${updatedProgress.carbs.consumed}g/${goals.daily_carbs}g (${updatedProgress.carbs.percentage}%)`;
+      message += `\n🥑 Grasas: ${updatedProgress.fat.consumed}g/${goals.daily_fat}g (${updatedProgress.fat.percentage}%)`;
+
+      console.log('📈 CREATE_MEAL_PLAN - Updated progress calculated:', updatedProgress);
+    }
+
+    console.log('✨ CREATE_MEAL_PLAN - Success! Meal plan created with', plateResults.length, 'plates and', allMealEntries.length, 'total meal entries');
+
+    return {
+      message,
+      plateResults,
+      allMealEntries,
+      updatedProgress,
+      planTotals
+    };
+
+  } catch (error) {
+    console.error('🚨 CREATE_MEAL_PLAN - Error in executeCreateMealPlan:', error);
     throw error;
   }
 }
