@@ -61,9 +61,12 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   
   // Helper function to create arc path
   const createArcPath = (startAngle: number, endAngle: number, radius: number) => {
+    // Ensure we have a valid range
+    if (endAngle <= startAngle) return "";
+    
     const start = polarToCartesian(centerX, centerY, radius, endAngle);
     const end = polarToCartesian(centerX, centerY, radius, startAngle);
-    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+    const largeArcFlag = (endAngle - startAngle) <= 180 ? "0" : "1";
     return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
   };
   
@@ -167,31 +170,31 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
               {proteinProgress > 0 && (
                 <path
                   d={createArcPath(proteinStartAngle, proteinEndAngle, radius)}
-                  stroke="currentColor"
+                  stroke="hsl(var(--protein))"
                   strokeWidth="8"
                   fill="transparent"
                   strokeLinecap="round"
-                  className="text-protein transition-all duration-500 ease-in-out"
+                  className="transition-all duration-500 ease-in-out"
                 />
               )}
               {carbsProgress > 0 && (
                 <path
                   d={createArcPath(carbsStartAngle, carbsEndAngle, radius)}
-                  stroke="currentColor"
+                  stroke="hsl(var(--carbs))"
                   strokeWidth="8"
                   fill="transparent"
                   strokeLinecap="round"
-                  className="text-carbs transition-all duration-500 ease-in-out"
+                  className="transition-all duration-500 ease-in-out"
                 />
               )}
               {fatProgress > 0 && (
                 <path
                   d={createArcPath(fatStartAngle, fatEndAngle, radius)}
-                  stroke="currentColor"
+                  stroke="hsl(var(--fat))"
                   strokeWidth="8"
                   fill="transparent"
                   strokeLinecap="round"
-                  className="text-fat transition-all duration-500 ease-in-out"
+                  className="transition-all duration-500 ease-in-out"
                 />
               )}
             </>
