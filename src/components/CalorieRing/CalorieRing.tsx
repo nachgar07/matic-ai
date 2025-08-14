@@ -54,19 +54,33 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const carbsStartAngle = proteinStartAngle + segmentAngle + gapAngle;
   const fatStartAngle = carbsStartAngle + segmentAngle + gapAngle;
   
-  // Calculate end angles based on progress - cap at full segment when exceeded
-  const proteinEndAngle = proteinStartAngle + (Math.min(100, proteinProgress) / 100) * segmentAngle;
-  const carbsEndAngle = carbsStartAngle + (Math.min(100, carbsProgress) / 100) * segmentAngle;
-  const fatEndAngle = fatStartAngle + (Math.min(100, fatProgress) / 100) * segmentAngle;
+  // Calculate end angles based on progress - ensure complete segments when >= 100%
+  const proteinEndAngle = proteinProgress >= 100 
+    ? proteinStartAngle + segmentAngle 
+    : proteinStartAngle + (proteinProgress / 100) * segmentAngle;
+  
+  const carbsEndAngle = carbsProgress >= 100 
+    ? carbsStartAngle + segmentAngle 
+    : carbsStartAngle + (carbsProgress / 100) * segmentAngle;
+  
+  const fatEndAngle = fatProgress >= 100 
+    ? fatStartAngle + segmentAngle 
+    : fatStartAngle + (fatProgress / 100) * segmentAngle;
   
   // Helper function to create arc path
   const createArcPath = (startAngle: number, endAngle: number, radius: number) => {
     // Ensure we have a valid range
     if (endAngle <= startAngle) return "";
     
-    const start = polarToCartesian(centerX, centerY, radius, endAngle);
+    // For nearly complete arcs (99.9%+), ensure we draw the full segment
+    const angleDiff = endAngle - startAngle;
+    const isNearlyComplete = angleDiff >= (segmentAngle * 0.999);
+    
+    const finalEndAngle = isNearlyComplete ? startAngle + segmentAngle : endAngle;
+    
+    const start = polarToCartesian(centerX, centerY, radius, finalEndAngle);
     const end = polarToCartesian(centerX, centerY, radius, startAngle);
-    const largeArcFlag = (endAngle - startAngle) <= 180 ? "0" : "1";
+    const largeArcFlag = (finalEndAngle - startAngle) <= 180 ? "0" : "1";
     return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
   };
   
