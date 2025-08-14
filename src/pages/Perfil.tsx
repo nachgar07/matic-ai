@@ -94,10 +94,10 @@ export const Perfil = () => {
     }
   };
   const goals = {
-    calories: nutritionGoals?.daily_calories || 2000,
-    protein: nutritionGoals?.daily_protein || 150,
-    carbs: nutritionGoals?.daily_carbs || 250,
-    fat: nutritionGoals?.daily_fat || 67
+    calories: nutritionGoals?.daily_calories || 0,
+    protein: nutritionGoals?.daily_protein || 0,
+    carbs: nutritionGoals?.daily_carbs || 0,
+    fat: nutritionGoals?.daily_fat || 0
   };
   return <div className="min-h-screen bg-background pb-20">
       <Header title="Perfil" />

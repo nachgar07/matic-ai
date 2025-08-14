@@ -183,11 +183,11 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
         .eq('id', user.id)
         .single();
 
-      // Try to get nutrition goals, but don't fail if they don't exist
+      // Default values - will be overridden by user goals if they exist
       let goals = {
         daily_calories: 2000,
         daily_protein: 150,
-        daily_carbs: 250,
+        daily_carbs: 200,
         daily_fat: 67
       };
 

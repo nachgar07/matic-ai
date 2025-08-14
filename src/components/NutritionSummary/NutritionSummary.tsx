@@ -13,11 +13,24 @@ export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummary
   const { data: nutritionGoals } = useNutritionGoals();
   const { waterGlasses, addWaterGlass } = useWaterIntake(selectedDate);
   
+  // Only show values when nutrition goals are loaded
+  if (!nutritionGoals) {
+    return (
+      <div className="space-y-4">
+        <Card className="p-6 flex justify-center">
+          <div className="text-center">
+            <div className="text-muted-foreground">Cargando objetivos nutricionales...</div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   const goals = {
-    calories: nutritionGoals?.daily_calories || 2000,
-    protein: nutritionGoals?.daily_protein || 150,
-    carbs: nutritionGoals?.daily_carbs || 250,
-    fat: nutritionGoals?.daily_fat || 67
+    calories: nutritionGoals.daily_calories,
+    protein: nutritionGoals.daily_protein,
+    carbs: nutritionGoals.daily_carbs,
+    fat: nutritionGoals.daily_fat
   };
   return (
     <div className="space-y-4">
