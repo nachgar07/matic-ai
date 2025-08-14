@@ -134,7 +134,6 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
                 strokeDasharray={`${strokeLength} ${circumference - strokeLength}`}
                 strokeDashoffset={strokeOffset}
                 strokeLinecap="round"
-                className="transition-all duration-500 ease-in-out"
               />
             </>
           ) : (
@@ -279,7 +278,6 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
               height={waterFillHeight}
               fill="#2196f3"
               clipPath="url(#dropClip)"
-              className="transition-all duration-500 ease-in-out"
             />
           </svg>
           
