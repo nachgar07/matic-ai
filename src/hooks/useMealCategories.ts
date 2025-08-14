@@ -73,3 +73,34 @@ export const useCreateMealCategory = () => {
     },
   });
 };
+
+export const useDeleteMealCategory = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (categoryId: string) => {
+      const { error } = await supabase
+        .from('meal_categories')
+        .delete()
+        .eq('id', categoryId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meal-categories'] });
+      toast({
+        title: "Categoría eliminada",
+        description: "La categoría se eliminó exitosamente",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la categoría",
+        variant: "destructive"
+      });
+      console.error('Error deleting meal category:', error);
+    },
+  });
+};

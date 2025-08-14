@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,7 @@ import { useAddMeal } from '@/hooks/useFatSecret';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useMealCategories, useCreateMealCategory } from '@/hooks/useMealCategories';
+import { useMealCategories, useCreateMealCategory, useDeleteMealCategory } from '@/hooks/useMealCategories';
 
 interface AnalyzedFood {
   name: string;
@@ -47,6 +47,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
   const isMobile = useIsMobile();
   const { data: mealCategories } = useMealCategories();
   const createMealCategory = useCreateMealCategory();
+  const deleteMealCategory = useDeleteMealCategory();
 
   const updateFood = (index: number, field: string, value: any) => {
     const updated = [...editedFoods];
@@ -181,6 +182,39 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
     setShowCreateCategory(false);
   };
 
+  const handleDeleteCategory = async (categoryId: string) => {
+    const category = mealCategories?.find(cat => cat.id === categoryId);
+    if (!category) return;
+
+    if (category.is_default) {
+      toast({
+        title: "No se puede eliminar",
+        description: "Las categorías por defecto no se pueden eliminar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await deleteMealCategory.mutateAsync(categoryId);
+      
+      // Remove from selected meal types if it was selected
+      if (globalMealType === categoryId) {
+        setGlobalMealType('');
+      }
+      
+      const newSelectedMealTypes = {...selectedMealTypes};
+      Object.keys(newSelectedMealTypes).forEach(index => {
+        if (newSelectedMealTypes[parseInt(index)] === categoryId) {
+          delete newSelectedMealTypes[parseInt(index)];
+        }
+      });
+      setSelectedMealTypes(newSelectedMealTypes);
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
+  };
+
   const handleIndividualMealTypeChange = (index: number, value: string) => {
     if (value === 'create-new') {
       setShowCreateCategory(true);
@@ -251,8 +285,24 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                     </SelectTrigger>
                     <SelectContent className="bg-background z-50">
                       {mealCategories?.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.icon} {category.name}
+                        <SelectItem key={category.id} value={category.id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 flex-1">
+                            <span>{category.icon} {category.name}</span>
+                          </div>
+                          {!category.is_default && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 hover:bg-destructive/20 ml-2"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeleteCategory(category.id);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                          )}
                         </SelectItem>
                       ))}
                       <SelectItem value="create-new" className="text-primary">
@@ -352,8 +402,24 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                           </SelectTrigger>
                           <SelectContent className="bg-background z-50">
                             {mealCategories?.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.icon} {category.name}
+                              <SelectItem key={category.id} value={category.id} className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 flex-1">
+                                  <span>{category.icon} {category.name}</span>
+                                </div>
+                                {!category.is_default && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-destructive/20 ml-2"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleDeleteCategory(category.id);
+                                    }}
+                                  >
+                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                  </Button>
+                                )}
                               </SelectItem>
                             ))}
                             <SelectItem value="create-new" className="text-primary">
