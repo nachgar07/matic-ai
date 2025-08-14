@@ -654,7 +654,10 @@ export const Archivos = () => {
       });
 
       setShowEditModal(false);
+      // Recargar tanto la lista de gastos como los datos del gráfico
       await fetchGastos();
+      const updatedChartExpenses = await loadExpensesForChart(user.id, chartPeriod, filterDate);
+      setChartExpenses(updatedChartExpenses);
     } catch (error) {
       console.error('Error updating expense:', error);
       toast({
@@ -952,7 +955,7 @@ export const Archivos = () => {
                       <div className="text-xs text-muted-foreground mb-2">Productos:</div>
                       {gasto.items.slice(0, 2).map((item, index) => (
                         <div key={index} className="text-sm flex justify-between">
-                          <span>{item.producto} ({item.cantidad})</span>
+                          <span>{item.producto}</span>
                           <span>${item.precio.toFixed(2)}</span>
                         </div>
                       ))}
