@@ -479,17 +479,17 @@ export const HabitTracker = ({
                   }} 
                   modifiersStyles={{
                     active: {
-                      backgroundColor: goal.color + '40',
-                      color: goal.color,
+                      backgroundColor: '#22c55e40',
+                      color: '#22c55e',
                       fontWeight: 'bold',
-                      border: `2px solid ${goal.color}`
+                      border: `2px solid #22c55e`
                     },
                     completed: {
-                      backgroundColor: goal.color,
+                      backgroundColor: '#22c55e',
                       color: 'white',
                       fontWeight: 'bold'
                     }
-                  }} 
+                  }}
                 />
                 <div className="mt-4 text-sm text-muted-foreground text-center">
                   Los días marcados representan cuándo debes realizar este hábito
