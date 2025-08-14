@@ -150,7 +150,7 @@ export const HabitTracker = ({
     console.log('🔍 Goal frequency_days:', goal.frequency_days);
 
     // Verificar si la fecha está dentro del rango del hábito
-    const startDate = new Date(goal.start_date);
+    const startDate = new Date(goal.start_date + 'T00:00:00');
     startDate.setHours(0, 0, 0, 0);
     const dateOnly = new Date(date);
     dateOnly.setHours(0, 0, 0, 0);
@@ -161,7 +161,7 @@ export const HabitTracker = ({
 
     // Si hay fecha de fin, verificar que no la exceda
     if (goal.end_date) {
-      const endDate = new Date(goal.end_date);
+      const endDate = new Date(goal.end_date + 'T00:00:00');
       endDate.setHours(23, 59, 59, 999);
       if (dateOnly > endDate) {
         console.log('❌ Date is after end date');
@@ -289,15 +289,6 @@ export const HabitTracker = ({
   const handleDelete = async () => {
     await deleteGoal.mutateAsync(goal.id);
   };
-  const handleUpdateStartDate = async () => {
-    // Cambiar la fecha de inicio del hábito al 11 de agosto
-    await updateGoal.mutateAsync({
-      goalId: goal.id,
-      updates: {
-        start_date: '2025-08-11'
-      }
-    });
-  };
   return <Card className="p-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -330,10 +321,6 @@ export const HabitTracker = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleUpdateStartDate}>
-                <Edit className="mr-2 h-4 w-4" />
-                Cambiar inicio al 11/08
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
                 Eliminar hábito
