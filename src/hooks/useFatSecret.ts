@@ -18,7 +18,7 @@ export interface MealEntry {
   user_id: string;
   food_id: string;
   servings: number;
-  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  meal_type: string;
   consumed_at: string;
   plate_image?: string;
   foods: Food;
@@ -72,7 +72,7 @@ export const useAddMeal = () => {
     mutationFn: async ({ foodId, servings, mealType, plateImage, consumedAt }: {
       foodId: string;
       servings: number;
-      mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+      mealType: string;
       plateImage?: string;
       consumedAt?: Date;
     }) => {

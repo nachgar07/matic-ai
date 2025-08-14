@@ -10,6 +10,7 @@ import { useAddMeal } from '@/hooks/useFatSecret';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMealCategories, useCreateMealCategory } from '@/hooks/useMealCategories';
 
 interface AnalyzedFood {
   name: string;
@@ -38,10 +39,14 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
   const [selectedMealTypes, setSelectedMealTypes] = useState<Record<number, string>>({});
   const [servings, setServings] = useState<Record<number, number>>({});
   const [globalMealType, setGlobalMealType] = useState<string>("");
+  const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const { toast } = useToast();
   const addMealMutation = useAddMeal();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { data: mealCategories } = useMealCategories();
+  const createMealCategory = useCreateMealCategory();
 
   const updateFood = (index: number, field: string, value: any) => {
     const updated = [...editedFoods];
@@ -50,13 +55,13 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
   };
 
   const addFoodToMeal = async (food: AnalyzedFood, index: number) => {
-    const mealType = selectedMealTypes[index] as 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    const mealType = selectedMealTypes[index];
     const foodServings = servings[index] || 1;
 
     if (!mealType) {
       toast({
         title: "Selecciona el tipo de comida",
-        description: "Por favor indica si es desayuno, almuerzo, cena o snack.",
+        description: "Por favor selecciona una categoría de comida.",
         variant: "destructive"
       });
       return;
@@ -92,9 +97,10 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
 
       await queryClient.invalidateQueries({ queryKey: ['user-meals'] });
 
+      const categoryName = mealCategories?.find(cat => cat.id === mealType)?.name || mealType;
       toast({
         title: "Comida agregada",
-        description: `${food.name} se agregó a tu registro de ${getMealTypeLabel(mealType)}.`
+        description: `${food.name} se agregó a tu registro de ${categoryName}.`
       });
 
     } catch (error) {
@@ -142,14 +148,46 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
     }
   };
 
-  const getMealTypeLabel = (type: string) => {
-    const labels = {
-      breakfast: 'desayuno',
-      lunch: 'almuerzo', 
-      dinner: 'cena',
-      snack: 'snack'
-    };
-    return labels[type as keyof typeof labels] || type;
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast({
+        title: "Nombre requerido",
+        description: "Por favor ingresa un nombre para la categoría",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const newCategory = await createMealCategory.mutateAsync({ 
+        name: newCategoryName.trim() 
+      });
+      
+      setGlobalMealType(newCategory.id);
+      setShowCreateCategory(false);
+      setNewCategoryName('');
+    } catch (error) {
+      console.error('Error creating category:', error);
+    }
+  };
+
+  const handleGlobalMealTypeChange = (value: string) => {
+    if (value === 'create-new') {
+      setShowCreateCategory(true);
+      return;
+    }
+    
+    setGlobalMealType(value);
+    setShowCreateCategory(false);
+  };
+
+  const handleIndividualMealTypeChange = (index: number, value: string) => {
+    if (value === 'create-new') {
+      setShowCreateCategory(true);
+      return;
+    }
+    
+    setSelectedMealTypes({...selectedMealTypes, [index]: value});
   };
 
   const applyGlobalMealType = () => {
@@ -161,9 +199,10 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
     });
     setSelectedMealTypes(newSelectedMealTypes);
     
+    const categoryName = mealCategories?.find(cat => cat.id === globalMealType)?.name || globalMealType;
     toast({
       title: "Tipo de comida aplicado",
-      description: `Todos los alimentos se configuraron como ${getMealTypeLabel(globalMealType)}.`
+      description: `Todos los alimentos se configuraron como ${categoryName}.`
     });
   };
 
@@ -202,20 +241,49 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                 <label className="text-sm font-medium text-muted-foreground">
                   Asignar todos los alimentos como:
                 </label>
-                <Select
-                  value={globalMealType}
-                  onValueChange={setGlobalMealType}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleccionar tipo de comida..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    <SelectItem value="breakfast">Desayuno</SelectItem>
-                    <SelectItem value="lunch">Almuerzo</SelectItem>
-                    <SelectItem value="dinner">Cena</SelectItem>
-                    <SelectItem value="snack">Snack</SelectItem>
-                  </SelectContent>
-                </Select>
+                {!showCreateCategory ? (
+                  <Select
+                    value={globalMealType}
+                    onValueChange={handleGlobalMealTypeChange}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleccionar tipo de comida..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      {mealCategories?.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.icon} {category.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="create-new" className="text-primary">
+                        <Plus className="h-4 w-4 inline mr-2" />
+                        Crear nueva categoría
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      placeholder="Nombre de la categoría..."
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleCreateCategory()}
+                    />
+                    <Button onClick={handleCreateCategory} size="sm" disabled={!newCategoryName.trim()}>
+                      Crear
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setShowCreateCategory(false);
+                        setNewCategoryName('');
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                )}
               </div>
               <Button 
                 onClick={applyGlobalMealType}
@@ -277,16 +345,21 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                         </label>
                         <Select
                           value={selectedMealTypes[index] || ""}
-                          onValueChange={(value) => setSelectedMealTypes({...selectedMealTypes, [index]: value})}
+                          onValueChange={(value) => handleIndividualMealTypeChange(index, value)}
                         >
                           <SelectTrigger className="mt-1">
                             <SelectValue placeholder="Seleccionar..." />
                           </SelectTrigger>
                           <SelectContent className="bg-background z-50">
-                            <SelectItem value="breakfast">Desayuno</SelectItem>
-                            <SelectItem value="lunch">Almuerzo</SelectItem>
-                            <SelectItem value="dinner">Cena</SelectItem>
-                            <SelectItem value="snack">Snack</SelectItem>
+                            {mealCategories?.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.icon} {category.name}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="create-new" className="text-primary">
+                              <Plus className="h-4 w-4 inline mr-2" />
+                              Crear nueva categoría
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
