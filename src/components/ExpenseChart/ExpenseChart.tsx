@@ -113,7 +113,25 @@ export const ExpenseChart = ({
       </div>;
   };
   return <Card className="w-full">
-      
+      <CardHeader>
+        <CardTitle className="text-center mb-4">Gastos</CardTitle>
+        {/* Botones de período */}
+        <div className="flex gap-3 justify-center mt-3">
+          <Button variant={chartPeriod === 'month' ? 'default' : 'outline'} size="sm" onClick={() => onPeriodChange('month')} className="px-2 py-1 text-xs h-7">
+            Mes
+          </Button>
+          <Button variant={chartPeriod === 'week' ? 'default' : 'outline'} size="sm" onClick={() => onPeriodChange('week')} className="px-2 py-1 text-xs h-7">
+            Semana
+          </Button>
+          <Button variant={chartPeriod === 'day' ? 'default' : 'outline'} size="sm" onClick={() => onPeriodChange('day')} className="px-2 py-1 text-xs h-7">
+            Día
+          </Button>
+        </div>
+        {/* Indicador del período */}
+        <div className="text-center text-sm text-muted-foreground mt-2">
+          {getPeriodLabel()}
+        </div>
+      </CardHeader>
       <CardContent>
         <div className="relative h-80">
           <ResponsiveContainer width="100%" height="100%">
