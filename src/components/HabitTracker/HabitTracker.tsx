@@ -76,6 +76,7 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dateString = format(date, 'yyyy-MM-dd');
     const progress = progressData?.find(p => p.date === dateString && p.goal_id === goal.id);
     
+    console.log(`📅 getDayProgress for ${dateString}:`, progress);
     
     return progress;
   };
@@ -137,6 +138,12 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dayOfWeek = date.getDay();
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = dayNames[dayOfWeek];
+    const dateString = format(date, 'yyyy-MM-dd');
+    
+    console.log(`🔍 Checking if ${dateString} (${dayName}) is active for goal:`, goal.name);
+    console.log('🔍 Goal frequency:', goal.frequency);
+    console.log('🔍 Goal frequency_data:', goal.frequency_data);
+    console.log('🔍 Goal frequency_days:', goal.frequency_days);
     
     // Verificar si la fecha está dentro del rango del hábito
     const startDate = new Date(goal.start_date);
@@ -145,33 +152,47 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     const dateOnly = new Date(date);
     dateOnly.setHours(0, 0, 0, 0);
     
-    if (dateOnly < startDate) return false;
+    if (dateOnly < startDate) {
+      console.log('❌ Date is before start date');
+      return false;
+    }
     
     // Si hay fecha de fin, verificar que no la exceda
     if (goal.end_date) {
       const endDate = new Date(goal.end_date);
       endDate.setHours(23, 59, 59, 999);
       
-      if (dateOnly > endDate) return false;
+      if (dateOnly > endDate) {
+        console.log('❌ Date is after end date');
+        return false;
+      }
     }
     
-    if (goal.frequency === 'daily') return true;
+    if (goal.frequency === 'daily') {
+      console.log('✅ Daily frequency - active');
+      return true;
+    }
     
     if (goal.frequency === 'custom') {
       // Verificar si hay frequency_data con configuraciones avanzadas
       if (goal.frequency_data) {
         try {
           const frequencyData = JSON.parse(goal.frequency_data);
+          console.log('🔍 Parsed frequency data:', frequencyData);
         
         // Días específicos de la semana
         if (frequencyData.type === 'specific_weekdays' && frequencyData.weekdays) {
-          return frequencyData.weekdays.includes(dayName);
+          const isActive = frequencyData.weekdays.includes(dayName);
+          console.log(`${isActive ? '✅' : '❌'} Specific weekdays check:`, isActive);
+          return isActive;
         }
           
           // Días específicos del mes
           if (frequencyData.type === 'specific_monthdays' && frequencyData.monthdays) {
             const dayOfMonth = date.getDate();
-            return frequencyData.monthdays.includes(dayOfMonth);
+            const isActive = frequencyData.monthdays.includes(dayOfMonth);
+            console.log(`${isActive ? '✅' : '❌'} Specific monthdays check:`, isActive);
+            return isActive;
           }
           
           // Días específicos del año
@@ -179,21 +200,20 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
             const currentFullDate = format(date, 'yyyy-MM-dd');
             const currentMonthDay = format(date, 'MM-dd');
             
-            return frequencyData.yeardays.some(yearday => {
+            const isActive = frequencyData.yeardays.some(yearday => {
               return yearday === currentFullDate || yearday.endsWith(currentMonthDay);
             });
+            console.log(`${isActive ? '✅' : '❌'} Specific yeardays check:`, isActive);
+            return isActive;
           }
           
           // Repetir cada X días
           if (frequencyData.type === 'repeat' && frequencyData.repeatInterval) {
             const diffInDays = Math.floor((dateOnly.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
             const isActiveDay = diffInDays >= 0 && diffInDays % frequencyData.repeatInterval === 0;
-            
-            
+            console.log(`${isActiveDay ? '✅' : '❌'} Repeat interval check:`, isActiveDay, `(${diffInDays} days from start)`);
             return isActiveDay;
           }
-          
-          
           
         } catch (error) {
           console.error('Error parsing frequency_data:', error);
@@ -201,23 +221,35 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       }
       
       // Fallback a frequency_days para días específicos de la semana
-      return goal.frequency_days?.includes(dayName) || false;
+      const isActive = goal.frequency_days?.includes(dayName) || false;
+      console.log(`${isActive ? '✅' : '❌'} Fallback frequency_days check:`, isActive);
+      return isActive;
     }
     
     if (goal.frequency === 'weekly') {
       // Para semanal, solo los lunes están activos
-      return dayOfWeek === 1;
+      const isActive = dayOfWeek === 1;
+      console.log(`${isActive ? '✅' : '❌'} Weekly frequency check:`, isActive);
+      return isActive;
     }
     
+    console.log('✅ Default - allowing all days');
     return true; // Por defecto, permitir todos los días
   };
   // Marcar día con 3 estados: normal → verde (completado) → rojo (cancelado) → normal
   const toggleDayComplete = async (date: Date) => {
+    console.log('🎯 toggleDayComplete called for:', format(date, 'yyyy-MM-dd'));
+    
     // Solo permitir toggle en días activos
-    if (!isDayActive(date)) return;
+    if (!isDayActive(date)) {
+      console.log('❌ Day not active, returning');
+      return;
+    }
     
     const dateString = format(date, 'yyyy-MM-dd');
     const currentProgress = getDayProgress(date);
+    
+    console.log('📊 Current progress for', dateString, ':', currentProgress);
     
     // Determinar el estado actual y el siguiente
     let nextIsCompleted: boolean;
@@ -227,25 +259,37 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       // Estado 1: Sin progreso → Verde (completado)
       nextIsCompleted = true;
       nextCompletedValue = goal.target_value;
+      console.log('🟢 Setting to completed');
     } else if (currentProgress.is_completed) {
       // Estado 2: Verde (completado) → Rojo (cancelado)
       nextIsCompleted = false;
       nextCompletedValue = goal.target_value; // Mantener el valor pero marcar como no completado
+      console.log('🔴 Setting to cancelled');
     } else {
       // Estado 3: Rojo (cancelado) → Normal (sin progreso)
       nextIsCompleted = false;
       nextCompletedValue = 0; // Eliminar el progreso
+      console.log('⚪ Setting to normal');
     }
 
     try {
+      console.log('🚀 Updating progress with:', {
+        goalId: goal.id,
+        date: dateString,
+        completedValue: nextCompletedValue,
+        isCompleted: nextIsCompleted,
+      });
+      
       await updateProgress.mutateAsync({
         goalId: goal.id,
         date: dateString,
         completedValue: nextCompletedValue,
         isCompleted: nextIsCompleted,
       });
+      
+      console.log('✅ Progress updated successfully');
     } catch (error) {
-      console.error('Error updating progress:', error);
+      console.error('❌ Error updating progress:', error);
     }
   };
 
@@ -310,6 +354,16 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           const isCurrentDay = isToday(date);
           const isPastDay = date < new Date() && !isToday(date);
           const isActive = isDayActive(date);
+          const dateString = format(date, 'yyyy-MM-dd');
+
+          console.log(`🎨 Rendering button for ${dateString}:`, {
+            dayProgress,
+            isCompleted,
+            hasProgress,
+            isCurrentDay,
+            isPastDay,
+            isActive
+          });
 
           // Determinar el estado del botón más claramente
           let buttonState: 'normal' | 'completed' | 'cancelled' = 'normal';
@@ -323,28 +377,36 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
             // Si no tiene progreso (completed_value = 0), permanece normal
           }
 
+          console.log(`🎨 Button state for ${dateString}: ${buttonState}`);
+
           // Clases de estilo más claras
           const getButtonClasses = () => {
             const baseClasses = "w-10 h-10 rounded-full p-0 transition-all duration-200 border-2";
             
+            let classes = '';
             if (!isActive) {
-              return `${baseClasses} bg-muted/20 text-muted-foreground/40 cursor-not-allowed border-transparent`;
+              classes = `${baseClasses} bg-muted/20 text-muted-foreground/40 cursor-not-allowed border-transparent`;
+            } else {
+              switch (buttonState) {
+                case 'completed':
+                  classes = `${baseClasses} bg-green-500 text-white hover:bg-green-600 border-green-600 shadow-sm`;
+                  break;
+                case 'cancelled':
+                  classes = `${baseClasses} bg-red-500 text-white hover:bg-red-600 border-red-600 shadow-sm`;
+                  break;
+                default:
+                  if (isCurrentDay) {
+                    classes = `${baseClasses} bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm`;
+                  } else if (isPastDay) {
+                    classes = `${baseClasses} bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-200`;
+                  } else {
+                    classes = `${baseClasses} bg-background hover:bg-muted border-border hover:border-muted-foreground/20`;
+                  }
+              }
             }
             
-            switch (buttonState) {
-              case 'completed':
-                return `${baseClasses} bg-green-500 text-white hover:bg-green-600 border-green-600 shadow-sm`;
-              case 'cancelled':
-                return `${baseClasses} bg-red-500 text-white hover:bg-red-600 border-red-600 shadow-sm`;
-              default:
-                if (isCurrentDay) {
-                  return `${baseClasses} bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm`;
-                } else if (isPastDay) {
-                  return `${baseClasses} bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-200`;
-                } else {
-                  return `${baseClasses} bg-background hover:bg-muted border-border hover:border-muted-foreground/20`;
-                }
-            }
+            console.log(`🎨 Button classes for ${dateString}:`, classes);
+            return classes;
           };
 
           return (
@@ -355,7 +417,10 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => toggleDayComplete(date)}
+                onClick={() => {
+                  console.log(`👆 Button clicked for ${dateString}`);
+                  toggleDayComplete(date);
+                }}
                 disabled={!isActive}
                 className={getButtonClasses()}
               >
