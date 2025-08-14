@@ -22,11 +22,12 @@ export const Home = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Get real data from hooks
+  // Get meal data for the selected date specifically
+  const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
   const {
     data: mealsData,
     isLoading: mealsLoading
-  } = useUserMeals();
+  } = useUserMeals(selectedDateString);
   
   // Get meals for date range (for calendar)
   const startDate = format(new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'); // 60 days ago

@@ -18,9 +18,16 @@ serve(async (req) => {
     
     // Try to get parameters from request body first (for date range queries)
     if (req.method === 'POST') {
-      const body = await req.json();
-      startDate = body.startDate;
-      endDate = body.endDate;
+      try {
+        const bodyText = await req.text();
+        if (bodyText && bodyText.trim()) {
+          const body = JSON.parse(bodyText);
+          startDate = body.startDate;
+          endDate = body.endDate;
+        }
+      } catch (jsonError) {
+        console.log('No valid JSON body found, falling back to URL parameters');
+      }
     }
     
     // If no body parameters, try URL parameters (for single date queries)
