@@ -218,7 +218,7 @@ export const TaskCard = ({ task, itemType = 'tarea', isHabit = false }: TaskCard
         </div>
 
         {/* Botón de check a la derecha */}
-        {!isHabit ? (
+        {!isHabit && (
           <Button
             variant="ghost"
             size="sm"
