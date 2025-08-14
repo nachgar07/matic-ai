@@ -232,15 +232,6 @@ export const TaskCard = ({ task, itemType = 'tarea', isHabit = false }: TaskCard
               <Circle className="w-6 h-6 text-muted-foreground" />
             )}
           </Button>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="p-2 h-auto"
-            disabled
-          >
-            <CalendarDays className="w-6 h-6 text-muted-foreground" />
-          </Button>
         )}
       </div>
       

@@ -443,6 +443,61 @@ export const HabitTracker = ({
           })() :
           // Si no hay fecha fin, contar solo la semana actual
           weekDays.filter(day => isDayActive(day) && getDayProgress(day)?.is_completed).length}</span>
+          
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-1">
+                <CalendarIcon className="w-4 h-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-fit">
+              <DialogHeader>
+                <DialogTitle>Calendario de {goal.name}</DialogTitle>
+              </DialogHeader>
+              <div className="p-4">
+                <Calendar 
+                  mode="multiple" 
+                  selected={(() => {
+                    const startDate = new Date(goal.start_date + 'T00:00:00');
+                    const endDate = goal.end_date ? new Date(goal.end_date + 'T00:00:00') : addDays(new Date(), 30);
+                    
+                    // Generate all days in the habit range
+                    const allDays = eachDayOfInterval({
+                      start: startDate,
+                      end: endDate
+                    });
+                    
+                    // Filter only the days that are active for this habit
+                    return allDays.filter(day => isDayActive(day));
+                  })()} 
+                  className="rounded-md border pointer-events-auto" 
+                  locale={es} 
+                  disabled={false} 
+                  modifiers={{
+                    active: date => isDayActive(date),
+                    completed: date => getDayProgress(date)?.is_completed || false
+                  }} 
+                  modifiersStyles={{
+                    active: {
+                      backgroundColor: goal.color + '40',
+                      color: goal.color,
+                      fontWeight: 'bold',
+                      border: `2px solid ${goal.color}`
+                    },
+                    completed: {
+                      backgroundColor: goal.color,
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }
+                  }} 
+                />
+                <div className="mt-4 text-sm text-muted-foreground text-center">
+                  Los días marcados representan cuándo debes realizar este hábito
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
         </div>
       </div>
     </Card>;
