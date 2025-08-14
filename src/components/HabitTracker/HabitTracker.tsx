@@ -158,21 +158,25 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     console.log('🔍 Goal frequency_days:', goal.frequency_days);
     
     // Verificar si la fecha está dentro del rango del hábito
-    const startDate = new Date(goal.start_date);
+    const startDate = new Date(goal.start_date + 'T00:00:00'); // Forzar timezone local
     startDate.setHours(0, 0, 0, 0);
     
     const dateOnly = new Date(date);
     dateOnly.setHours(0, 0, 0, 0);
+    
+    console.log(`🔍 Comparing dates: ${dateString} vs start_date ${goal.start_date}`);
+    console.log(`🔍 Parsed start date: ${startDate.toISOString()}`);
+    console.log(`🔍 Current date: ${dateOnly.toISOString()}`);
     
     if (dateOnly < startDate) {
       console.log('❌ Date is before start date');
       return false;
     }
     
-    // Si hay fecha de fin, verificar que no la exceda
+    // Si hay fecha de fin, verificar que no la exceda (incluir la fecha de fin)
     if (goal.end_date) {
-      const endDate = new Date(goal.end_date);
-      endDate.setHours(23, 59, 59, 999);
+      const endDate = new Date(goal.end_date + 'T00:00:00'); // Forzar timezone local
+      endDate.setHours(0, 0, 0, 0);
       
       if (dateOnly > endDate) {
         console.log('❌ Date is after end date');
@@ -358,10 +362,6 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleUpdateStartDate}>
-                <Edit className="mr-2 h-4 w-4" />
-                Cambiar inicio al 11/08
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
                 Eliminar hábito
