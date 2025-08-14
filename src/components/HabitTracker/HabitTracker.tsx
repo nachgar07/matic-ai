@@ -7,8 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Calendar } from "@/components/ui/calendar";
 import { format, subDays, addDays, isToday, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { es } from "date-fns/locale";
-import { Goal, useGoalProgress, useUpdateGoalProgress, useDeleteGoal } from "@/hooks/useGoals";
-import { ChevronLeft, ChevronRight, BarChart3, Trash2, MoreHorizontal, CalendarIcon } from "lucide-react";
+import { Goal, useGoalProgress, useUpdateGoalProgress, useDeleteGoal, useUpdateGoal } from "@/hooks/useGoals";
+import { ChevronLeft, ChevronRight, BarChart3, Trash2, MoreHorizontal, CalendarIcon, Edit } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface HabitTrackerProps {
@@ -69,6 +69,7 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
   const { data: progressData } = useGoalProgress(dateRange.startDate, dateRange.endDate);
   const updateProgress = useUpdateGoalProgress();
   const deleteGoal = useDeleteGoal();
+  const updateGoal = useUpdateGoal();
   const dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   // Obtener progreso para un día específico
@@ -314,6 +315,16 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
     await deleteGoal.mutateAsync(goal.id);
   };
 
+  const handleUpdateStartDate = async () => {
+    // Cambiar la fecha de inicio del hábito al 11 de agosto
+    await updateGoal.mutateAsync({
+      goalId: goal.id,
+      updates: {
+        start_date: '2025-08-11'
+      }
+    });
+  };
+
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -347,6 +358,10 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleUpdateStartDate}>
+                <Edit className="mr-2 h-4 w-4" />
+                Cambiar inicio al 11/08
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
                 Eliminar hábito

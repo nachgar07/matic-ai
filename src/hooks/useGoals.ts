@@ -288,6 +288,42 @@ export const useCreateTask = () => {
   });
 };
 
+// Hook para actualizar objetivo
+export const useUpdateGoal = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ goalId, updates }: { goalId: string; updates: Partial<Goal> }) => {
+      const { data, error } = await supabase
+        .from('goals')
+        .update(updates)
+        .eq('id', goalId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goal-progress'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['goal-stats'] });
+      toast({
+        title: "Hábito actualizado",
+        description: "El hábito se ha actualizado correctamente.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el hábito. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 // Hook para eliminar objetivo
 export const useDeleteGoal = () => {
   const queryClient = useQueryClient();
