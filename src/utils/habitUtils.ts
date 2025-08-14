@@ -19,10 +19,10 @@ export const isHabitActiveOnDate = (goal: Goal, date: Date): boolean => {
   
   if (dateOnly < startDate) return false;
   
-  // Si hay fecha de fin, verificar que no la exceda
+  // Si hay fecha de fin, verificar que no la exceda (incluir la fecha de fin)
   if (goal.end_date) {
     const endDate = new Date(goal.end_date);
-    endDate.setHours(23, 59, 59, 999);
+    endDate.setHours(0, 0, 0, 0);
     
     if (dateOnly > endDate) return false;
   }
