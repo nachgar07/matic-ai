@@ -155,8 +155,8 @@ export const CreateGoalDialog = ({
       // Siempre guardar frequency_data para todos los hábitos
       frequency_data: JSON.stringify(frequencyData),
       target_value: targetValue,
-      start_date: format(finalStartDate, "yyyy-MM-dd"),
-      end_date: finalEndDate ? format(finalEndDate, "yyyy-MM-dd") : undefined,
+      start_date: finalStartDate.toISOString().split('T')[0],
+      end_date: finalEndDate ? finalEndDate.toISOString().split('T')[0] : undefined,
       is_active: true,
     };
 
