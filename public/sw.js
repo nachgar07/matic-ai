@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vital-ai-v2';
+const CACHE_NAME = 'vital-ai-v3';
 const urlsToCache = [
   '/',
   '/icon-192.png',
@@ -48,11 +48,13 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+          // Delete all caches to force fresh content
+          return caches.delete(cacheName);
         })
-      );
+      ).then(() => {
+        // Claim all clients to force using new SW immediately
+        return self.clients.claim();
+      });
     })
   );
 });
