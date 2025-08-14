@@ -88,7 +88,16 @@ export const useAddMeal = () => {
 
 // Get user meals for a specific date
 export const useUserMeals = (date?: string) => {
-  const targetDate = date || new Date().toISOString().split('T')[0];
+  // Get date in local timezone if not provided
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  const targetDate = date || getLocalDateString();
   
   return useQuery({
     queryKey: ['user-meals', targetDate],

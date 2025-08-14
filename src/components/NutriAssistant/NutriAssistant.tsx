@@ -205,11 +205,19 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
         console.log('No nutrition goals found, using defaults');
       }
 
-      // Get today's meals
-      const today = new Date().toISOString().split('T')[0];
+      // Get today's meals (local timezone)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const today = `${year}-${month}-${day}`;
+      
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      const tomorrowYear = tomorrow.getFullYear();
+      const tomorrowMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
+      const tomorrowDay = String(tomorrow.getDate()).padStart(2, '0');
+      const tomorrowStr = `${tomorrowYear}-${tomorrowMonth}-${tomorrowDay}`;
       
       console.log('Fetching meals for date:', today);
       

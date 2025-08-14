@@ -15,7 +15,15 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const date = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
+    // Get date parameter or default to today in local timezone
+    let date = url.searchParams.get('date');
+    if (!date) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      date = `${year}-${month}-${day}`;
+    }
 
     // Get user from authorization header
     const authHeader = req.headers.get('Authorization');

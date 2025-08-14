@@ -29,7 +29,10 @@ export const DataExportDialog = ({ open, onOpenChange }: DataExportDialogProps) 
     
     for (let i = 0; i < 3; i++) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const value = date.toISOString().slice(0, 7); // YYYY-MM format
+      // Use local timezone format instead of UTC
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const value = `${year}-${month}`; // YYYY-MM format
       const label = date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
       months.push({ value, label });
     }

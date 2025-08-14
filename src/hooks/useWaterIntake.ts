@@ -7,9 +7,15 @@ export const useWaterIntake = (date?: string) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Get target date in YYYY-MM-DD format
+  // Get target date in YYYY-MM-DD format (local timezone)
   const getTargetDate = () => {
-    return date || new Date().toISOString().split('T')[0];
+    if (date) return date;
+    
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   // Load water intake for target date
@@ -77,7 +83,14 @@ export const useWaterIntake = (date?: string) => {
 
   // Add one glass of water (only for today)
   const addWaterGlass = () => {
-    const isToday = getTargetDate() === new Date().toISOString().split('T')[0];
+    // Get today's date in local timezone
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayLocal = `${year}-${month}-${day}`;
+    
+    const isToday = getTargetDate() === todayLocal;
     if (!isToday) return; // Only allow adding water for today
     
     const newCount = waterGlasses + 1;

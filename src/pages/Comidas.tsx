@@ -32,7 +32,7 @@ export const Comidas = () => {
   // Estado para manejar las imágenes de cada plato
   const [plateImages, setPlateImages] = useState<Record<string, string>>({});
   
-  const dateString = selectedDate.toISOString().split('T')[0];
+  const dateString = format(selectedDate, 'yyyy-MM-dd');
   const { data: mealsData, isLoading } = useUserMeals(dateString);
   const { mutateAsync: deleteMeal } = useDeleteMeal();
   const queryClient = useQueryClient();

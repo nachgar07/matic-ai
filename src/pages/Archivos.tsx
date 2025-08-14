@@ -338,8 +338,8 @@ export const Archivos = () => {
           expense_items (*)
         `)
         .eq('user_id', userId)
-        .gte('expense_date', startDate.toISOString().split('T')[0])
-        .lte('expense_date', endDate.toISOString().split('T')[0])
+        .gte('expense_date', format(startDate, 'yyyy-MM-dd'))
+        .lte('expense_date', format(endDate, 'yyyy-MM-dd'))
         .order('expense_date', { ascending: false });
 
       if (error) throw error;
@@ -515,7 +515,7 @@ export const Archivos = () => {
         .insert({
           user_id: user.id,
           store_name: data.store_name || 'Establecimiento desconocido',
-          expense_date: data.date || data.dateDetected || new Date().toISOString().split('T')[0],
+          expense_date: data.date || data.dateDetected || format(new Date(), 'yyyy-MM-dd'),
           total_amount: parseFloat(data.total_amount) || 0,
           payment_method: data.payment_method || 'efectivo',
           receipt_image: data.originalImage,
