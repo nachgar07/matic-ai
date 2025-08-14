@@ -59,7 +59,17 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
     const mealType = selectedMealTypes[index];
     const foodServings = servings[index] || 1;
 
+    console.log('🍽️ ADD-FOOD-TO-MEAL START:', {
+      foodName: food.name,
+      index,
+      mealType,
+      mealTypeType: typeof mealType,
+      foodServings,
+      selectedDate
+    });
+
     if (!mealType) {
+      console.warn('⚠️ NO MEAL TYPE SELECTED');
       toast({
         title: "Selecciona el tipo de comida",
         description: "Por favor selecciona una categoría de comida.",
@@ -81,21 +91,33 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
         serving_description: food.estimated_portion
       };
 
+      console.log('📝 CREATING MANUAL FOOD PAYLOAD:', foodPayload);
+
       // Store the food in the foods table first using Supabase function
       const { data: insertedFood, error: foodError } = await supabase.functions.invoke('add-manual-food', {
         body: foodPayload
       });
 
+      console.log('💾 MANUAL FOOD CREATION RESULT:', {
+        insertedFood,
+        foodError
+      });
+
       if (foodError) throw foodError;
 
-      await addMealMutation.mutateAsync({
+      const mealPayload = {
         foodId: insertedFood.food_id,
         servings: foodServings,
         mealType,
         plateImage: analysis.originalImage,
         consumedAt: selectedDate
-      });
+      };
 
+      console.log('🍽️ ADDING TO MEAL WITH PAYLOAD:', mealPayload);
+
+      await addMealMutation.mutateAsync(mealPayload);
+
+      console.log('✅ MEAL ADDED SUCCESSFULLY - Invalidating queries');
       await queryClient.invalidateQueries({ queryKey: ['user-meals'] });
 
       const categoryName = mealCategories?.find(cat => cat.id === mealType)?.name || mealType;

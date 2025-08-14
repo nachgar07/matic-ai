@@ -76,12 +76,36 @@ export const useAddMeal = () => {
       plateImage?: string;
       consumedAt?: Date;
     }) => {
+      console.log('🚀 CALLING ADD-MEAL FUNCTION:', {
+        foodId,
+        servings,
+        mealType,
+        mealTypeType: typeof mealType,
+        plateImagePresent: !!plateImage,
+        consumedAt: consumedAt?.toISOString()
+      });
+      
       const { data, error } = await supabase.functions.invoke('add-meal', {
         body: { foodId, servings, mealType, plateImage, consumedAt: consumedAt?.toISOString() }
       });
 
-      if (error) throw error;
+      console.log('📥 ADD-MEAL RESPONSE:', {
+        error,
+        data,
+        responseType: typeof data
+      });
+
+      if (error) {
+        console.error('❌ ADD-MEAL ERROR:', error);
+        throw error;
+      }
       return data;
+    },
+    onSuccess: (data) => {
+      console.log('✅ ADD-MEAL SUCCESS:', data);
+    },
+    onError: (error) => {
+      console.error('❌ ADD-MEAL MUTATION ERROR:', error);
     }
   });
 };

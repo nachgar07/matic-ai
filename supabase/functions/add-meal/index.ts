@@ -14,9 +14,22 @@ serve(async (req) => {
   }
 
   try {
-    const { foodId, servings, mealType, plateImage, consumedAt } = await req.json();
+    const requestBody = await req.json();
+    console.log('🔍 ADD-MEAL REQUEST BODY:', JSON.stringify(requestBody, null, 2));
+    
+    const { foodId, servings, mealType, plateImage, consumedAt } = requestBody;
+    
+    console.log('📝 PARSED PARAMETERS:', {
+      foodId,
+      servings: typeof servings,
+      mealType: typeof mealType,
+      mealTypeValue: mealType,
+      plateImage: plateImage ? 'present' : 'null',
+      consumedAt
+    });
     
     if (!foodId || !servings || !mealType) {
+      console.error('❌ MISSING REQUIRED PARAMETERS:', { foodId, servings, mealType });
       return new Response(
         JSON.stringify({ error: 'Food ID, servings, and meal type are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -46,6 +59,12 @@ serve(async (req) => {
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
+    console.log('👤 USER AUTH:', { 
+      userError: userError ? userError.message : null, 
+      userId: user?.id,
+      userEmail: user?.email 
+    });
+    
     if (userError || !user) {
       return new Response(
         JSON.stringify({ error: 'Invalid authorization' }),
@@ -54,14 +73,21 @@ serve(async (req) => {
     }
 
     // First, find the food by food_id to get the UUID
+    console.log('🔍 SEARCHING FOR FOOD:', { foodId });
+    
     const { data: foodData, error: foodError } = await supabase
       .from('foods')
-      .select('id')
+      .select('id, food_name')
       .eq('food_id', foodId)
       .maybeSingle();
 
+    console.log('🍽️ FOOD LOOKUP RESULT:', { 
+      foodData, 
+      foodError: foodError ? foodError.message : null 
+    });
+
     if (foodError) {
-      console.error('Error finding food:', foodError);
+      console.error('❌ ERROR FINDING FOOD:', foodError);
       return new Response(
         JSON.stringify({ error: 'Database error when finding food' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -69,34 +95,56 @@ serve(async (req) => {
     }
 
     if (!foodData) {
-      console.error('Food not found with food_id:', foodId);
+      console.error('❌ FOOD NOT FOUND:', foodId);
       return new Response(
         JSON.stringify({ error: 'Food not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Prepare meal entry data
+    const mealEntryData = {
+      user_id: user.id,
+      food_id: foodData.id,
+      servings: parseFloat(servings),
+      meal_type: mealType,
+      plate_image: plateImage || null,
+      consumed_at: consumedAt || new Date().toISOString()
+    };
+    
+    console.log('📝 MEAL ENTRY DATA TO INSERT:', JSON.stringify(mealEntryData, null, 2));
+
     // Insert meal entry using the UUID
     const { data: mealEntry, error: insertError } = await supabase
       .from('meal_entries')
-      .insert({
-        user_id: user.id,
-        food_id: foodData.id,
-        servings: parseFloat(servings),
-        meal_type: mealType,
-        plate_image: plateImage || null,
-        consumed_at: consumedAt || new Date().toISOString()
-      })
+      .insert(mealEntryData)
       .select(`
         *,
         foods (*)
       `)
       .single();
 
+    console.log('💾 INSERT RESULT:', { 
+      mealEntry, 
+      insertError: insertError ? {
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+        code: insertError.code
+      } : null 
+    });
+
     if (insertError) {
-      console.error('Error inserting meal entry:', insertError);
+      console.error('❌ ERROR INSERTING MEAL ENTRY:', {
+        error: insertError,
+        attemptedData: mealEntryData
+      });
       return new Response(
-        JSON.stringify({ error: 'Failed to add meal entry' }),
+        JSON.stringify({ 
+          error: 'Failed to add meal entry',
+          details: insertError.message,
+          code: insertError.code
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
