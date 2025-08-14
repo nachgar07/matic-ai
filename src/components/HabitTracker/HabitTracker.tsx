@@ -455,19 +455,42 @@ export const HabitTracker = ({
                 <DialogTitle>Calendario de {goal.name}</DialogTitle>
               </DialogHeader>
               <div className="p-4">
-                <Calendar mode="multiple" selected={eachDayOfInterval({
-                start: startOfMonth(new Date()),
-                end: endOfMonth(new Date())
-              }).filter(day => isDayActive(day))} className="rounded-md border pointer-events-auto" locale={es} disabled={false} modifiers={{
-                active: date => isDayActive(date)
-              }} modifiersStyles={{
-                active: {
-                  backgroundColor: goal.color + '40',
-                  color: goal.color,
-                  fontWeight: 'bold',
-                  border: `2px solid ${goal.color}`
-                }
-              }} />
+                <Calendar 
+                  mode="multiple" 
+                  selected={(() => {
+                    const startDate = new Date(goal.start_date + 'T00:00:00');
+                    const endDate = goal.end_date ? new Date(goal.end_date + 'T00:00:00') : addDays(new Date(), 30);
+                    
+                    // Generate all days in the habit range
+                    const allDays = eachDayOfInterval({
+                      start: startDate,
+                      end: endDate
+                    });
+                    
+                    // Filter only the days that are active for this habit
+                    return allDays.filter(day => isDayActive(day));
+                  })()} 
+                  className="rounded-md border pointer-events-auto" 
+                  locale={es} 
+                  disabled={false} 
+                  modifiers={{
+                    active: date => isDayActive(date),
+                    completed: date => getDayProgress(date)?.is_completed || false
+                  }} 
+                  modifiersStyles={{
+                    active: {
+                      backgroundColor: goal.color + '40',
+                      color: goal.color,
+                      fontWeight: 'bold',
+                      border: `2px solid ${goal.color}`
+                    },
+                    completed: {
+                      backgroundColor: goal.color,
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }
+                  }} 
+                />
                 <div className="mt-4 text-sm text-muted-foreground text-center">
                   Los días marcados representan cuándo debes realizar este hábito
                 </div>
