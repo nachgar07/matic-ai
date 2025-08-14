@@ -99,12 +99,15 @@ export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummary
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Calorías por gramo</span>
+            <span className="text-muted-foreground">% de carbohidratos</span>
             <span className="font-medium">
-              {dailyTotals.calories > 0 ? 
-                Math.round(dailyTotals.calories / (dailyTotals.protein + dailyTotals.carbs + dailyTotals.fat)) 
-                : 0
-              }
+              {Math.round((dailyTotals.carbs / goals.carbs) * 100)}%
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">% de grasas</span>
+            <span className="font-medium">
+              {Math.round((dailyTotals.fat / goals.fat) * 100)}%
             </span>
           </div>
         </div>

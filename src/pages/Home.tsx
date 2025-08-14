@@ -184,9 +184,9 @@ export const Home = () => {
       {/* Macronutrients */}
       <div className="px-4 mb-6">
         <div className="flex gap-3">
-          <MacroCard icon="🥩" label="Protein" current={Math.round(dailyTotals.protein)} target={nutritionGoals?.daily_protein || 129} unit="g" />
-          <MacroCard icon="🍞" label="Carbs" current={Math.round(dailyTotals.carbs)} target={nutritionGoals?.daily_carbs || 323} unit="g" />
-          <MacroCard icon="🥑" label="Fat" current={Math.round(dailyTotals.fat)} target={nutritionGoals?.daily_fat || 86} unit="g" />
+          <MacroCard icon="🥩" label="Proteína" current={Math.round(dailyTotals.protein)} target={nutritionGoals?.daily_protein || 129} unit="g" />
+          <MacroCard icon="🍞" label="Carbohidratos" current={Math.round(dailyTotals.carbs)} target={nutritionGoals?.daily_carbs || 323} unit="g" />
+          <MacroCard icon="🥑" label="Grasas" current={Math.round(dailyTotals.fat)} target={nutritionGoals?.daily_fat || 86} unit="g" />
         </div>
       </div>
 
