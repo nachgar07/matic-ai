@@ -325,9 +325,6 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                     <div className={`flex ${isMobile ? 'flex-col gap-1' : 'items-center gap-2'} mb-2`}>
                       <h4 className="font-medium">{food.name}</h4>
                       <div className="flex gap-2 flex-wrap">
-                        <Badge variant={food.confidence > 0.8 ? "default" : "secondary"} className={isMobile ? 'text-xs' : ''}>
-                          {Math.round(food.confidence * 100)}% confianza
-                        </Badge>
                         <Badge variant="outline" className={isMobile ? 'text-xs' : ''}>
                           Analizado por IA
                         </Badge>
