@@ -418,6 +418,39 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_categories: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_entries: {
         Row: {
           consumed_at: string
@@ -613,6 +646,10 @@ export type Database = {
     Functions: {
       cleanup_old_conversations: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_default_meal_categories_for_user: {
+        Args: { user_uuid: string }
         Returns: undefined
       }
     }
