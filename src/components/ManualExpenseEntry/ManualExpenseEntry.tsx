@@ -194,6 +194,7 @@ export const ManualExpenseEntry = ({ onExpenseAdded, onClose, categories }: Manu
                   type="number"
                   step="0.01"
                   min="0"
+                  max="999999999999"
                   value={formData.total_amount}
                   onChange={(e) => handleInputChange('total_amount', e.target.value)}
                   placeholder="0.00"
