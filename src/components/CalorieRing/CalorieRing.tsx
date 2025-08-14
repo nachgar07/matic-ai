@@ -11,9 +11,13 @@ interface CalorieRingProps {
   onWaterClick?: () => void;
   simple?: boolean; // Nueva prop para modo simple
   waterTarget?: number; // Nueva prop para el objetivo de agua
+  // Props para targets específicos de macros
+  proteinTarget?: number;
+  carbsTarget?: number;
+  fatTarget?: number;
 }
 
-export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200, waterGlasses = 0, onWaterClick, simple = false, waterTarget = 12 }: CalorieRingProps) => {
+export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200, waterGlasses = 0, onWaterClick, simple = false, waterTarget = 12, proteinTarget, carbsTarget, fatTarget }: CalorieRingProps) => {
   const [showWaterAnimation, setShowWaterAnimation] = useState(false);
   
   const remaining = Math.max(0, target - consumed);
@@ -31,19 +35,19 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
   const carbsCals = carbs * 4;
   const fatCals = fat * 9;
   
-  // Calculate target calories for each macro (assuming balanced diet)
-  const proteinTarget = target * 0.25; // 25% protein
-  const carbsTarget = target * 0.45;   // 45% carbs 
-  const fatTarget = target * 0.30;     // 30% fat
+  // Use provided targets or calculate based on percentages
+  const finalProteinTarget = proteinTarget ? proteinTarget * 4 : target * 0.25; // Convert grams to calories or use percentage
+  const finalCarbsTarget = carbsTarget ? carbsTarget * 4 : target * 0.45;   // Convert grams to calories or use percentage
+  const finalFatTarget = fatTarget ? fatTarget * 9 : target * 0.30;     // Convert grams to calories or use percentage
   
   // New approach using SVG paths for precise positioning
   const centerX = size / 2;
   const centerY = size / 2;
   
   // Calculate progress percentages - ensure 100% fill when exceeded
-  const proteinProgress = (proteinCals / proteinTarget) * 100;
-  const carbsProgress = (carbsCals / carbsTarget) * 100;
-  const fatProgress = (fatCals / fatTarget) * 100;
+  const proteinProgress = (proteinCals / finalProteinTarget) * 100;
+  const carbsProgress = (carbsCals / finalCarbsTarget) * 100;
+  const fatProgress = (fatCals / finalFatTarget) * 100;
   
   // Each segment is 110 degrees with 10 degree gaps
   const segmentAngle = 110;
