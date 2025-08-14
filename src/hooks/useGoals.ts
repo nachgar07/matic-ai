@@ -237,68 +237,17 @@ export const useUpdateGoalProgress = () => {
       if (error) throw error;
       return data;
     },
-    onMutate: async ({ goalId, date, completedValue, isCompleted, notes }) => {
-      // Cancelar queries pendientes para evitar conflictos
-      await queryClient.cancelQueries({ queryKey: ['goal-progress'] });
-
-      // Obtener usuario actual
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Buscar todas las queries de goal-progress activas
-      const queryKeys = queryClient.getQueryCache().getAll()
-        .filter(query => query.queryKey[0] === 'goal-progress')
-        .map(query => query.queryKey);
-
-      // Para cada query activa, actualizar optimistamente
-      queryKeys.forEach(queryKey => {
-        queryClient.setQueryData(queryKey, (oldData: any) => {
-          if (!oldData) return oldData;
-
-          // Buscar si ya existe progreso para este goal y fecha
-          const existingIndex = oldData.findIndex((p: any) => 
-            p.goal_id === goalId && p.date === date
-          );
-
-          const newProgressEntry = {
-            id: `temp-${goalId}-${date}`, // ID temporal
-            goal_id: goalId,
-            user_id: user.id,
-            date,
-            completed_value: completedValue,
-            is_completed: isCompleted,
-            notes: notes || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-
-          if (existingIndex >= 0) {
-            // Actualizar entrada existente
-            const newData = [...oldData];
-            newData[existingIndex] = { ...newData[existingIndex], ...newProgressEntry };
-            return newData;
-          } else {
-            // Agregar nueva entrada
-            return [...oldData, newProgressEntry];
-          }
-        });
-      });
-
-      // Devolver contexto para posible rollback
-      return { queryKeys };
-    },
-    onError: (err, variables, context) => {
-      // En caso de error, revertir cambios optimistas
-      if (context?.queryKeys) {
-        context.queryKeys.forEach(queryKey => {
-          queryClient.invalidateQueries({ queryKey });
-        });
-      }
-    },
-    onSettled: () => {
-      // Invalidar todas las queries de goal-progress para asegurar consistencia
-      queryClient.invalidateQueries({ queryKey: ['goal-progress'], exact: false });
+    onSuccess: () => {
+      // Invalidar todas las queries de goal-progress para asegurar actualización inmediata
+      queryClient.invalidateQueries({ queryKey: ['goal-progress'] });
       queryClient.invalidateQueries({ queryKey: ['goal-stats'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el progreso. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
     },
   });
 };
