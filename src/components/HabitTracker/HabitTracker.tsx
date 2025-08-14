@@ -369,12 +369,21 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           let buttonState: 'normal' | 'completed' | 'cancelled' = 'normal';
           
           if (dayProgress) {
+            console.log(`🔍 dayProgress for ${dateString}:`, {
+              completed_value: dayProgress.completed_value,
+              is_completed: dayProgress.is_completed,
+              hasProgress,
+              isCompleted
+            });
+            
             if (isCompleted && hasProgress) {
               buttonState = 'completed'; // Verde: completado
             } else if (!isCompleted && hasProgress) {
               buttonState = 'cancelled'; // Rojo: cancelado/fallido
             }
             // Si no tiene progreso (completed_value = 0), permanece normal
+          } else {
+            console.log(`❌ No dayProgress found for ${dateString}`);
           }
 
           console.log(`🎨 Button state for ${dateString}: ${buttonState}`);
