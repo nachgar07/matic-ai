@@ -91,38 +91,51 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
       
       // Normalizar todas las fechas a medianoche
       startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999); // Incluir todo el día final
-      today.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999); 
+      today.setHours(23, 59, 59, 999); // Incluir todo el día de hoy
       
-      // Para el cálculo del porcentaje, usar todo el rango planificado
-      // pero solo considerar días completados hasta hoy
       const allDays = [];
       const current = new Date(startDate);
       
-      // Generar TODOS los días del rango planificado
-      while (current <= endDate) {
+      // Generar TODOS los días del rango planificado hasta hoy (o fecha fin si es anterior)
+      const effectiveEndDate = today < endDate ? today : endDate;
+      
+      while (current <= effectiveEndDate) {
         allDays.push(new Date(current));
         current.setDate(current.getDate() + 1);
       }
       
-      // Filtrar solo los días que son activos según la frecuencia
-      const activeDays = allDays.filter(day => isDayActive(day));
+      console.log(`📊 Calculating percentage for ${goal.name}:`);
+      console.log(`📅 Date range: ${format(startDate, 'yyyy-MM-dd')} to ${format(effectiveEndDate, 'yyyy-MM-dd')}`);
+      console.log(`📅 Total days in range: ${allDays.length}`);
       
-      // Para días completados, solo contar hasta hoy (no futuros)
-      const completedActiveDays = activeDays.filter(day => {
-        const dayNormalized = new Date(day);
-        dayNormalized.setHours(0, 0, 0, 0);
-        const progress = getDayProgress(day);
-        const isCompleted = progress?.is_completed || false;
-        const isNotFuture = dayNormalized <= today;
-        
-        
-        return isNotFuture && isCompleted;
+      // Filtrar solo los días que son activos según la frecuencia
+      const activeDays = allDays.filter(day => {
+        const isActive = isDayActive(day);
+        if (isActive) {
+          console.log(`✅ Active day: ${format(day, 'yyyy-MM-dd')}`);
+        }
+        return isActive;
       });
       
+      console.log(`📅 Total active days: ${activeDays.length}`);
+      
+      // Contar días completados
+      const completedActiveDays = activeDays.filter(day => {
+        const progress = getDayProgress(day);
+        const isCompleted = progress?.is_completed || false;
+        if (isCompleted) {
+          console.log(`✅ Completed day: ${format(day, 'yyyy-MM-dd')}`);
+        }
+        return isCompleted;
+      });
+      
+      console.log(`📅 Completed active days: ${completedActiveDays.length}`);
       
       if (activeDays.length === 0) return 0;
-      return Math.round((completedActiveDays.length / activeDays.length) * 100);
+      const percentage = Math.round((completedActiveDays.length / activeDays.length) * 100);
+      console.log(`📊 Final percentage: ${percentage}%`);
+      return percentage;
     } else {
       // Si no hay fecha de fin, calcular solo para la semana actual
       const activeDays = weekDays.filter(day => isDayActive(day));
