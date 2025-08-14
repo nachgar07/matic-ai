@@ -14,15 +14,26 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    // Get date parameter or default to today in local timezone
-    let date = url.searchParams.get('date');
-    if (!date) {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      date = `${year}-${month}-${day}`;
+    let date, startDate, endDate;
+    
+    // Try to get parameters from request body first (for date range queries)
+    if (req.method === 'POST') {
+      const body = await req.json();
+      startDate = body.startDate;
+      endDate = body.endDate;
+    }
+    
+    // If no body parameters, try URL parameters (for single date queries)
+    if (!startDate && !endDate) {
+      const url = new URL(req.url);
+      date = url.searchParams.get('date');
+      if (!date) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        date = `${year}-${month}-${day}`;
+      }
     }
 
     // Get user from authorization header
@@ -55,17 +66,28 @@ serve(async (req) => {
       );
     }
 
-    // Get meals for the specified date
-    const { data: meals, error } = await supabase
+    // Build query based on whether we have a date range or single date
+    let query = supabase
       .from('meal_entries')
       .select(`
         *,
         foods (*)
       `)
-      .eq('user_id', user.id)
-      .gte('consumed_at', `${date}T00:00:00`)
-      .lt('consumed_at', `${date}T23:59:59`)
-      .order('consumed_at', { ascending: true });
+      .eq('user_id', user.id);
+
+    if (startDate && endDate) {
+      // Date range query
+      query = query
+        .gte('consumed_at', `${startDate}T00:00:00`)
+        .lte('consumed_at', `${endDate}T23:59:59`);
+    } else {
+      // Single date query
+      query = query
+        .gte('consumed_at', `${date}T00:00:00`)
+        .lt('consumed_at', `${date}T23:59:59`);
+    }
+
+    const { data: meals, error } = await query.order('consumed_at', { ascending: true });
 
     if (error) {
       console.error('Error fetching meals:', error);
@@ -75,7 +97,17 @@ serve(async (req) => {
       );
     }
 
-    // Calculate daily totals
+    // If it's a date range query, return all meals without calculating daily totals
+    if (startDate && endDate) {
+      return new Response(
+        JSON.stringify({ 
+          meals: meals || []
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // For single date queries, calculate daily totals
     let totalCalories = 0;
     let totalCarbs = 0;
     let totalProtein = 0;

@@ -7,7 +7,7 @@ import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Footprints, Flame, Sparkles, LogOut } from "lucide-react";
 import { User, Session } from '@supabase/supabase-js';
-import { useUserMeals, useNutritionGoals } from "@/hooks/useFatSecret";
+import { useUserMeals, useUserMealsForDateRange, useNutritionGoals } from "@/hooks/useFatSecret";
 import { useWaterIntake } from "@/hooks/useWaterIntake";
 import { useGoals, useTasks } from "@/hooks/useGoals";
 import { format } from "date-fns";
@@ -27,6 +27,15 @@ export const Home = () => {
     data: mealsData,
     isLoading: mealsLoading
   } = useUserMeals();
+  
+  // Get meals for date range (for calendar)
+  const startDate = format(new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'); // 60 days ago
+  const endDate = format(new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'); // 60 days ahead
+  const {
+    data: mealsRangeData,
+    isLoading: mealsRangeLoading
+  } = useUserMealsForDateRange(startDate, endDate);
+  
   const {
     data: nutritionGoals
   } = useNutritionGoals();
@@ -126,7 +135,7 @@ export const Home = () => {
     }
   };
 
-  // Show loading while checking auth or loading meal data
+  // Show loading while checking auth or loading meal data (but not range data to avoid blocking)
   if (loading || mealsLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -153,6 +162,7 @@ export const Home = () => {
           selectedDate={selectedDate} 
           onDateChange={setSelectedDate}
           mealsData={mealsData}
+          mealsRangeData={mealsRangeData}
           tasksCount={tasks.length + activeHabitsForDate.length}
           expensesCount={expenses.length}
         />

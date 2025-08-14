@@ -86,6 +86,33 @@ export const useAddMeal = () => {
   });
 };
 
+// Get user meals for a date range (for calendar view)
+export const useUserMealsForDateRange = (startDate: string, endDate: string) => {
+  return useQuery({
+    queryKey: ['user-meals-range', startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('get-user-meals', {
+        body: { startDate, endDate }
+      });
+
+      if (error) throw error;
+
+      // Group meals by date for easy access
+      const mealsByDate: Record<string, MealEntry[]> = {};
+      data.meals?.forEach((meal: MealEntry) => {
+        const mealDate = meal.consumed_at.split('T')[0]; // Get date part
+        if (!mealsByDate[mealDate]) {
+          mealsByDate[mealDate] = [];
+        }
+        mealsByDate[mealDate].push(meal);
+      });
+
+      return { mealsByDate, meals: data.meals || [] };
+    },
+    enabled: !!(startDate && endDate)
+  });
+};
+
 // Get user meals for a specific date
 export const useUserMeals = (date?: string) => {
   // Get date in local timezone if not provided

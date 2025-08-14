@@ -6,11 +6,12 @@ interface WeeklyCalendarProps {
   selectedDate: Date;
   onDateChange: (date: Date) => void;
   mealsData?: any;
+  mealsRangeData?: { mealsByDate: Record<string, any[]>; meals: any[] };
   tasksCount?: number;
   expensesCount?: number;
 }
 
-export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, tasksCount, expensesCount }: WeeklyCalendarProps) => {
+export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, mealsRangeData, tasksCount, expensesCount }: WeeklyCalendarProps) => {
   const today = new Date();
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState(0);
@@ -158,9 +159,14 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, tasksCou
       return true;
     }
     
-    // Si hay datos de comidas para este día
-    if (mealsData?.meals && mealsData.meals.length > 0) {
-      return dateString === todayString; // Por ahora solo para hoy, se puede expandir
+    // Verificar si hay comidas para cualquier día usando mealsRangeData
+    if (mealsRangeData?.mealsByDate && mealsRangeData.mealsByDate[dateString]) {
+      return mealsRangeData.mealsByDate[dateString].length > 0;
+    }
+    
+    // Fallback: si es hoy y hay datos de comidas actuales
+    if (dateString === todayString && mealsData?.meals && mealsData.meals.length > 0) {
+      return true;
     }
     
     return false;
