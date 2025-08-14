@@ -311,18 +311,41 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
           const isPastDay = date < new Date() && !isToday(date);
           const isActive = isDayActive(date);
 
-
-          // Determinar el estado del botón
-          let buttonState = 'normal';
-          let stateLabel = 'Normal';
-          if (hasProgress && isCompleted) {
-            buttonState = 'completed'; // Verde
-            stateLabel = 'Completado';
-          } else if (hasProgress && !isCompleted) {
-            buttonState = 'cancelled'; // Rojo
-            stateLabel = 'Cancelado';
-          }
+          // Determinar el estado del botón más claramente
+          let buttonState: 'normal' | 'completed' | 'cancelled' = 'normal';
           
+          if (dayProgress) {
+            if (isCompleted && hasProgress) {
+              buttonState = 'completed'; // Verde: completado
+            } else if (!isCompleted && hasProgress) {
+              buttonState = 'cancelled'; // Rojo: cancelado/fallido
+            }
+            // Si no tiene progreso (completed_value = 0), permanece normal
+          }
+
+          // Clases de estilo más claras
+          const getButtonClasses = () => {
+            const baseClasses = "w-10 h-10 rounded-full p-0 transition-all duration-200 border-2";
+            
+            if (!isActive) {
+              return `${baseClasses} bg-muted/20 text-muted-foreground/40 cursor-not-allowed border-transparent`;
+            }
+            
+            switch (buttonState) {
+              case 'completed':
+                return `${baseClasses} bg-green-500 text-white hover:bg-green-600 border-green-600 shadow-sm`;
+              case 'cancelled':
+                return `${baseClasses} bg-red-500 text-white hover:bg-red-600 border-red-600 shadow-sm`;
+              default:
+                if (isCurrentDay) {
+                  return `${baseClasses} bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm`;
+                } else if (isPastDay) {
+                  return `${baseClasses} bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-200`;
+                } else {
+                  return `${baseClasses} bg-background hover:bg-muted border-border hover:border-muted-foreground/20`;
+                }
+            }
+          };
 
           return (
             <div key={date.toISOString()} className="text-center">
@@ -334,19 +357,7 @@ export const HabitTracker = ({ goal }: HabitTrackerProps) => {
                 size="sm"
                 onClick={() => toggleDayComplete(date)}
                 disabled={!isActive}
-                className={`w-10 h-10 rounded-full p-0 ${
-                  !isActive
-                    ? 'bg-muted/30 text-muted-foreground/50 cursor-not-allowed'
-                    : buttonState === 'completed'
-                    ? 'bg-green-500 text-white hover:bg-green-600'
-                    : buttonState === 'cancelled'
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : isCurrentDay
-                    ? 'bg-primary text-primary-foreground hover:bg-primary/80'
-                    : isPastDay
-                    ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
-                    : 'bg-muted hover:bg-muted/80'
-                }`}
+                className={getButtonClasses()}
               >
                 {format(date, 'd')}
               </Button>
