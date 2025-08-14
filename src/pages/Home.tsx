@@ -15,7 +15,6 @@ import { es } from "date-fns/locale";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { isHabitActiveOnDate } from "@/utils/habitUtils";
 import { useExpenses } from "@/hooks/useExpenses";
-import { ExpenseChart } from "@/components/ExpenseChart/ExpenseChart";
 export const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -351,19 +350,6 @@ export const Home = () => {
                 )}
               </div>
             </div>
-
-            {/* Expense Chart */}
-            {chartData.length > 0 && (
-              <div className="mt-4">
-                <ExpenseChart 
-                  data={chartData}
-                  totalAmount={totalAmount}
-                  chartPeriod="day"
-                  onPeriodChange={() => {}} // No permitir cambio de período en Home
-                  referenceDate={selectedDate}
-                />
-              </div>
-            )}
           </div>
         ) : (
           <div className="bg-card rounded-lg p-6 text-center">
