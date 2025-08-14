@@ -74,6 +74,43 @@ export const useCreateMealCategory = () => {
   });
 };
 
+export const useUpdateMealCategory = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ categoryId, name }: {
+      categoryId: string;
+      name: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('meal_categories')
+        .update({ name, updated_at: new Date().toISOString() })
+        .eq('id', categoryId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meal-categories'] });
+      toast({
+        title: "Categoría actualizada",
+        description: "El nombre de la categoría se actualizó exitosamente",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la categoría",
+        variant: "destructive"
+      });
+      console.error('Error updating meal category:', error);
+    },
+  });
+};
+
 export const useDeleteMealCategory = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
