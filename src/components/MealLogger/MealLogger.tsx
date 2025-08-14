@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { Food, useAddMeal } from "@/hooks/useFatSecret";
 import { useToast } from "@/hooks/use-toast";
+import { useMealCategories, useCreateMealCategory } from "@/hooks/useMealCategories";
 
 interface MealLoggerProps {
   food: Food;
@@ -16,9 +17,18 @@ interface MealLoggerProps {
 
 export const MealLogger = ({ food, onClose, onSuccess, selectedDate }: MealLoggerProps) => {
   const [servings, setServings] = useState("1");
-  const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
+  const [mealType, setMealType] = useState<string>("Desayuno");
+  const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const { mutateAsync: addMeal, isPending } = useAddMeal();
   const { toast } = useToast();
+  const { data: categories, isLoading: categoriesLoading } = useMealCategories();
+  const { mutateAsync: createCategory, isPending: isCreatingCategory } = useCreateMealCategory();
+
+  // Set default meal type when categories load
+  if (categories && categories.length > 0 && mealType === "Desayuno" && !categories.find(c => c.name === "Desayuno")) {
+    setMealType(categories[0].name);
+  }
 
   const calculateNutrition = (multiplier: number) => ({
     calories: Math.round((food.calories_per_serving || 0) * multiplier),
@@ -29,18 +39,56 @@ export const MealLogger = ({ food, onClose, onSuccess, selectedDate }: MealLogge
 
   const nutrition = calculateNutrition(parseFloat(servings) || 1);
 
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    
+    try {
+      const newCategory = await createCategory({ name: newCategoryName.trim() });
+      setMealType(newCategory.name);
+      setShowCreateCategory(false);
+      setNewCategoryName("");
+    } catch (error) {
+      console.error('Error creating category:', error);
+    }
+  };
+
+  const handleMealTypeChange = (value: string) => {
+    if (value === "create-new") {
+      setShowCreateCategory(true);
+    } else {
+      setMealType(value);
+      setShowCreateCategory(false);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
+      // Map custom category names to the meal_type format expected by the API
+      let finalMealType = mealType;
+      
+      // For backward compatibility, map default categories to expected values
+      const categoryMapping: Record<string, string> = {
+        'Desayuno': 'breakfast',
+        'Almuerzo': 'lunch', 
+        'Cena': 'dinner',
+        'Snack': 'snack'
+      };
+
+      // Use mapping if it exists, otherwise use the category name directly
+      if (categoryMapping[mealType]) {
+        finalMealType = categoryMapping[mealType];
+      }
+
       await addMeal({
         foodId: food.food_id,
         servings: parseFloat(servings) || 1,
-        mealType,
+        mealType: finalMealType as any,
         consumedAt: selectedDate
       });
       
       toast({
         title: "¡Comida registrada!",
-        description: `${food.food_name} añadido a ${getMealTypeLabel(mealType)}`
+        description: `${food.food_name} añadido a ${mealType}`
       });
       
       onSuccess();
@@ -53,15 +101,6 @@ export const MealLogger = ({ food, onClose, onSuccess, selectedDate }: MealLogge
     }
   };
 
-  const getMealTypeLabel = (type: string) => {
-    const labels = {
-      breakfast: "Desayuno",
-      lunch: "Almuerzo", 
-      dinner: "Cena",
-      snack: "Snack"
-    };
-    return labels[type as keyof typeof labels] || type;
-  };
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -92,17 +131,59 @@ export const MealLogger = ({ food, onClose, onSuccess, selectedDate }: MealLogge
 
           <div>
             <Label htmlFor="meal-type">Tipo de comida</Label>
-            <Select value={mealType} onValueChange={(value: any) => setMealType(value)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="breakfast">Desayuno</SelectItem>
-                <SelectItem value="lunch">Almuerzo</SelectItem>
-                <SelectItem value="dinner">Cena</SelectItem>
-                <SelectItem value="snack">Snack</SelectItem>
-              </SelectContent>
-            </Select>
+            {!showCreateCategory ? (
+              <Select value={mealType} onValueChange={handleMealTypeChange}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  {categoriesLoading ? (
+                    <SelectItem value="loading" disabled>Cargando...</SelectItem>
+                  ) : (
+                    <>
+                      {categories?.map((category) => (
+                        <SelectItem key={category.id} value={category.name}>
+                          {category.icon} {category.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="create-new">➕ Crear nueva categoría</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="space-y-2 mt-1">
+                <Input
+                  placeholder="Nombre de la nueva categoría"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleCreateCategory()}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowCreateCategory(false);
+                      setNewCategoryName("");
+                    }}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCreateCategory}
+                    disabled={!newCategoryName.trim() || isCreatingCategory}
+                    className="flex-1"
+                  >
+                    {isCreatingCategory ? "Creando..." : "Crear"}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Nutrition Summary */}
