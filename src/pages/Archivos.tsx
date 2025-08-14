@@ -955,7 +955,7 @@ export const Archivos = () => {
                       <div className="text-xs text-muted-foreground mb-2">Productos:</div>
                       {gasto.items.slice(0, 2).map((item, index) => (
                         <div key={index} className="text-sm flex justify-between">
-                          <span>{item.producto}</span>
+                          <span>{item.producto} x {item.cantidad}</span>
                           <span>${item.precio.toFixed(2)}</span>
                         </div>
                       ))}
