@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Mic, MicOff, Send, X, Sparkles, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useChatPersistence } from '@/hooks/useChatPersistence';
+import { useMealCategories } from '@/hooks/useMealCategories';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
@@ -30,6 +32,7 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
   const { clearAllConversations } = useChatPersistence();
+  const { data: mealCategories } = useMealCategories();
 
   // Load conversation history on component mount
   useEffect(() => {
@@ -309,6 +312,14 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
         .slice(0, 5)
         .map(([food, count]) => ({ food, count }));
 
+      // Add user's custom meal categories to context
+      const userMealCategories = mealCategories?.map(category => ({
+        name: category.name,
+        icon: category.icon,
+        color: category.color,
+        is_default: category.is_default
+      })) || [];
+
       return {
         user: {
           id: user.id,
@@ -324,7 +335,8 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
         recent_patterns: {
           total_meals: recentMeals?.length || 0,
           frequent_foods: frequentFoods
-        }
+        },
+        meal_categories: userMealCategories
       };
     } catch (error) {
       console.error('Error getting user context:', error);
@@ -362,6 +374,7 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
       // Get user context from frontend
       const userContext = await getUserNutritionContext();
       console.log('👤 User context loaded:', !!userContext);
+      console.log('🏷️ User meal categories:', userContext?.meal_categories);
 
       // Get auth session to pass to edge function
       const { data: { session } } = await supabase.auth.getSession();
@@ -520,7 +533,7 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
     });
   };
 
-  // Format assistant messages to remove markdown and add icons
+  // Format assistant messages to remove markdown and add icons (avoid duplicating existing icons)
   const formatAssistantMessage = (content: string) => {
     // Handle undefined or null content
     if (!content) {
@@ -537,23 +550,51 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
     formatted = formatted.replace(/## (.*?)(\n|$)/g, '$1$2');
     formatted = formatted.replace(/# (.*?)(\n|$)/g, '$1$2');
     
-    // Add food emoji before meal names
-    formatted = formatted.replace(/^- (Huevos?|Huevo)/gmi, '🥚 $1');
-    formatted = formatted.replace(/^- (Pan|Tostada)/gmi, '🍞 $1');
-    formatted = formatted.replace(/^- (Palta|Aguacate)/gmi, '🥑 $1');
-    formatted = formatted.replace(/^- (Pollo|Pechuga)/gmi, '🍗 $1');
-    formatted = formatted.replace(/^- (Arroz)/gmi, '🍚 $1');
-    formatted = formatted.replace(/^- (Quinoa)/gmi, '🌾 $1');
-    formatted = formatted.replace(/^- (Ensalada|Lechuga)/gmi, '🥗 $1');
-    formatted = formatted.replace(/^- (Tomate)/gmi, '🍅 $1');
-    formatted = formatted.replace(/^- (Limón)/gmi, '🍋 $1');
+    // Only add food emojis if they don't already exist in the text
+    if (!formatted.includes('🥚')) {
+      formatted = formatted.replace(/^- (Huevos?|Huevo)/gmi, '🥚 $1');
+    }
+    if (!formatted.includes('🍞')) {
+      formatted = formatted.replace(/^- (Pan|Tostada)/gmi, '🍞 $1');
+    }
+    if (!formatted.includes('🥑')) {
+      formatted = formatted.replace(/^- (Palta|Aguacate)/gmi, '🥑 $1');
+    }
+    if (!formatted.includes('🍗')) {
+      formatted = formatted.replace(/^- (Pollo|Pechuga)/gmi, '🍗 $1');
+    }
+    if (!formatted.includes('🍚')) {
+      formatted = formatted.replace(/^- (Arroz)/gmi, '🍚 $1');
+    }
+    if (!formatted.includes('🌾')) {
+      formatted = formatted.replace(/^- (Quinoa)/gmi, '🌾 $1');
+    }
+    if (!formatted.includes('🥗')) {
+      formatted = formatted.replace(/^- (Ensalada|Lechuga)/gmi, '🥗 $1');
+    }
+    if (!formatted.includes('🍅')) {
+      formatted = formatted.replace(/^- (Tomate)/gmi, '🍅 $1');
+    }
+    if (!formatted.includes('🍋')) {
+      formatted = formatted.replace(/^- (Limón)/gmi, '🍋 $1');
+    }
     
-    // Add nutrition emoji before totals
-    formatted = formatted.replace(/Totales del (desayuno|almuerzo|cena|snack):/gi, '📊 Totales del $1:');
-    formatted = formatted.replace(/Calorías:/gi, '🔥 Calorías:');
-    formatted = formatted.replace(/Proteína:/gi, '💪 Proteína:');
-    formatted = formatted.replace(/Carbohidratos:/gi, '🌾 Carbohidratos:');
-    formatted = formatted.replace(/Grasas:/gi, '🥑 Grasas:');
+    // Add nutrition emoji before totals only if they don't already exist
+    if (!formatted.includes('📊')) {
+      formatted = formatted.replace(/Totales del (desayuno|almuerzo|cena|snack):/gi, '📊 Totales del $1:');
+    }
+    if (!formatted.includes('🔥')) {
+      formatted = formatted.replace(/Calorías:/gi, '🔥 Calorías:');
+    }
+    if (!formatted.includes('💪')) {
+      formatted = formatted.replace(/Proteína:/gi, '💪 Proteína:');
+    }
+    if (!formatted.includes('🌾')) {
+      formatted = formatted.replace(/Carbohidratos:/gi, '🌾 Carbohidratos:');
+    }
+    if (!formatted.includes('🥑')) {
+      formatted = formatted.replace(/Grasas:/gi, '🥑 Grasas:');
+    }
     
     return formatted;
   };
