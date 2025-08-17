@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vital-ai-v3';
+const CACHE_NAME = 'vital-ai-v4';
 const urlsToCache = [
   '/',
   '/icon-192.png',
@@ -12,12 +12,20 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        return cache.addAll(urlsToCache);
+        return cache.addAll(urlsToCache).catch(err => {
+          console.log('Failed to cache some resources:', err);
+          return Promise.resolve();
+        });
       })
   );
 });
 
 self.addEventListener('fetch', event => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -28,17 +36,39 @@ self.addEventListener('fetch', event => {
         
         // For navigation requests, serve index.html for SPA routing
         if (event.request.mode === 'navigate') {
-          return caches.match('/') || fetch('/');
+          return caches.match('/').then(cachedResponse => {
+            return cachedResponse || fetch('/').catch(() => {
+              return new Response('App offline', {
+                status: 503,
+                statusText: 'Service Unavailable',
+                headers: new Headers({
+                  'Content-Type': 'text/plain'
+                })
+              });
+            });
+          });
         }
         
         // For all other requests, fetch from network
-        return fetch(event.request);
+        return fetch(event.request).catch(() => {
+          return new Response('Resource unavailable', {
+            status: 404,
+            statusText: 'Not Found',
+            headers: new Headers({
+              'Content-Type': 'text/plain'
+            })
+          });
+        });
       })
       .catch(() => {
-        // If offline and it's a navigation request, serve index.html
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
+        // Fallback response
+        return new Response('Service unavailable', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: new Headers({
+            'Content-Type': 'text/plain'
+          })
+        });
       })
   );
 });
@@ -48,11 +78,11 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          // Delete all caches to force fresh content
-          return caches.delete(cacheName);
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
         })
       ).then(() => {
-        // Claim all clients to force using new SW immediately
         return self.clients.claim();
       });
     })
