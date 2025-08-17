@@ -150,17 +150,31 @@ serve(async (req) => {
       // Handle single meal with pre-calculated nutrition
       console.log(`Creating single meal: ${food_name}`);
       
-      // Create a food entry in the database if it doesn't exist
-      const { data: existingFood, error: searchError } = await supabase
+      // Find or create food entry with exact nutritional match
+      const { data: existingFoods, error: searchError } = await supabase
         .from('foods')
         .select('*')
-        .eq('food_name', food_name)
-        .limit(1);
+        .eq('food_name', food_name);
 
       let foodId;
-      if (existingFood && existingFood.length > 0) {
-        foodId = existingFood[0].id;
-        console.log(`Found existing food: ${food_name}`);
+      let matchedFood = null;
+      
+      // Look for an exact nutritional match (with 2% tolerance)
+      if (existingFoods && existingFoods.length > 0) {
+        for (const food of existingFoods) {
+          const caloriesDiff = Math.abs((food.calories_per_serving || 0) - calories_per_serving!) / calories_per_serving! * 100;
+          const proteinDiff = Math.abs((food.protein_per_serving || 0) - protein_per_serving!) / protein_per_serving! * 100;
+          
+          if (caloriesDiff <= 2 && proteinDiff <= 2) {
+            matchedFood = food;
+            break;
+          }
+        }
+      }
+
+      if (matchedFood) {
+        foodId = matchedFood.id;
+        console.log(`✅ Found nutritionally matching food: ${food_name} (${matchedFood.calories_per_serving} kcal vs ${calories_per_serving} kcal)`);
       } else {
         // Create new food entry
         const { data: newFood, error: insertError } = await supabase
@@ -183,7 +197,7 @@ serve(async (req) => {
         }
 
         foodId = newFood.id;
-        console.log(`Created new food: ${food_name}`);
+        console.log(`✅ Created new food entry: ${food_name} (${calories_per_serving} kcal) - no exact nutritional match found`);
       }
 
       // Create meal entry
@@ -234,17 +248,31 @@ serve(async (req) => {
       if (nutritionalInfo) {
         nutritionalResults.push(nutritionalInfo);
         
-        // Create a food entry in the database if it doesn't exist
-        const { data: existingFood, error: searchError } = await supabase
+        // Find or create food entry with exact nutritional match
+        const { data: existingFoods, error: searchError } = await supabase
           .from('foods')
           .select('*')
-          .eq('food_name', nutritionalInfo.food_name)
-          .limit(1);
+          .eq('food_name', nutritionalInfo.food_name);
 
         let foodId;
-        if (existingFood && existingFood.length > 0) {
-          foodId = existingFood[0].id;
-          console.log(`Found existing food: ${nutritionalInfo.food_name}`);
+        let matchedFood = null;
+        
+        // Look for an exact nutritional match (with 2% tolerance)
+        if (existingFoods && existingFoods.length > 0) {
+          for (const food of existingFoods) {
+            const caloriesDiff = Math.abs((food.calories_per_serving || 0) - nutritionalInfo.calories_per_serving) / nutritionalInfo.calories_per_serving * 100;
+            const proteinDiff = Math.abs((food.protein_per_serving || 0) - nutritionalInfo.protein_per_serving) / nutritionalInfo.protein_per_serving * 100;
+            
+            if (caloriesDiff <= 2 && proteinDiff <= 2) {
+              matchedFood = food;
+              break;
+            }
+          }
+        }
+
+        if (matchedFood) {
+          foodId = matchedFood.id;
+          console.log(`✅ Found nutritionally matching food: ${nutritionalInfo.food_name} (${matchedFood.calories_per_serving} kcal vs ${nutritionalInfo.calories_per_serving} kcal)`);
         } else {
           // Create new food entry
           const { data: newFood, error: insertError } = await supabase
@@ -267,7 +295,7 @@ serve(async (req) => {
           }
 
           foodId = newFood.id;
-          console.log(`Created new food: ${nutritionalInfo.food_name}`);
+          console.log(`✅ Created new food entry: ${nutritionalInfo.food_name} (${nutritionalInfo.calories_per_serving} kcal) - no exact nutritional match found`);
         }
 
         // Create meal entry
