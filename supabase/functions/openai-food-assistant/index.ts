@@ -1074,17 +1074,31 @@ async function executeCreatePlate(args: any, userContext: any) {
         fat: food.fat_per_serving
       });
 
-      // Create or find the food entry
-      const { data: existingFood } = await supabase
+      // Find or create food entry with exact nutritional match
+      const { data: existingFoods } = await supabase
         .from('foods')
         .select('*')
-        .eq('food_name', food.food_name)
-        .limit(1);
+        .eq('food_name', food.food_name);
 
       let foodId;
-      if (existingFood && existingFood.length > 0) {
-        foodId = existingFood[0].id;
-        console.log(`🔍 CREATE_PLATE - Found existing food: ${food.food_name}`);
+      let matchedFood = null;
+      
+      // Look for an exact nutritional match (with 2% tolerance)
+      if (existingFoods && existingFoods.length > 0) {
+        for (const existingFood of existingFoods) {
+          const caloriesDiff = Math.abs((existingFood.calories_per_serving || 0) - food.calories_per_serving) / food.calories_per_serving * 100;
+          const proteinDiff = Math.abs((existingFood.protein_per_serving || 0) - food.protein_per_serving) / food.protein_per_serving * 100;
+          
+          if (caloriesDiff <= 2 && proteinDiff <= 2) {
+            matchedFood = existingFood;
+            break;
+          }
+        }
+      }
+
+      if (matchedFood) {
+        foodId = matchedFood.id;
+        console.log(`✅ CREATE_PLATE - Found nutritionally matching food: ${food.food_name} (${matchedFood.calories_per_serving} kcal vs ${food.calories_per_serving} kcal)`);
       } else {
         // Create new food entry
         const { data: newFood, error: insertError } = await supabase
@@ -1107,7 +1121,7 @@ async function executeCreatePlate(args: any, userContext: any) {
         }
 
         foodId = newFood.id;
-        console.log(`➕ CREATE_PLATE - Created new food: ${food.food_name}`);
+        console.log(`✅ CREATE_PLATE - Created new food entry: ${food.food_name} (${food.calories_per_serving} kcal) - no exact nutritional match found`);
       }
 
       // Create meal entry for this food
@@ -1307,17 +1321,31 @@ async function executeCreateMealPlan(args: any, userContext: any) {
         const food = plate.foods[i];
         console.log(`🍽️ CREATE_MEAL_PLAN - Processing food ${i + 1}/${plate.foods.length} in plate "${plate.plate_name}": ${food.food_name}`);
 
-        // Create or find the food entry
-        const { data: existingFood } = await supabase
+        // Find or create food entry with exact nutritional match
+        const { data: existingFoods } = await supabase
           .from('foods')
           .select('*')
-          .eq('food_name', food.food_name)
-          .limit(1);
+          .eq('food_name', food.food_name);
 
         let foodId;
-        if (existingFood && existingFood.length > 0) {
-          foodId = existingFood[0].id;
-          console.log(`🔍 CREATE_MEAL_PLAN - Found existing food: ${food.food_name}`);
+        let matchedFood = null;
+        
+        // Look for an exact nutritional match (with 2% tolerance)
+        if (existingFoods && existingFoods.length > 0) {
+          for (const existingFood of existingFoods) {
+            const caloriesDiff = Math.abs((existingFood.calories_per_serving || 0) - food.calories_per_serving) / food.calories_per_serving * 100;
+            const proteinDiff = Math.abs((existingFood.protein_per_serving || 0) - food.protein_per_serving) / food.protein_per_serving * 100;
+            
+            if (caloriesDiff <= 2 && proteinDiff <= 2) {
+              matchedFood = existingFood;
+              break;
+            }
+          }
+        }
+
+        if (matchedFood) {
+          foodId = matchedFood.id;
+          console.log(`✅ CREATE_MEAL_PLAN - Found nutritionally matching food: ${food.food_name} (${matchedFood.calories_per_serving} kcal vs ${food.calories_per_serving} kcal)`);
         } else {
           // Create new food entry
           const { data: newFood, error: insertError } = await supabase
@@ -1340,7 +1368,7 @@ async function executeCreateMealPlan(args: any, userContext: any) {
           }
 
           foodId = newFood.id;
-          console.log(`➕ CREATE_MEAL_PLAN - Created new food: ${food.food_name}`);
+          console.log(`✅ CREATE_MEAL_PLAN - Created new food entry: ${food.food_name} (${food.calories_per_serving} kcal) - no exact nutritional match found`);
         }
 
         // Create meal entry for this food
