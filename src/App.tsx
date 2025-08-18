@@ -11,8 +11,6 @@ import { Archivos } from "./pages/Archivos";
 import { Perfil } from "./pages/Perfil";
 import { Auth } from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import { PWAInstallPrompt } from "./components/PWAInstallPrompt/PWAInstallPrompt";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -21,7 +19,6 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <PWAInstallPrompt />
         <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
