@@ -169,6 +169,12 @@ export const Auth = () => {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     
+    // Show user feedback about the redirect
+    toast({
+      title: "Redirigiendo a Google...",
+      description: "Te redirigiremos de vuelta en unos segundos.",
+    });
+    
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -182,6 +188,8 @@ export const Auth = () => {
       });
 
       if (error) throw error;
+      
+      // Note: This code won't run because of the redirect, but we keep it for completeness
     } catch (error: any) {
       toast({
         title: "Error al iniciar sesión con Google",
