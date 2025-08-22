@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { User, Session } from '@supabase/supabase-js';
 import { Loader2, UserPlus, LogIn } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useNativeGoogleAuth } from "@/hooks/useNativeGoogleAuth";
 
 export const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -18,6 +19,7 @@ export const Auth = () => {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const { toast } = useToast();
+  const { signInWithGoogle, loading: googleLoading, isNative } = useNativeGoogleAuth();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -167,37 +169,7 @@ export const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    setLoading(true);
-    
-    // Show user feedback about the redirect
-    toast({
-      title: "Redirigiendo a Google...",
-      description: "Te redirigiremos de vuelta en unos segundos.",
-    });
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        },
-      });
-
-      if (error) throw error;
-      
-      // Note: This code won't run because of the redirect, but we keep it for completeness
-    } catch (error: any) {
-      toast({
-        title: "Error al iniciar sesión con Google",
-        description: error.message || "Ha ocurrido un error inesperado.",
-        variant: "destructive",
-      });
-      setLoading(false);
-    }
+    await signInWithGoogle();
   };
 
   // If user is already logged in, show loading state while redirecting
@@ -286,7 +258,7 @@ export const Auth = () => {
                   variant="outline"
                   className="w-full"
                   onClick={handleGoogleSignIn}
-                  disabled={loading}
+                  disabled={loading || googleLoading}
                 >
                   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                     <path
@@ -381,7 +353,7 @@ export const Auth = () => {
                   variant="outline"
                   className="w-full"
                   onClick={handleGoogleSignIn}
-                  disabled={loading}
+                  disabled={loading || googleLoading}
                 >
                   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                     <path

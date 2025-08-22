@@ -19,6 +19,11 @@ const config: CapacitorConfig = {
     },
     Filesystem: {
       iosDatabaseLocation: 'Documents'
+    },
+    GoogleAuth: {
+      scopes: ['profile', 'email'],
+      serverClientId: 'YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com',
+      forceCodeForRefreshToken: true
     }
   }
 };
