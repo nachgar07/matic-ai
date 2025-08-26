@@ -18,19 +18,30 @@ export interface Expense {
   category_icon?: string;
 }
 
-export const useExpenses = (date?: Date) => {
+export const useExpenses = (date?: Date | null) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Don't load expenses if date is null (user not authenticated)
+    if (date === null) {
+      setExpenses([]);
+      setLoading(false);
+      return;
+    }
+
     const loadExpenses = async () => {
       try {
         setLoading(true);
         setError(null);
 
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setExpenses([]);
+          setLoading(false);
+          return;
+        }
 
         const targetDate = date || new Date();
         const dateString = format(targetDate, 'yyyy-MM-dd');

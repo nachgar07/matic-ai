@@ -158,6 +158,7 @@ export const useTasks = (date?: string) => {
       
       return filteredTasks as Task[];
     },
+    enabled: !!date // Only run when date is provided
   });
 };
 

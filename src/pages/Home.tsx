@@ -23,20 +23,26 @@ export const Home = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Get meal data for the selected date specifically
+  // Only fetch data when user is authenticated
   const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
+  const shouldFetchData = !loading && !!session && !!user;
+  
+  // Get meal data for the selected date (only when authenticated)
   const {
     data: mealsData,
     isLoading: mealsLoading
-  } = useUserMeals(selectedDateString);
+  } = useUserMeals(shouldFetchData ? selectedDateString : undefined);
   
-  // Get meals for date range (for calendar)
-  const startDate = format(new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'); // 60 days ago
-  const endDate = format(new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'); // 60 days ahead
+  // Get meals for date range (for calendar) (only when authenticated)
+  const startDate = format(new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+  const endDate = format(new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
   const {
     data: mealsRangeData,
     isLoading: mealsRangeLoading
-  } = useUserMealsForDateRange(startDate, endDate);
+  } = useUserMealsForDateRange(
+    shouldFetchData ? startDate : '', 
+    shouldFetchData ? endDate : ''
+  );
   
   const {
     data: nutritionGoals
@@ -45,15 +51,17 @@ export const Home = () => {
     waterGlasses
   } = useWaterIntake();
 
-  // Get tasks and goals for selected date
-  const { data: tasks = [] } = useTasks(format(selectedDate, 'yyyy-MM-dd'));
+  // Get tasks and goals for selected date (only when authenticated)
+  const { data: tasks = [] } = useTasks(shouldFetchData ? format(selectedDate, 'yyyy-MM-dd') : '');
   const { data: goals = [] } = useGoals();
   
   // Filter active habits for selected date
   const activeHabitsForDate = goals.filter(goal => isHabitActiveOnDate(goal, selectedDate));
 
-  // Get expenses for selected date
-  const { expenses, chartData, totalAmount, loading: expensesLoading } = useExpenses(selectedDate);
+  // Get expenses for selected date (only when authenticated)
+  const { expenses, chartData, totalAmount, loading: expensesLoading } = useExpenses(
+    shouldFetchData ? selectedDate : null
+  );
 
   // Terms acceptance
   const { hasAcceptedTerms, loading: termsLoading, checkTermsAcceptance, acceptTerms } = useTermsAcceptance();

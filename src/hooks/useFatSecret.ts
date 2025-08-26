@@ -159,7 +159,8 @@ export const useUserMeals = (date?: string) => {
 
       if (error) throw error;
       return data as { meals: MealEntry[]; dailyTotals: DailyTotals };
-    }
+    },
+    enabled: !!date // Only run when date is provided
   });
 };
 
