@@ -10,6 +10,8 @@ import { Objetivos } from "./pages/Objetivos";
 import { Archivos } from "./pages/Archivos";
 import { Perfil } from "./pages/Perfil";
 import { Auth } from "./pages/Auth";
+import { TermsAndConditions } from "./pages/TermsAndConditions";
+import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -27,6 +29,8 @@ const App = () => (
           <Route path="/objetivos" element={<Objetivos />} />
           <Route path="/archivos" element={<Archivos />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

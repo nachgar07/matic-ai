@@ -15,6 +15,8 @@ import { es } from "date-fns/locale";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { isHabitActiveOnDate } from "@/utils/habitUtils";
 import { useExpenses } from "@/hooks/useExpenses";
+import { useTermsAcceptance } from "@/hooks/useTermsAcceptance";
+import { TermsAcceptanceModal } from "@/components/TermsAcceptanceModal/TermsAcceptanceModal";
 export const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -53,6 +55,9 @@ export const Home = () => {
   // Get expenses for selected date
   const { expenses, chartData, totalAmount, loading: expensesLoading } = useExpenses(selectedDate);
 
+  // Terms acceptance
+  const { hasAcceptedTerms, loading: termsLoading, checkTermsAcceptance, acceptTerms } = useTermsAcceptance();
+
   // Calculate real values from meal data
   const dailyTotals = mealsData?.dailyTotals || {
     calories: 0,
@@ -75,6 +80,13 @@ export const Home = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Check terms acceptance when user signs in
+      if (session?.user && event === 'SIGNED_IN') {
+        setTimeout(() => {
+          checkTermsAcceptance(session.user.id);
+        }, 0);
+      }
     });
 
     // Check for existing session
@@ -86,9 +98,14 @@ export const Home = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Check terms acceptance for existing session
+      if (session?.user) {
+        checkTermsAcceptance(session.user.id);
+      }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [checkTermsAcceptance]);
   const handleSignOut = async () => {
     try {
       // Clean up auth state including problematic URLs
@@ -136,7 +153,7 @@ export const Home = () => {
   };
 
   // Show loading while checking auth or loading meal data (but not range data to avoid blocking)
-  if (loading || mealsLoading) {
+  if (loading || mealsLoading || termsLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="text-muted-foreground">Cargando...</div>
@@ -149,6 +166,17 @@ export const Home = () => {
     window.location.href = '/auth';
     return null;
   }
+
+  // Handle terms acceptance
+  const handleAcceptTerms = async () => {
+    if (user) {
+      const success = await acceptTerms(user.id);
+      if (!success) {
+        // Error toast is handled by the hook
+        return;
+      }
+    }
+  };
   return <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="p-4">
@@ -364,5 +392,11 @@ export const Home = () => {
       </div>
 
       <BottomNavigation />
+      
+      {/* Terms Acceptance Modal */}
+      <TermsAcceptanceModal 
+        isOpen={hasAcceptedTerms === false} 
+        onAccept={handleAcceptTerms} 
+      />
     </div>;
 };
