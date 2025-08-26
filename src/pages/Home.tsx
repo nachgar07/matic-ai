@@ -14,7 +14,6 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { isHabitActiveOnDate } from "@/utils/habitUtils";
 import { useExpenses } from "@/hooks/useExpenses";
-import { useTermsAcceptance } from "@/hooks/useTermsAcceptance";
 import { TermsAcceptanceModal } from "@/components/TermsAcceptanceModal/TermsAcceptanceModal";
 
 export const Home = () => {
@@ -22,10 +21,11 @@ export const Home = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [authInitialized, setAuthInitialized] = useState(false);
 
-  // Only fetch data when user is authenticated
+  // Only fetch data when user is fully authenticated and initialized
   const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
-  const shouldFetchData = !loading && !!session && !!user;
+  const shouldFetchData = authInitialized && !loading && !!session && !!user;
   
   // Get meal data for the selected date (only when authenticated)
   const {
@@ -33,7 +33,7 @@ export const Home = () => {
     isLoading: mealsLoading
   } = useUserMeals(shouldFetchData ? selectedDateString : undefined);
   
-  // Get meals for date range (for calendar) (only when authenticated)
+  // Get meals for date range (for calendar) (only when authenticated)  
   const startDate = format(new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
   const endDate = format(new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
   const {
@@ -44,14 +44,9 @@ export const Home = () => {
     shouldFetchData ? endDate : ''
   );
   
-  const {
-    data: nutritionGoals
-  } = useNutritionGoals();
-  const {
-    waterGlasses
-  } = useWaterIntake();
-
-  // Get tasks and goals for selected date (only when authenticated)
+  // Only fetch nutrition goals, water, tasks, etc when authenticated
+  const { data: nutritionGoals } = useNutritionGoals();
+  const { waterGlasses } = useWaterIntake();
   const { data: tasks = [] } = useTasks(shouldFetchData ? format(selectedDate, 'yyyy-MM-dd') : '');
   const { data: goals = [] } = useGoals();
   
@@ -63,9 +58,9 @@ export const Home = () => {
     shouldFetchData ? selectedDate : null
   );
 
-  // Terms acceptance
-  const { hasAcceptedTerms, loading: termsLoading, checkTermsAcceptance, acceptTerms } = useTermsAcceptance();
-  const [checkedTerms, setCheckedTerms] = useState(false);
+  // Terms acceptance - only initialize when user is ready
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
+  const [checkingTerms, setCheckingTerms] = useState(false);
 
   // Calculate real values from meal data
   const dailyTotals = mealsData?.dailyTotals || {
@@ -89,11 +84,7 @@ export const Home = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // Reset terms check flag when user changes
-      if (event === 'SIGNED_OUT') {
-        setCheckedTerms(false);
-      }
+      setAuthInitialized(true);
     });
 
     // Check for existing session
@@ -105,17 +96,44 @@ export const Home = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      setAuthInitialized(true);
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  // Check terms acceptance when user is available and we haven't checked yet
+  // Check terms acceptance when user is ready
   useEffect(() => {
-    if (user && !checkedTerms && !termsLoading) {
-      checkTermsAcceptance(user.id);
-      setCheckedTerms(true);
+    if (user && !checkingTerms && hasAcceptedTerms === null) {
+      setCheckingTerms(true);
+      checkUserTerms();
     }
-  }, [user, checkedTerms, termsLoading, checkTermsAcceptance]);
+  }, [user, checkingTerms, hasAcceptedTerms]);
+
+  const checkUserTerms = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_terms_acceptance')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('terms_version', '2025-08-26')
+        .eq('privacy_version', '2025-08-26')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking terms acceptance:', error);
+        setHasAcceptedTerms(false);
+      } else {
+        setHasAcceptedTerms(!!data);
+      }
+    } catch (error) {
+      console.error('Network error checking terms acceptance:', error);
+      setHasAcceptedTerms(false);
+    } finally {
+      setCheckingTerms(false);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -163,8 +181,8 @@ export const Home = () => {
     }
   };
 
-  // Show loading while checking auth or loading meal data (but not range data to avoid blocking)
-  if (loading || mealsLoading || termsLoading) {
+  // Show loading while checking auth or loading meal data 
+  if (loading || mealsLoading || checkingTerms) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="text-muted-foreground">Cargando...</div>
@@ -180,12 +198,29 @@ export const Home = () => {
 
   // Handle terms acceptance
   const handleAcceptTerms = async () => {
-    if (user) {
-      const success = await acceptTerms(user.id);
-      if (success) {
-        // Terms accepted successfully, modal will close automatically
-        setCheckedTerms(true);
+    if (!user) return;
+    
+    setCheckingTerms(true);
+    try {
+      const { error } = await supabase
+        .from('user_terms_acceptance')
+        .upsert({
+          user_id: user.id,
+          terms_version: '2025-08-26',
+          privacy_version: '2025-08-26',
+          ip_address: null,
+          user_agent: navigator.userAgent
+        });
+
+      if (error) {
+        console.error('Error accepting terms:', error);
+      } else {
+        setHasAcceptedTerms(true);
       }
+    } catch (error) {
+      console.error('Network error accepting terms:', error);
+    } finally {
+      setCheckingTerms(false);
     }
   };
 
