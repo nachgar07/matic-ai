@@ -211,21 +211,21 @@ export const Perfil = () => {
           <div className="space-y-1">
             <Link to="/terms-and-conditions" target="_blank">
               <Button variant="ghost" className="w-full justify-between p-3 h-auto">
-                <span>Terms and Conditions</span>
+                <span>Términos y Condiciones</span>
                 <ChevronRight size={16} className="text-muted-foreground" />
               </Button>
             </Link>
             
             <Link to="/privacy-policy" target="_blank">
               <Button variant="ghost" className="w-full justify-between p-3 h-auto">
-                <span>Privacy Policy</span>
+                <span>Política de Privacidad</span>
                 <ChevronRight size={16} className="text-muted-foreground" />
               </Button>
             </Link>
             
             <a href="mailto:cal.maticai@gmail.com" className="block">
               <Button variant="ghost" className="w-full justify-between p-3 h-auto">
-                <span>Support Email</span>
+                <span>Email de Soporte</span>
                 <ChevronRight size={16} className="text-muted-foreground" />
               </Button>
             </a>
@@ -235,7 +235,7 @@ export const Perfil = () => {
               className="w-full justify-between p-3 h-auto text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={() => setDeleteAccountOpen(true)}
             >
-              <span>Delete Account</span>
+              <span>Eliminar Cuenta</span>
               <ChevronRight size={16} className="text-muted-foreground" />
             </Button>
           </div>
