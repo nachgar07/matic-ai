@@ -5,18 +5,18 @@ import { WeeklyCalendar } from "@/components/WeeklyCalendar/WeeklyCalendar";
 import { MacroCard } from "@/components/MacroCard/MacroCard";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
-import { Footprints, Flame, Sparkles, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { User, Session } from '@supabase/supabase-js';
 import { useUserMeals, useUserMealsForDateRange, useNutritionGoals } from "@/hooks/useFatSecret";
 import { useWaterIntake } from "@/hooks/useWaterIntake";
 import { useGoals, useTasks } from "@/hooks/useGoals";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { isHabitActiveOnDate } from "@/utils/habitUtils";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useTermsAcceptance } from "@/hooks/useTermsAcceptance";
 import { TermsAcceptanceModal } from "@/components/TermsAcceptanceModal/TermsAcceptanceModal";
+
 export const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -106,6 +106,7 @@ export const Home = () => {
     });
     return () => subscription.unsubscribe();
   }, [checkTermsAcceptance]);
+
   const handleSignOut = async () => {
     try {
       // Clean up auth state including problematic URLs
@@ -177,7 +178,9 @@ export const Home = () => {
       }
     }
   };
-  return <div className="min-h-screen bg-background pb-20">
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="p-4">
         <div className="flex justify-between items-center mb-4">
@@ -198,15 +201,17 @@ export const Home = () => {
 
       {/* Main Calorie Ring */}
       <div className="px-4 py-6 flex justify-center">
-        <CalorieRing consumed={caloriesConsumed} target={caloriesTarget} protein={Math.round(dailyTotals.protein)} carbs={Math.round(dailyTotals.carbs)} fat={Math.round(dailyTotals.fat)} size={220} waterGlasses={waterGlasses} simple={true} waterTarget={nutritionGoals?.daily_water_glasses || 12} />
-      </div>
-
-      {/* Activity Stats */}
-      <div className="px-4 mb-6">
-        <div className="flex gap-4">
-          
-          
-        </div>
+        <CalorieRing 
+          consumed={caloriesConsumed} 
+          target={caloriesTarget} 
+          protein={Math.round(dailyTotals.protein)} 
+          carbs={Math.round(dailyTotals.carbs)} 
+          fat={Math.round(dailyTotals.fat)} 
+          size={220} 
+          waterGlasses={waterGlasses} 
+          simple={true} 
+          waterTarget={nutritionGoals?.daily_water_glasses || 12} 
+        />
       </div>
 
       {/* Macronutrients */}
@@ -217,7 +222,6 @@ export const Home = () => {
           <MacroCard icon="🥑" label="Grasas" current={Math.round(dailyTotals.fat)} target={nutritionGoals?.daily_fat || 86} unit="g" />
         </div>
       </div>
-
 
       {/* Daily Tasks Section */}
       <div className="px-4">
@@ -398,5 +402,6 @@ export const Home = () => {
         isOpen={hasAcceptedTerms === false} 
         onAccept={handleAcceptTerms} 
       />
-    </div>;
+    </div>
+  );
 };
