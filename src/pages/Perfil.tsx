@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 import { Input } from "@/components/ui/input";
-import { User, Settings, Target, TrendingDown, TrendingUp, Scale, Activity, Moon, Sun, Camera, Flag } from "lucide-react";
+import { User, Settings, Target, TrendingDown, TrendingUp, Scale, Activity, Moon, Sun, Camera, FileText, ChevronRight } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNutritionGoals } from "@/hooks/useFatSecret";
 import { EditNutritionGoalsDialog } from "@/components/EditNutritionGoalsDialog/EditNutritionGoalsDialog";
 import { PersonalDataSettings } from "@/components/PersonalDataSettings/PersonalDataSettings";
 import { DataExportDialog } from "@/components/DataExportDialog/DataExportDialog";
+import { DeleteAccountDialog } from "@/components/DeleteAccountDialog/DeleteAccountDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 export const Perfil = () => {
   const {
     theme,
@@ -24,6 +26,7 @@ export const Perfil = () => {
   const [editGoalsOpen, setEditGoalsOpen] = useState(false);
   const [personalDataOpen, setPersonalDataOpen] = useState(false);
   const [exportDataOpen, setExportDataOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
@@ -199,6 +202,45 @@ export const Perfil = () => {
           </div>
         </Card>
 
+        {/* Legal Section */}
+        <Card className="p-4">
+          <h3 className="font-semibold mb-4 flex items-center">
+            <FileText className="mr-2" size={20} />
+            Legal
+          </h3>
+          <div className="space-y-1">
+            <Link to="/terms-and-conditions" target="_blank">
+              <Button variant="ghost" className="w-full justify-between p-3 h-auto">
+                <span>Terms and Conditions</span>
+                <ChevronRight size={16} className="text-muted-foreground" />
+              </Button>
+            </Link>
+            
+            <Link to="/privacy-policy" target="_blank">
+              <Button variant="ghost" className="w-full justify-between p-3 h-auto">
+                <span>Privacy Policy</span>
+                <ChevronRight size={16} className="text-muted-foreground" />
+              </Button>
+            </Link>
+            
+            <a href="mailto:cal.maticai@gmail.com" className="block">
+              <Button variant="ghost" className="w-full justify-between p-3 h-auto">
+                <span>Support Email</span>
+                <ChevronRight size={16} className="text-muted-foreground" />
+              </Button>
+            </a>
+            
+            <Button 
+              variant="ghost" 
+              className="w-full justify-between p-3 h-auto text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => setDeleteAccountOpen(true)}
+            >
+              <span>Delete Account</span>
+              <ChevronRight size={16} className="text-muted-foreground" />
+            </Button>
+          </div>
+        </Card>
+
         {/* Daily Targets */}
         <Card className="p-4">
           <h3 className="font-semibold mb-4 flex items-center">
@@ -240,6 +282,12 @@ export const Perfil = () => {
     }} />}
 
       <DataExportDialog open={exportDataOpen} onOpenChange={setExportDataOpen} />
+
+      <DeleteAccountDialog 
+        isOpen={deleteAccountOpen} 
+        onOpenChange={setDeleteAccountOpen}
+        userEmail={user?.email || ""}
+      />
 
       <BottomNavigation />
     </div>;
