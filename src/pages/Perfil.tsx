@@ -3,9 +3,9 @@ import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { User, Settings, Target, TrendingDown, TrendingUp, Scale, Activity, Moon, Sun, Camera, FileText, ChevronRight } from "lucide-react";
+import { User, Settings, Target, TrendingDown, TrendingUp, Scale, Activity, Moon, Sun, Camera, FileText, ChevronRight, Languages } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNutritionGoals } from "@/hooks/useFatSecret";
 import { EditNutritionGoalsDialog } from "@/components/EditNutritionGoalsDialog/EditNutritionGoalsDialog";
@@ -15,11 +15,14 @@ import { DeleteAccountDialog } from "@/components/DeleteAccountDialog/DeleteAcco
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { useLanguage, Language } from "@/hooks/useLanguage";
+import { translations, TranslationKey } from "@/lib/translations";
 export const Perfil = () => {
   const {
     theme,
     setTheme
   } = useTheme();
+  const { language, changeLanguage } = useLanguage();
   const {
     data: nutritionGoals
   } = useNutritionGoals();
@@ -33,6 +36,8 @@ export const Perfil = () => {
   const {
     toast
   } = useToast();
+
+  const t = (key: TranslationKey) => translations[language][key];
   useEffect(() => {
     const getUser = async () => {
       const {
@@ -54,7 +59,7 @@ export const Perfil = () => {
     try {
       setUploading(true);
       if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('Debes seleccionar una imagen');
+        throw new Error(t('selectImage'));
       }
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
@@ -83,12 +88,12 @@ export const Perfil = () => {
         avatar_url: data.publicUrl
       });
       toast({
-        title: "Éxito",
-        description: "Imagen de perfil actualizada correctamente"
+        title: t('success'),
+        description: t('profileImageUpdated')
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t('error'),
         description: error.message,
         variant: "destructive"
       });
@@ -103,7 +108,7 @@ export const Perfil = () => {
     fat: nutritionGoals?.daily_fat || 0
   };
   return <div className="min-h-screen bg-background pb-20">
-      <Header title="Perfil" />
+      <Header title={t('profile')} />
       
       <div className="p-4 space-y-6">
         {/* User Info */}
@@ -118,10 +123,10 @@ export const Perfil = () => {
             <Input id="avatar-upload" type="file" accept="image/*" onChange={uploadAvatar} disabled={uploading} className="hidden" />
           </div>
           <h2 className="text-xl font-semibold">
-            {profile?.display_name || user?.user_metadata?.display_name || "Usuario"}
+            {profile?.display_name || user?.user_metadata?.display_name || t('user')}
           </h2>
-          <p className="text-muted-foreground">{user?.email || "Cargando..."}</p>
-          {uploading && <p className="text-sm text-muted-foreground mt-2">Subiendo imagen...</p>}
+          <p className="text-muted-foreground">{user?.email || t('loading')}</p>
+          {uploading && <p className="text-sm text-muted-foreground mt-2">{t('uploading')}</p>}
         </Card>
 
         {/* Country and Currency Info */}
@@ -133,7 +138,7 @@ export const Perfil = () => {
               <div>
                 <div className="font-medium">{profile.nationality}</div>
                 <div className="text-sm text-muted-foreground">
-                  Moneda: {profile.currency || 'USD'}
+                  {t('currency')}: {profile.currency || 'USD'}
                 </div>
               </div>
             </div>
@@ -143,17 +148,17 @@ export const Perfil = () => {
         <Card className="p-4">
           <h3 className="font-semibold mb-4 flex items-center">
             <Target className="mr-2" size={20} />
-            Objetivo Actual
+            {t('currentGoal')}
           </h3>
           <div className="space-y-3">
             <div className="flex items-center">
               {profile?.goal === 'lose' ? <TrendingDown className="mr-3 text-destructive" size={20} /> : profile?.goal === 'gain' ? <TrendingUp className="mr-3 text-success" size={20} /> : <Scale className="mr-3 text-muted-foreground" size={20} />}
               <div>
                 <div className="font-medium">
-                  {profile?.goal === 'lose' ? 'Perder peso' : profile?.goal === 'gain' ? 'Ganar peso' : 'Mantener peso'}
+                  {profile?.goal === 'lose' ? t('loseWeight') : profile?.goal === 'gain' ? t('gainWeight') : t('maintainWeight')}
                 </div>
                 {profile?.goal && profile?.goal !== 'maintain' && <div className="text-sm text-muted-foreground">
-                    {profile?.progress_speed === 'slow' ? '0.25 kg por semana' : profile?.progress_speed === 'moderate' ? '0.5 kg por semana' : profile?.progress_speed === 'fast' ? '1 kg por semana' : '0.5 kg por semana'}
+                    {profile?.progress_speed === 'slow' ? `0.25 kg ${t('perWeek')}` : profile?.progress_speed === 'moderate' ? `0.5 kg ${t('perWeek')}` : profile?.progress_speed === 'fast' ? `1 kg ${t('perWeek')}` : `0.5 kg ${t('perWeek')}`}
                   </div>}
               </div>
             </div>
@@ -161,10 +166,10 @@ export const Perfil = () => {
               <Scale className="mr-3 text-muted-foreground" size={20} />
               <div>
                 <div className="font-medium">
-                  Peso objetivo: {profile?.target_weight || 'No definido'} kg
+                  {t('targetWeight')}: {profile?.target_weight || t('notDefined')} kg
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Altura: {profile?.height || 'No definida'} cm
+                  {t('height')}: {profile?.height || t('notDefined2')} cm
                 </div>
               </div>
             </div>
@@ -175,20 +180,20 @@ export const Perfil = () => {
         <Card className="p-4">
           <h3 className="font-semibold mb-4 flex items-center">
             <Settings className="mr-2" size={20} />
-            Configuración
+            {t('configuration')}
           </h3>
           <div className="space-y-3">
             <Button variant="ghost" className="w-full justify-start" onClick={() => {
             console.log('Opening personal data dialog');
             setPersonalDataOpen(true);
           }}>
-              Ajustar datos personales
+              {t('adjustPersonalData')}
             </Button>
             
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center">
                 {theme === 'dark' ? <Moon className="mr-3" size={20} /> : <Sun className="mr-3" size={20} />}
-                <span>Tema oscuro</span>
+                <span>{t('darkTheme')}</span>
               </div>
               <Button
                 variant="outline"
@@ -199,6 +204,22 @@ export const Perfil = () => {
                 {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
               </Button>
             </div>
+
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center">
+                <Languages className="mr-3" size={20} />
+                <span>{t('language')}</span>
+              </div>
+              <Select value={language} onValueChange={(value: Language) => changeLanguage(value)}>
+                <SelectTrigger className="h-8 w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="es">{t('spanish')}</SelectItem>
+                  <SelectItem value="en">{t('english')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </Card>
 
@@ -206,26 +227,26 @@ export const Perfil = () => {
         <Card className="p-4">
           <h3 className="font-semibold mb-4 flex items-center">
             <FileText className="mr-2" size={20} />
-            Legal
+            {t('legal')}
           </h3>
           <div className="space-y-1">
             <Link to="/terms-and-conditions" target="_blank">
               <Button variant="ghost" className="w-full justify-between p-3 h-auto">
-                <span>Términos y Condiciones</span>
+                <span>{t('termsAndConditions')}</span>
                 <ChevronRight size={16} className="text-muted-foreground" />
               </Button>
             </Link>
             
             <Link to="/privacy-policy" target="_blank">
               <Button variant="ghost" className="w-full justify-between p-3 h-auto">
-                <span>Política de Privacidad</span>
+                <span>{t('privacyPolicy')}</span>
                 <ChevronRight size={16} className="text-muted-foreground" />
               </Button>
             </Link>
             
             <a href="mailto:cal.maticai@gmail.com" className="block">
               <Button variant="ghost" className="w-full justify-between p-3 h-auto">
-                <span>Email de Soporte</span>
+                <span>{t('supportEmail')}</span>
                 <ChevronRight size={16} className="text-muted-foreground" />
               </Button>
             </a>
@@ -235,7 +256,7 @@ export const Perfil = () => {
               className="w-full justify-between p-3 h-auto text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={() => setDeleteAccountOpen(true)}
             >
-              <span>Eliminar Cuenta</span>
+              <span>{t('deleteAccount')}</span>
               <ChevronRight size={16} className="text-muted-foreground" />
             </Button>
           </div>
@@ -245,27 +266,27 @@ export const Perfil = () => {
         <Card className="p-4">
           <h3 className="font-semibold mb-4 flex items-center">
             <Activity className="mr-2" size={20} />
-            Objetivos Diarios
+            {t('dailyTargets')}
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span>Calorías objetivo</span>
+              <span>{t('targetCalories')}</span>
               <span className="font-medium">{goals.calories} kcal</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Proteína</span>
+              <span>{t('protein')}</span>
               <span className="font-medium">{goals.protein} g</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Carbohidratos</span>
+              <span>{t('carbohydrates')}</span>
               <span className="font-medium">{goals.carbs} g</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Grasas</span>
+              <span>{t('fats')}</span>
               <span className="font-medium">{goals.fat} g</span>
             </div>
             <Button variant="outline" size="sm" className="w-full mt-3" onClick={() => setEditGoalsOpen(true)}>
-              Editar objetivos
+              {t('editGoals')}
             </Button>
           </div>
         </Card>
