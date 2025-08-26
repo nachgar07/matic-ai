@@ -13,26 +13,34 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log('Request method:', req.method);
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+
   try {
     let date, startDate, endDate;
     
-    // Try to get parameters from request body first (for date range queries)
-    if (req.method === 'POST') {
-      try {
-        const bodyText = await req.text();
-        if (bodyText && bodyText.trim()) {
-          const body = JSON.parse(bodyText);
-          startDate = body.startDate;
-          endDate = body.endDate;
-        }
-      } catch (jsonError) {
-        console.log('No valid JSON body found, falling back to URL parameters');
+    // Try to get parameters from request body (for POST requests from supabase.functions.invoke)
+    try {
+      const bodyText = await req.text();
+      console.log('Request body:', bodyText);
+      
+      if (bodyText && bodyText.trim()) {
+        const body = JSON.parse(bodyText);
+        console.log('Parsed body:', body);
+        
+        date = body.date;
+        startDate = body.startDate;
+        endDate = body.endDate;
       }
+    } catch (jsonError) {
+      console.log('No valid JSON body found, trying URL parameters');
     }
     
-    // If no body parameters, try URL parameters (for single date queries)
-    if (!startDate && !endDate) {
+    // If no body parameters, try URL parameters (fallback)
+    if (!date && !startDate && !endDate) {
       const url = new URL(req.url);
+      console.log('URL parameters:', url.searchParams.toString());
+      
       date = url.searchParams.get('date');
       if (!date) {
         const now = new Date();
@@ -42,6 +50,8 @@ serve(async (req) => {
         date = `${year}-${month}-${day}`;
       }
     }
+    
+    console.log('Final parameters:', { date, startDate, endDate });
 
     // Get user from authorization header
     const authHeader = req.headers.get('Authorization');
