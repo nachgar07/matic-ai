@@ -11,7 +11,9 @@ import { useUserMeals, useUserMealsForDateRange, useNutritionGoals } from "@/hoo
 import { useWaterIntake } from "@/hooks/useWaterIntake";
 import { useGoals, useTasks } from "@/hooks/useGoals";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 import { isHabitActiveOnDate } from "@/utils/habitUtils";
 import { useExpenses } from "@/hooks/useExpenses";
 import { TermsAcceptanceModal } from "@/components/TermsAcceptanceModal/TermsAcceptanceModal";
@@ -22,6 +24,10 @@ export const Home = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [authInitialized, setAuthInitialized] = useState(false);
+  
+  const { language } = useLanguage();
+  const t = (key: keyof typeof translations.es) => translations[language][key];
+  const locale = language === 'es' ? es : enUS;
 
   // Only fetch data when user is fully authenticated and initialized
   const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
@@ -185,7 +191,7 @@ export const Home = () => {
   if (loading || mealsLoading || checkingTerms) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="text-muted-foreground">Cargando...</div>
+          <div className="text-muted-foreground">{t('loading')}</div>
         </div>
       </div>;
   }
@@ -262,16 +268,16 @@ export const Home = () => {
       {/* Macronutrients */}
       <div className="px-4 mb-6">
         <div className="flex gap-3">
-          <MacroCard icon="🥩" label="Proteína" current={Math.round(dailyTotals.protein)} target={nutritionGoals?.daily_protein || 129} unit="g" />
-          <MacroCard icon="🍞" label="Carbohidratos" current={Math.round(dailyTotals.carbs)} target={nutritionGoals?.daily_carbs || 323} unit="g" />
-          <MacroCard icon="🥑" label="Grasas" current={Math.round(dailyTotals.fat)} target={nutritionGoals?.daily_fat || 86} unit="g" />
+          <MacroCard icon="🥩" label={t('protein')} current={Math.round(dailyTotals.protein)} target={nutritionGoals?.daily_protein || 129} unit="g" />
+          <MacroCard icon="🍞" label={t('carbohydrates')} current={Math.round(dailyTotals.carbs)} target={nutritionGoals?.daily_carbs || 323} unit="g" />
+          <MacroCard icon="🥑" label={t('fats')} current={Math.round(dailyTotals.fat)} target={nutritionGoals?.daily_fat || 86} unit="g" />
         </div>
       </div>
 
       {/* Daily Tasks Section */}
       <div className="px-4">
         <h2 className="text-xl font-bold mb-4">
-          Tareas de {format(selectedDate, "dd 'de' MMMM", { locale: es })}
+          {t('tasksOf')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", { locale })}
         </h2>
         
         {(tasks.length > 0 || activeHabitsForDate.length > 0) ? (
@@ -279,9 +285,9 @@ export const Home = () => {
             {/* Upcoming Tasks Summary */}
             <div className="bg-card rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-foreground">Resumen del día</h3>
+                <h3 className="font-medium text-foreground">{t('dailySummaryText')}</h3>
                 <span className="text-sm text-muted-foreground">
-                  {tasks.length + activeHabitsForDate.length} actividades
+                  {tasks.length + activeHabitsForDate.length} {t('activities')}
                 </span>
               </div>
               
@@ -345,7 +351,7 @@ export const Home = () => {
                       <p className="text-sm font-medium truncate text-foreground">
                         {goal.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">Hábito</p>
+                      <p className="text-xs text-muted-foreground">{t('habit')}</p>
                     </div>
                   </div>
                 ))}
@@ -353,7 +359,7 @@ export const Home = () => {
                 {tasks.length + activeHabitsForDate.length > 5 && (
                   <div className="text-center pt-2">
                     <span className="text-xs text-muted-foreground">
-                      y {tasks.length + activeHabitsForDate.length - 5} más...
+                      {t('and')} {tasks.length + activeHabitsForDate.length - 5} {t('more')}
                     </span>
                   </div>
                 )}
@@ -363,10 +369,10 @@ export const Home = () => {
         ) : (
           <div className="bg-card rounded-lg p-6 text-center">
             <div className="text-muted-foreground mb-2">
-              No tienes tareas o hábitos programados para este día
+              {t('noTasksScheduled')}
             </div>
             <div className="text-sm text-muted-foreground">
-              Ve a la sección de Objetivos para agregar nuevas actividades
+              {t('goToGoals')}
             </div>
           </div>
         )}
@@ -375,19 +381,19 @@ export const Home = () => {
       {/* Expenses Section */}
       <div className="px-4 mt-6">
         <h2 className="text-xl font-bold mb-4">
-          Gastos de {format(selectedDate, "dd 'de' MMMM", { locale: es })}
+          {t('expensesOf')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", { locale })}
         </h2>
         
         {expensesLoading ? (
           <div className="bg-card rounded-lg p-6 text-center">
-            <div className="text-muted-foreground">Cargando gastos...</div>
+            <div className="text-muted-foreground">{t('loading')} gastos...</div>
           </div>
         ) : expenses.length > 0 ? (
           <div className="space-y-4">
             {/* Expense Summary */}
             <div className="bg-card rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-foreground">Resumen de gastos</h3>
+                <h3 className="font-medium text-foreground">{t('expensesSummary')}</h3>
                 <span className="text-lg font-bold text-foreground">
                   ${totalAmount.toLocaleString()}
                 </span>
@@ -404,7 +410,7 @@ export const Home = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate text-foreground">
-                        {expense.store_name || 'Establecimiento desconocido'}
+                        {expense.store_name || t('unknownStore')}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {expense.category_name}
@@ -421,7 +427,7 @@ export const Home = () => {
                 {expenses.length > 3 && (
                   <div className="text-center pt-2">
                     <span className="text-xs text-muted-foreground">
-                      y {expenses.length - 3} gastos más...
+                      {t('and')} {expenses.length - 3} gastos {t('more')}
                     </span>
                   </div>
                 )}
@@ -431,10 +437,10 @@ export const Home = () => {
         ) : (
           <div className="bg-card rounded-lg p-6 text-center">
             <div className="text-muted-foreground mb-2">
-              No tienes gastos registrados para este día
+              {t('noExpensesToday')}
             </div>
             <div className="text-sm text-muted-foreground">
-              Ve a la sección de Gastos para agregar nuevos gastos
+              {t('goToExpenses')}
             </div>
           </div>
         )}

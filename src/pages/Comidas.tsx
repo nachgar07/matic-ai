@@ -17,7 +17,9 @@ import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 import { useWaterIntake } from "@/hooks/useWaterIntake";
 
@@ -28,6 +30,10 @@ export const Comidas = () => {
   const [analysisResults, setAnalysisResults] = useState<any>(null);
   const [showAssistant, setShowAssistant] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  
+  const { language } = useLanguage();
+  const t = (key: keyof typeof translations.es) => translations[language][key];
+  const locale = language === 'es' ? es : enUS;
   
   // Estado para manejar las imágenes de cada plato
   const [plateImages, setPlateImages] = useState<Record<string, string>>({});
@@ -79,12 +85,12 @@ export const Comidas = () => {
       await deleteMeal(mealId);
       queryClient.invalidateQueries({ queryKey: ['user-meals'] });
       toast({
-        title: "Comida eliminada",
-        description: "La comida se eliminó correctamente"
+        title: t('mealDeleted'),
+        description: t('mealDeletedDesc')
       });
     } catch (error) {
       toast({
-        title: "Error",
+        title: t('error'),
         description: "No se pudo eliminar la comida",
         variant: "destructive"
       });
@@ -96,12 +102,12 @@ export const Comidas = () => {
       await Promise.all(mealIds.map(id => deleteMeal(id)));
       queryClient.invalidateQueries({ queryKey: ['user-meals'] });
       toast({
-        title: "Comidas eliminadas",
+        title: t('mealsDeleted'),
         description: `${mealIds.length} comida${mealIds.length === 1 ? '' : 's'} eliminada${mealIds.length === 1 ? '' : 's'} correctamente`
       });
     } catch (error) {
       toast({
-        title: "Error",
+        title: t('error'),
         description: "No se pudieron eliminar algunas comidas",
         variant: "destructive"
       });
@@ -111,8 +117,8 @@ export const Comidas = () => {
   const handleSyncToCalendar = async () => {
     if (meals.length === 0) {
       toast({
-        title: "No hay comidas",
-        description: "No tienes comidas registradas para sincronizar",
+        title: t('noMealsToSync'),
+        description: t('noMealsToSyncDesc'),
         variant: "destructive"
       });
       return;
@@ -137,16 +143,16 @@ export const Comidas = () => {
 
   const isToday = selectedDate.toDateString() === new Date().toDateString();
   const formatDisplayDate = (date: Date) => {
-    if (isToday) return "Hoy";
-    return format(date, "d MMM yyyy", { locale: es });
+    if (isToday) return t('today');
+    return format(date, language === 'es' ? "d MMM yyyy" : "MMM d yyyy", { locale });
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <Header title="¿Qué comiste?" />
+        <Header title={t('whatDidYouEat')} />
         <div className="p-4 text-center">
-          <div className="text-muted-foreground">Cargando...</div>
+          <div className="text-muted-foreground">{t('loading')}</div>
         </div>
         <BottomNavigation />
       </div>
@@ -159,7 +165,7 @@ export const Comidas = () => {
   return (
     <>
       <div className="min-h-screen bg-background pb-20">
-        <Header title="¿Qué comiste?" />
+        <Header title={t('whatDidYouEat')} />
         
         <div className="p-4 space-y-6">
           {/* Main Action Buttons */}
@@ -170,7 +176,7 @@ export const Comidas = () => {
               size="lg"
             >
               <Camera className="mr-3" size={24} />
-              Tomar Foto
+              {t('takePhoto')}
             </Button>
             
             <Button
@@ -180,7 +186,7 @@ export const Comidas = () => {
               onClick={() => setShowFoodSearch(true)}
             >
               <Search className="mr-3" size={24} />
-              Buscar Alimentos
+              {t('searchFood')}
             </Button>
 
             <Button
@@ -189,7 +195,7 @@ export const Comidas = () => {
               onClick={() => setShowAssistant(true)}
             >
               <Sparkles className="mr-2" size={20} />
-              Hablar con NutriAI
+              {t('talkToNutri')}
             </Button>
           </div>
 
@@ -200,7 +206,7 @@ export const Comidas = () => {
           <div className="mt-8">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">
-                Comidas {isToday ? "de Hoy" : `del ${format(selectedDate, "d 'de' MMMM", { locale: es })}`}
+                {isToday ? t('mealsToday') : `${t('mealsOf')} ${format(selectedDate, language === 'es' ? "d 'de' MMMM" : "MMMM d", { locale })}`}
               </h2>
               <div className="flex items-center gap-2">
                 <Popover>
@@ -222,7 +228,7 @@ export const Comidas = () => {
                 </Popover>
                 {!isToday && (
                   <Button variant="ghost" onClick={handleTodayClick} className="text-primary">
-                    Hoy
+                    {t('today')}
                   </Button>
                 )}
               </div>

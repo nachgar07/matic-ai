@@ -11,13 +11,19 @@ import { useGoals, useTasks } from "@/hooks/useGoals";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Calendar, Filter, Search, Settings } from "lucide-react";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 import { isHabitActiveOnDate } from "@/utils/habitUtils";
 
 export const Objetivos = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState<'tasks' | 'habits'>('tasks');
+
+  const { language } = useLanguage();
+  const t = (key: keyof typeof translations.es) => translations[language][key];
+  const locale = language === 'es' ? es : enUS;
 
   const { data: tasks = [] } = useTasks(format(selectedDate, 'yyyy-MM-dd'));
   const { data: goals = [] } = useGoals();
@@ -29,9 +35,9 @@ export const Objetivos = () => {
   const getHeaderTitle = () => {
     const today = new Date();
     if (format(selectedDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
-      return 'Hoy';
+      return t('today');
     }
-    return format(selectedDate, "dd 'de' MMMM", { locale: es });
+    return format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", { locale });
   };
 
   useEffect(() => {
@@ -78,10 +84,10 @@ export const Objetivos = () => {
           <div className="flex items-center justify-center">
             <TabsList className="rounded-full bg-muted p-1 grid grid-cols-2 w-[280px]">
               <TabsTrigger value="tasks" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                Tareas
+                {t('tasks')}
               </TabsTrigger>
               <TabsTrigger value="habits" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                Hábitos
+                {t('habits')}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -91,7 +97,7 @@ export const Objetivos = () => {
               {(tasks.length > 0 || activeHabitsForDate.length > 0) ? (
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground">
-                    Tareas y hábitos para {format(selectedDate, "dd 'de' MMMM", { locale: es })}
+                    {t('tasksAndHabitsFor')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", { locale })}
                   </h3>
                   {/* Tareas */}
                   {tasks.map((task) => (
@@ -127,9 +133,9 @@ export const Objetivos = () => {
                     <div className="w-20 h-20 mx-auto mb-6 bg-primary/10 rounded-2xl flex items-center justify-center">
                       <Calendar className="text-primary" size={32} />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2 text-foreground">No hay tareas o hábitos programados</h3>
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">{t('noTasksOrHabits')}</h3>
                     <p className="text-muted-foreground">
-                      Prueba agregar nuevas tareas o hábitos
+                      {t('tryAddingNew')}
                     </p>
                   </div>
                 </div>
@@ -140,7 +146,7 @@ export const Objetivos = () => {
               {activeHabitsForDate.length > 0 ? (
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium text-muted-foreground">
-                    Hábitos activos para {format(selectedDate, "dd 'de' MMMM", { locale: es })}
+                    {t('activeHabitsFor')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", { locale })}
                   </h3>
                   {activeHabitsForDate.map((goal) => (
                     <HabitTracker key={goal.id} goal={goal} />
@@ -152,9 +158,9 @@ export const Objetivos = () => {
                     <div className="w-20 h-20 mx-auto mb-6 bg-secondary/10 rounded-2xl flex items-center justify-center">
                       <Calendar className="text-secondary" size={32} />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2 text-foreground">No hay hábitos para este día</h3>
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">{t('noHabitsToday')}</h3>
                     <p className="text-muted-foreground">
-                      Los hábitos se muestran solo en los días programados
+                      {t('habitsOnlyScheduled')}
                     </p>
                   </div>
                 </div>

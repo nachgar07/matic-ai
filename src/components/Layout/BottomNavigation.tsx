@@ -1,17 +1,21 @@
 import { Home, Utensils, Target, FileText, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-
-const navItems = [
-  { icon: Home, label: "Home", path: "/" },
-  { icon: Utensils, label: "Comidas", path: "/comidas" },
-  { icon: Target, label: "Objetivos", path: "/objetivos" },
-  { icon: FileText, label: "Gastos", path: "/archivos" },
-  { icon: User, label: "Perfil", path: "/perfil" },
-];
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 export const BottomNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = (key: keyof typeof translations.es) => translations[language][key];
+
+  const navItems = [
+    { icon: Home, label: t('home'), path: "/" },
+    { icon: Utensils, label: t('meals'), path: "/comidas" },
+    { icon: Target, label: t('goals'), path: "/objetivos" },
+    { icon: FileText, label: t('expenses'), path: "/archivos" },
+    { icon: User, label: t('profile'), path: "/perfil" },
+  ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border">
