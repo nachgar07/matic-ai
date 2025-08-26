@@ -17,14 +17,16 @@ export const useTermsAcceptance = () => {
         .eq('privacy_version', '2025-08-26')
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
+        // Log the error but don't block the user if it's just a network issue
         console.error('Error checking terms acceptance:', error);
         setHasAcceptedTerms(false);
       } else {
         setHasAcceptedTerms(!!data);
       }
     } catch (error) {
-      console.error('Error checking terms acceptance:', error);
+      console.error('Network error checking terms acceptance:', error);
+      // In case of network errors, assume terms not accepted to be safe
       setHasAcceptedTerms(false);
     } finally {
       setLoading(false);
@@ -35,7 +37,7 @@ export const useTermsAcceptance = () => {
     try {
       const { error } = await supabase
         .from('user_terms_acceptance')
-        .insert({
+        .upsert({
           user_id: userId,
           terms_version: '2025-08-26',
           privacy_version: '2025-08-26',
@@ -54,12 +56,16 @@ export const useTermsAcceptance = () => {
       }
 
       setHasAcceptedTerms(true);
+      toast({
+        title: "Éxito",
+        description: "Términos y condiciones aceptados correctamente.",
+      });
       return true;
     } catch (error) {
-      console.error('Error accepting terms:', error);
+      console.error('Network error accepting terms:', error);
       toast({
-        title: "Error",
-        description: "Hubo un error al aceptar los términos. Inténtalo de nuevo.",
+        title: "Error de red",
+        description: "Error de conexión. Verifica tu conexión a internet e inténtalo de nuevo.",
         variant: "destructive"
       });
       return false;
