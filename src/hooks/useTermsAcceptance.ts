@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -7,7 +7,7 @@ export const useTermsAcceptance = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const checkTermsAcceptance = async (userId: string) => {
+  const checkTermsAcceptance = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_terms_acceptance')
@@ -31,9 +31,9 @@ export const useTermsAcceptance = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const acceptTerms = async (userId: string) => {
+  const acceptTerms = useCallback(async (userId: string) => {
     try {
       const { error } = await supabase
         .from('user_terms_acceptance')
@@ -70,7 +70,7 @@ export const useTermsAcceptance = () => {
       });
       return false;
     }
-  };
+  }, [toast]);
 
   return {
     hasAcceptedTerms,

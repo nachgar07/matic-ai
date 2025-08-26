@@ -57,6 +57,7 @@ export const Home = () => {
 
   // Terms acceptance
   const { hasAcceptedTerms, loading: termsLoading, checkTermsAcceptance, acceptTerms } = useTermsAcceptance();
+  const [checkedTerms, setCheckedTerms] = useState(false);
 
   // Calculate real values from meal data
   const dailyTotals = mealsData?.dailyTotals || {
@@ -81,11 +82,9 @@ export const Home = () => {
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Check terms acceptance when user signs in
-      if (session?.user && event === 'SIGNED_IN') {
-        setTimeout(() => {
-          checkTermsAcceptance(session.user.id);
-        }, 0);
+      // Reset terms check flag when user changes
+      if (event === 'SIGNED_OUT') {
+        setCheckedTerms(false);
       }
     });
 
@@ -98,14 +97,17 @@ export const Home = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // Check terms acceptance for existing session
-      if (session?.user) {
-        checkTermsAcceptance(session.user.id);
-      }
     });
     return () => subscription.unsubscribe();
-  }, [checkTermsAcceptance]);
+  }, []);
+
+  // Check terms acceptance when user is available and we haven't checked yet
+  useEffect(() => {
+    if (user && !checkedTerms && !termsLoading) {
+      checkTermsAcceptance(user.id);
+      setCheckedTerms(true);
+    }
+  }, [user, checkedTerms, termsLoading, checkTermsAcceptance]);
 
   const handleSignOut = async () => {
     try {
@@ -172,9 +174,9 @@ export const Home = () => {
   const handleAcceptTerms = async () => {
     if (user) {
       const success = await acceptTerms(user.id);
-      if (!success) {
-        // Error toast is handled by the hook
-        return;
+      if (success) {
+        // Terms accepted successfully, modal will close automatically
+        setCheckedTerms(true);
       }
     }
   };
