@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles, Edit3, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
   const [globalMealType, setGlobalMealType] = useState<string>("");
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const addMealMutation = useAddMeal();
   const queryClient = useQueryClient();
@@ -422,79 +423,108 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                       </div>
                     </div>
 
-                    <div className={`space-y-4`}>
-                      {/* Nombre del alimento editable */}
-                      <div>
-                        <label className="text-sm text-muted-foreground">Nombre del alimento</label>
-                        <Input
-                          value={food.name}
-                          onChange={(e) => updateFood(index, 'name', e.target.value)}
-                          className="mt-1"
-                          placeholder="Nombre del ingrediente..."
-                        />
-                      </div>
-
-                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 md:grid-cols-4 gap-4'}`}>
-                        {/* Cantidad en gramos editable */}
+                    {editingIndex === index ? (
+                      // Modo edición
+                      <div className={`space-y-4`}>
+                        {/* Nombre del alimento editable */}
                         <div>
-                          <label className="text-sm text-muted-foreground">Gramos</label>
+                          <label className="text-sm text-muted-foreground">Nombre del alimento</label>
                           <Input
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={parseFloat(food.estimated_portion.match(/(\d+\.?\d*)g/)?.[1] || '100')}
-                            onChange={(e) => updateFoodGrams(index, parseFloat(e.target.value) || 100)}
+                            value={food.name}
+                            onChange={(e) => updateFood(index, 'name', e.target.value)}
                             className="mt-1"
+                            placeholder="Nombre del ingrediente..."
                           />
+                        </div>
+
+                        <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 md:grid-cols-4 gap-4'}`}>
+                          {/* Cantidad en gramos editable */}
+                          <div>
+                            <label className="text-sm text-muted-foreground">Gramos</label>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={parseFloat(food.estimated_portion.match(/(\d+\.?\d*)g/)?.[1] || '100')}
+                              onChange={(e) => updateFoodGrams(index, parseFloat(e.target.value) || 100)}
+                              className="mt-1"
+                            />
+                          </div>
+
+                          {/* Servings */}
+                          <div>
+                            <label className="text-sm text-muted-foreground">Porciones</label>
+                            <Input
+                              type="number"
+                              min="0.1"
+                              step="0.1"
+                              value={servings[index] || 1}
+                              onChange={(e) => setServings({...servings, [index]: parseFloat(e.target.value) || 1})}
+                              className="mt-1"
+                            />
+                          </div>
+
+                          {/* Meal type */}
+                          <div className={isMobile ? 'col-span-1' : 'col-span-2'}>
+                            <label className="text-sm text-muted-foreground">
+                              Tipo de comida {selectedMealTypes[index] && globalMealType !== selectedMealTypes[index] && "(personalizado)"}
+                            </label>
+                            <Select
+                              value={selectedMealTypes[index] || ""}
+                              onValueChange={(value) => handleIndividualMealTypeChange(index, value)}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Seleccionar..." />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background z-50">
+                                {mealCategories?.map((category) => (
+                                  <SelectItem key={category.id} value={category.id}>
+                                    {category.icon} {category.name}
+                                  </SelectItem>
+                                ))}
+                                <SelectItem value="create-new" className="text-primary">
+                                  <Plus className="h-4 w-4 inline mr-2" />
+                                  Crear nueva categoría
+                                </SelectItem>
+                                <CategoryManagerModal 
+                                  trigger={
+                                    <div className="flex items-center px-2 py-1.5 text-sm rounded-sm cursor-pointer hover:bg-accent">
+                                      Administrar categorías
+                                    </div>
+                                  }
+                                />
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      // Modo vista
+                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-3 gap-4'}`}>
+                        {/* Portion */}
+                        <div>
+                          <label className="text-sm text-muted-foreground">Porción</label>
+                          <p className={`mt-1 ${isMobile ? 'text-sm' : ''}`}>{food.estimated_portion}</p>
                         </div>
 
                         {/* Servings */}
                         <div>
                           <label className="text-sm text-muted-foreground">Porciones</label>
-                          <Input
-                            type="number"
-                            min="0.1"
-                            step="0.1"
-                            value={servings[index] || 1}
-                            onChange={(e) => setServings({...servings, [index]: parseFloat(e.target.value) || 1})}
-                            className="mt-1"
-                          />
+                          <p className={`mt-1 ${isMobile ? 'text-sm' : ''}`}>{servings[index] || 1}</p>
                         </div>
 
                         {/* Meal type */}
-                        <div className={isMobile ? 'col-span-1' : 'col-span-2'}>
-                          <label className="text-sm text-muted-foreground">
-                            Tipo de comida {selectedMealTypes[index] && globalMealType !== selectedMealTypes[index] && "(personalizado)"}
-                          </label>
-                          <Select
-                            value={selectedMealTypes[index] || ""}
-                            onValueChange={(value) => handleIndividualMealTypeChange(index, value)}
-                          >
-                            <SelectTrigger className="mt-1">
-                              <SelectValue placeholder="Seleccionar..." />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background z-50">
-                              {mealCategories?.map((category) => (
-                                <SelectItem key={category.id} value={category.id}>
-                                  {category.icon} {category.name}
-                                </SelectItem>
-                              ))}
-                              <SelectItem value="create-new" className="text-primary">
-                                <Plus className="h-4 w-4 inline mr-2" />
-                                Crear nueva categoría
-                              </SelectItem>
-                              <CategoryManagerModal 
-                                trigger={
-                                  <div className="flex items-center px-2 py-1.5 text-sm rounded-sm cursor-pointer hover:bg-accent">
-                                    Administrar categorías
-                                  </div>
-                                }
-                              />
-                            </SelectContent>
-                          </Select>
+                        <div>
+                          <label className="text-sm text-muted-foreground">Tipo de comida</label>
+                          <p className={`mt-1 ${isMobile ? 'text-sm' : ''}`}>
+                            {selectedMealTypes[index] ? 
+                              `${mealCategories?.find(cat => cat.id === selectedMealTypes[index])?.icon || '🍽️'} ${mealCategories?.find(cat => cat.id === selectedMealTypes[index])?.name || 'Sin categoría'}` :
+                              'No seleccionado'
+                            }
+                          </p>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Nutritional info */}
                     <div className={`mt-3 grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-4 gap-3'} text-sm`}>
@@ -529,17 +559,53 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                   </div>
 
                   <div className={`flex ${isMobile ? 'justify-end gap-2' : 'gap-2'}`}>
-                    <Button
-                      onClick={async () => {
-                        await addFoodToMeal(food, index);
-                        onSuccess();
-                      }}
-                      disabled={!selectedMealTypes[index]}
-                      size="sm"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Agregar
-                    </Button>
+                    {editingIndex === index ? (
+                      // Botones de guardar/cancelar en modo edición
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingIndex(null)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            // Revertir cambios (reload original)
+                            setEditedFoods(analysis.foods || []);
+                            setEditingIndex(null);
+                          }}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      // Botones normales en modo vista
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingIndex(index)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          onClick={async () => {
+                            await addFoodToMeal(food, index);
+                          }}
+                          disabled={!selectedMealTypes[index] || addMealMutation.isPending}
+                          size="sm"
+                          className="shrink-0"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </Card>
