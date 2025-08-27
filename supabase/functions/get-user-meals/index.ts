@@ -120,16 +120,24 @@ serve(async (req) => {
     // Now get meal categories for each meal
     const mealsWithCategoryInfo = await Promise.all(
       (basicMeals || []).map(async (meal) => {
-        const { data: category } = await supabase
+        console.log(`🏷️ GET-USER-MEALS - Looking for category: "${meal.meal_type}" for user: ${user.id}`);
+        
+        const { data: category, error: categoryError } = await supabase
           .from('meal_categories')
           .select('name, color, icon')
-          .eq('id', meal.meal_type)
+          .eq('name', meal.meal_type) // Buscar por nombre, no por ID
           .eq('user_id', user.id)
           .maybeSingle();
 
+        if (categoryError) {
+          console.log(`🏷️ GET-USER-MEALS - Error fetching category: ${categoryError.message}`);
+        }
+        
+        console.log(`🏷️ GET-USER-MEALS - Found category for "${meal.meal_type}":`, category);
+
         return {
           ...meal,
-          meal_categories: category || { name: 'Comida', color: '#6366f1', icon: '🍽️' }
+          meal_categories: category || { name: meal.meal_type || 'Comida', color: '#6366f1', icon: '🍽️' }
         };
       })
     );
