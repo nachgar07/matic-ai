@@ -444,7 +444,7 @@ export const MealPlate = ({
                        />
                      </div>
                    ) : (
-                     <span>{editData.grams}g • {meal.foods.serving_description || 'porción'}</span>
+                     <span>{Math.round(currentServings * 10) / 10} × {meal.foods.serving_description || 'porción'} • {editData.grams}g</span>
                    )}
                    <span>{Math.round(calories)} cal</span>
                  </div>
