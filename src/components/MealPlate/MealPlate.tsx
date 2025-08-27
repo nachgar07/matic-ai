@@ -59,22 +59,36 @@ export const MealPlate = ({
   function getDefaultPlateName(meal: MealEntry) {
     // Si hay datos de meal_categories, usar esos
     if (meal.meal_categories?.name) {
+      console.log("🏷️ MealPlate - Using meal_categories name:", meal.meal_categories.name);
       return meal.meal_categories.name;
     }
     
     // Fallback a nombres por defecto basados en el UUID o string
     const mealType = meal.meal_type;
+    console.log("🏷️ MealPlate - Using fallback mapping for meal_type:", mealType);
+    
     const names = {
+      // Español
       breakfast: "Desayuno",
       lunch: "Almuerzo", 
       dinner: "Cena",
       snack: "Merienda",
+      // Español también
       desayuno: "Desayuno",
-      almuerzo: "Almuerzo",
+      almuerzo: "Almuerzo", 
+      comida: "Almuerzo",
       cena: "Cena",
-      merienda: "Merienda"
+      merienda: "Merienda",
+      // Nombres de categorías por defecto
+      "Desayuno": "Desayuno",
+      "Almuerzo": "Almuerzo",
+      "Cena": "Cena",
+      "Merienda": "Merienda"
     };
-    return names[mealType as keyof typeof names] || "Comida";
+    
+    const mappedName = names[mealType as keyof typeof names] || "Comida";
+    console.log("🏷️ MealPlate - Mapped name:", mappedName);
+    return mappedName;
   }
 
   function getMealTypeColor(firstMeal: MealEntry) {
