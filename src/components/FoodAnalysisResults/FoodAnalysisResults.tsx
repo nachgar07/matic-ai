@@ -55,6 +55,26 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
     setEditedFoods(updated);
   };
 
+  const updateFoodGrams = (index: number, gramsValue: number) => {
+    const updated = [...editedFoods];
+    const food = updated[index];
+    
+    // Extraer los gramos actuales de la porción estimada (ej: "100g" -> 100)
+    const currentGrams = parseFloat(food.estimated_portion.match(/(\d+\.?\d*)g/)?.[1] || '100');
+    const ratio = gramsValue / currentGrams;
+    
+    // Actualizar todos los valores proporcionalmente
+    updated[index] = {
+      ...food,
+      estimated_portion: `${gramsValue}g`,
+      estimated_calories: Math.round(food.estimated_calories * ratio),
+      estimated_protein: Math.round(food.estimated_protein * ratio * 10) / 10,
+      estimated_carbs: Math.round(food.estimated_carbs * ratio * 10) / 10,
+      estimated_fat: Math.round(food.estimated_fat * ratio * 10) / 10,
+    };
+    setEditedFoods(updated);
+  };
+
   const addFoodToMeal = async (food: AnalyzedFood, index: number) => {
     const mealType = selectedMealTypes[index];
     const foodServings = servings[index] || 1;
@@ -402,57 +422,77 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
                       </div>
                     </div>
 
-                    <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-3 gap-4'}`}>
-                      {/* Portion */}
+                    <div className={`space-y-4`}>
+                      {/* Nombre del alimento editable */}
                       <div>
-                        <label className="text-sm text-muted-foreground">Porción</label>
-                        <p className={`mt-1 ${isMobile ? 'text-sm' : ''}`}>{food.estimated_portion}</p>
-                      </div>
-
-                      {/* Servings */}
-                      <div>
-                        <label className="text-sm text-muted-foreground">Porciones</label>
+                        <label className="text-sm text-muted-foreground">Nombre del alimento</label>
                         <Input
-                          type="number"
-                          min="0.1"
-                          step="0.1"
-                          value={servings[index] || 1}
-                          onChange={(e) => setServings({...servings, [index]: parseFloat(e.target.value) || 1})}
+                          value={food.name}
+                          onChange={(e) => updateFood(index, 'name', e.target.value)}
                           className="mt-1"
+                          placeholder="Nombre del ingrediente..."
                         />
                       </div>
 
-                      {/* Meal type */}
-                      <div>
-                        <label className="text-sm text-muted-foreground">
-                          Tipo de comida {selectedMealTypes[index] && globalMealType !== selectedMealTypes[index] && "(personalizado)"}
-                        </label>
-                        <Select
-                          value={selectedMealTypes[index] || ""}
-                          onValueChange={(value) => handleIndividualMealTypeChange(index, value)}
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Seleccionar..." />
-                          </SelectTrigger>
-                          <SelectContent className="bg-background z-50">
-                            {mealCategories?.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.icon} {category.name}
+                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 md:grid-cols-4 gap-4'}`}>
+                        {/* Cantidad en gramos editable */}
+                        <div>
+                          <label className="text-sm text-muted-foreground">Gramos</label>
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={parseFloat(food.estimated_portion.match(/(\d+\.?\d*)g/)?.[1] || '100')}
+                            onChange={(e) => updateFoodGrams(index, parseFloat(e.target.value) || 100)}
+                            className="mt-1"
+                          />
+                        </div>
+
+                        {/* Servings */}
+                        <div>
+                          <label className="text-sm text-muted-foreground">Porciones</label>
+                          <Input
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            value={servings[index] || 1}
+                            onChange={(e) => setServings({...servings, [index]: parseFloat(e.target.value) || 1})}
+                            className="mt-1"
+                          />
+                        </div>
+
+                        {/* Meal type */}
+                        <div className={isMobile ? 'col-span-1' : 'col-span-2'}>
+                          <label className="text-sm text-muted-foreground">
+                            Tipo de comida {selectedMealTypes[index] && globalMealType !== selectedMealTypes[index] && "(personalizado)"}
+                          </label>
+                          <Select
+                            value={selectedMealTypes[index] || ""}
+                            onValueChange={(value) => handleIndividualMealTypeChange(index, value)}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background z-50">
+                              {mealCategories?.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  {category.icon} {category.name}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="create-new" className="text-primary">
+                                <Plus className="h-4 w-4 inline mr-2" />
+                                Crear nueva categoría
                               </SelectItem>
-                            ))}
-                            <SelectItem value="create-new" className="text-primary">
-                              <Plus className="h-4 w-4 inline mr-2" />
-                              Crear nueva categoría
-                            </SelectItem>
-                            <CategoryManagerModal 
-                              trigger={
-                                <div className="flex items-center px-2 py-1.5 text-sm rounded-sm cursor-pointer hover:bg-accent">
-                                  Administrar categorías
-                                </div>
-                              }
-                            />
-                          </SelectContent>
-                        </Select>
+                              <CategoryManagerModal 
+                                trigger={
+                                  <div className="flex items-center px-2 py-1.5 text-sm rounded-sm cursor-pointer hover:bg-accent">
+                                    Administrar categorías
+                                  </div>
+                                }
+                              />
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
 
