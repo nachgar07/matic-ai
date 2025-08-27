@@ -163,13 +163,17 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
 
       if (error) throw error;
 
-      // Update nutrition goals with calculated calories
+      // Update nutrition goals with calculated calories and recommended water
       if (data.calculated_calories) {
+        // Calculate recommended water intake: 35ml per kg of body weight
+        const recommendedWaterGlasses = data.weight ? Math.round(((data.weight * 35) / 1000) * 4) : 12;
+        
         await supabase
           .from('nutrition_goals')
           .upsert({
             user_id: userId,
-            daily_calories: data.calculated_calories
+            daily_calories: data.calculated_calories,
+            daily_water_glasses: recommendedWaterGlasses
           });
         
         onDataUpdate?.(data as PersonalData & { calculated_calories: number });
