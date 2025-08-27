@@ -63,13 +63,31 @@ export const DeleteAccountDialog = ({ isOpen, onOpenChange, userEmail }: DeleteA
         throw deleteError;
       }
       
+      // Clean up all authentication state immediately
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      Object.keys(sessionStorage || {}).forEach(key => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+
+      // Sign out completely
+      await supabase.auth.signOut({ scope: 'global' });
+      
       toast({
         title: "Cuenta eliminada",
         description: "Tu cuenta y todos tus datos han sido eliminados permanentemente.",
       });
       
-      // Redirect to auth page
-      window.location.href = '/auth';
+      // Force redirect to auth page with a small delay to ensure cleanup
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
       
     } catch (error: any) {
       console.error('Error deleting account:', error);
