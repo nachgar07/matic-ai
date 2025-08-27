@@ -730,12 +730,12 @@ INFORMACION DEL USUARIO:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07', // GPT-5 para mejor detección de alimentos múltiples
+        model: 'gpt-4.1-2025-04-14', // GPT-4.1 para mejor estabilidad
         messages: messages,
         tools: tools,
         tool_choice: "auto",
-        // Note: temperature not supported in GPT-5
-        max_completion_tokens: 1000, // Parámetro correcto para GPT-5
+        temperature: 0.1, // Baja temperatura para precisión
+        max_completion_tokens: 1000, // Parámetro correcto para GPT-4.1
       }),
     });
 
@@ -753,13 +753,28 @@ INFORMACION DEL USUARIO:
     const data = await response.json();
     console.log('OpenAI conversation response:', JSON.stringify(data, null, 2));
 
+    // Validate OpenAI response structure
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('🚨 INVALID OPENAI RESPONSE STRUCTURE:', data);
+      throw new Error('Estructura de respuesta inválida de OpenAI');
+    }
+
     // Check if OpenAI wants to call a function
     if (data.choices[0].message.tool_calls && data.choices[0].message.tool_calls.length > 0) {
       const toolCall = data.choices[0].message.tool_calls[0];
       console.log('OpenAI requested function call:', toolCall);
 
       if (toolCall.function.name === 'create_meal') {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
+        let functionArgs;
+        try {
+          functionArgs = JSON.parse(toolCall.function.arguments);
+        } catch (parseError) {
+          console.error('🚨 ERROR PARSING FUNCTION ARGUMENTS:', parseError);
+          return {
+            reply: `Lo siento, hubo un error al procesar los argumentos de la función. Por favor, intenta nuevamente.`,
+            functionCalled: false
+          };
+        }
         console.log('Function arguments:', functionArgs);
         
         try {
@@ -777,7 +792,16 @@ INFORMACION DEL USUARIO:
           };
         }
       } else if (toolCall.function.name === 'create_plate') {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
+        let functionArgs;
+        try {
+          functionArgs = JSON.parse(toolCall.function.arguments);
+        } catch (parseError) {
+          console.error('🚨 ERROR PARSING CREATE_PLATE ARGUMENTS:', parseError);
+          return {
+            reply: `Lo siento, hubo un error al procesar los argumentos del plato. Por favor, intenta nuevamente.`,
+            functionCalled: false
+          };
+        }
         console.log('🍽️ CREATE_PLATE - Function arguments:', JSON.stringify(functionArgs, null, 2));
         
         try {
@@ -795,7 +819,16 @@ INFORMACION DEL USUARIO:
           };
         }
       } else if (toolCall.function.name === 'create_meal_plan') {
-        const functionArgs = JSON.parse(toolCall.function.arguments);
+        let functionArgs;
+        try {
+          functionArgs = JSON.parse(toolCall.function.arguments);
+        } catch (parseError) {
+          console.error('🚨 ERROR PARSING CREATE_MEAL_PLAN ARGUMENTS:', parseError);
+          return {
+            reply: `Lo siento, hubo un error al procesar los argumentos del plan alimenticio. Por favor, intenta nuevamente.`,
+            functionCalled: false
+          };
+        }
         console.log('🍽️ CREATE_MEAL_PLAN - Function arguments:', JSON.stringify(functionArgs, null, 2));
         
         try {
@@ -812,11 +845,24 @@ INFORMACION DEL USUARIO:
             functionCalled: false
           };
         }
+      } else {
+        console.error('🚨 UNKNOWN FUNCTION CALL:', toolCall.function.name);
+        return {
+          reply: `Lo siento, se intentó llamar una función desconocida: ${toolCall.function.name}. Por favor, intenta nuevamente.`,
+          functionCalled: false
+        };
       }
     }
 
     // Return the regular conversation response
     console.log('💬 RETURNING REGULAR CONVERSATION RESPONSE');
+    
+    // Validate that we have a proper response
+    if (!data.choices[0]?.message?.content) {
+      console.error('🚨 NO CONTENT IN OPENAI RESPONSE:', data);
+      throw new Error('OpenAI no devolvió contenido válido en la respuesta');
+    }
+    
     const responseData: any = {
       reply: data.choices[0].message.content,
       functionCalled: false
