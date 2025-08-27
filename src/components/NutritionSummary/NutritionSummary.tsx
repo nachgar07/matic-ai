@@ -12,9 +12,12 @@ interface NutritionSummaryProps {
 }
 
 export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummaryProps) => {
-  const { data: nutritionGoals } = useNutritionGoals();
+  const { data: nutritionGoals, isLoading: isNutritionGoalsLoading } = useNutritionGoals();
   const { waterGlasses, addWaterGlass } = useWaterIntake(selectedDate);
-  const { hasPersonalData, hasNutritionGoals, isNewUser } = useProfileCompletion();
+  const { hasPersonalData, hasNutritionGoals, isNewUser, profile, nutritionGoals: profileNutritionGoals } = useProfileCompletion();
+  
+  // Check if profile data is still loading to prevent flash of onboarding content
+  const isProfileDataLoading = profile === undefined || profileNutritionGoals === undefined;
   
   // Default values for new users
   const defaultGoals = {
@@ -59,7 +62,7 @@ export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummary
           proteinTarget={displayGoals.protein}
           carbsTarget={displayGoals.carbs}
           fatTarget={displayGoals.fat}
-          customCenter={isNewUser ? (
+          customCenter={!isProfileDataLoading && isNewUser ? (
             <OnboardingCenter 
               hasPersonalData={hasPersonalData}
               hasNutritionGoals={hasNutritionGoals}
