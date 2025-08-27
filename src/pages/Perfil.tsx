@@ -389,7 +389,7 @@ export const Perfil = () => {
         {/* Logout Section */}
         <Card className="p-4">
           <Button 
-            variant="destructive" 
+            variant="ghost" 
             className="w-full justify-start" 
             onClick={handleLogout}
           >
