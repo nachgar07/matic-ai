@@ -439,10 +439,11 @@ Eres un calculador nutricional preciso. SIEMPRE calcula exactitud matemática an
 4. **MÚLTIPLES ITEMS:** Si menciona varios alimentos, créalos TODOS en un plato
 
 ## CATEGORIZACIÓN DE COMIDAS:
-- Cuando el usuario dice "desayuné", "desayuno" → meal_type: "breakfast"
-- Cuando el usuario dice "almorcé", "comí", "almuerzo" → meal_type: "lunch"  
-- Cuando el usuario dice "cené", "cena" → meal_type: "dinner"
-- Cuando el usuario dice "snack", "merienda" → meal_type: "snack"
+- Cuando el usuario dice "desayuné", "desayuno" → meal_type: "Desayuno"
+- Cuando el usuario dice "almorcé", "comí", "almuerzo" → meal_type: "Almuerzo"  
+- Cuando el usuario dice "cené", "cena" → meal_type: "Cena"
+- Cuando el usuario dice "snack", "merienda" → meal_type: "Merienda"
+- IMPORTANTE: Usa SIEMPRE el idioma español para meal_type cuando el usuario escriba en español
 
 ## PROCESO OBLIGATORIO:
 1. **IDENTIFICAR TODOS:** Lista todos los alimentos mencionados
@@ -557,8 +558,8 @@ INFORMACION DEL USUARIO:
           properties: {
             meal_type: {
               type: "string",
-              enum: ["breakfast", "lunch", "dinner", "snack"],
-              description: "Tipo de comida (breakfast, lunch, dinner, snack)"
+              enum: ["breakfast", "lunch", "dinner", "snack", "Desayuno", "Almuerzo", "Cena", "Merienda"],
+              description: "Tipo de comida. Usa español cuando el usuario escriba en español: Desayuno (breakfast), Almuerzo (lunch), Cena (dinner), Merienda (snack)"
             },
             food_name: {
               type: "string",
@@ -599,8 +600,8 @@ INFORMACION DEL USUARIO:
           properties: {
             meal_type: {
               type: "string",
-              enum: ["breakfast", "lunch", "dinner", "snack"],
-              description: "Tipo de comida (breakfast, lunch, dinner, snack)"
+              enum: ["breakfast", "lunch", "dinner", "snack", "Desayuno", "Almuerzo", "Cena", "Merienda"],
+              description: "Tipo de comida. Usa español cuando el usuario escriba en español: Desayuno (breakfast), Almuerzo (lunch), Cena (dinner), Merienda (snack)"
             },
             plate_name: {
               type: "string",
