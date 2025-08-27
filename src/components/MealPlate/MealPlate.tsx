@@ -427,6 +427,7 @@ export const MealPlate = ({
                  <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
                    {isEditing ? (
                      <div className="flex items-center gap-2">
+                       <span>{Math.round(currentServings * 10) / 10}</span>
                        <Input
                          type="number"
                          value={editData.grams}
@@ -435,16 +436,10 @@ export const MealPlate = ({
                          min="0"
                          step="0.1"
                        />
-                       <span className="text-xs">gramos</span>
-                       <Input
-                         value={editData.serving_description}
-                         onChange={(e) => updateEditingMeal(meal.id, 'serving_description', e.target.value)}
-                         className="h-6 w-20 text-xs"
-                         placeholder="porción"
-                       />
+                       <span className="text-xs">g</span>
                      </div>
                    ) : (
-                     <span>{Math.round(currentServings * 10) / 10} unidades • {editData.grams}g</span>
+                     <span>{Math.round(currentServings * 10) / 10} {editData.grams}g</span>
                    )}
                    <span>{Math.round(calories)} cal</span>
                  </div>
