@@ -105,7 +105,8 @@ serve(async (req) => {
       // Add auth info to userContext for functions that need it
       const enrichedUserContext = {
         ...userContext,
-        authHeader: authHeader
+        authHeader: authHeader,
+        originalUserMessage: text  // Add the original user message for meal categorization
       };
       
       console.log('💬 CALLING HANDLE CONVERSATION...');
@@ -1000,6 +1001,63 @@ async function executeCreateMeal(args: any, userContext: any) {
   }
 }
 
+async function findMealCategoryInAssistant(userMessage: string, userId: string, supabase: any): Promise<string> {
+  // Get user's meal categories
+  const { data: categories, error } = await supabase
+    .from('meal_categories')
+    .select('name')
+    .eq('user_id', userId);
+
+  if (error || !categories) {
+    console.log('No meal categories found, using default meal_type');
+    return 'desayuno'; // default fallback
+  }
+
+  // Convert user message to lowercase for matching
+  const messageLower = userMessage?.toLowerCase() || '';
+  
+  // Try to match user message with existing categories
+  for (const category of categories) {
+    const categoryName = category.name.toLowerCase();
+    
+    // Check for exact word matches or partial matches
+    if (messageLower.includes(categoryName) || 
+        categoryName.includes(messageLower.split(' ')[0])) {
+      console.log(`✅ Found matching category: ${category.name} for message: ${userMessage}`);
+      return category.name;
+    }
+  }
+
+  // Fallback mappings for common Spanish meal types
+  const mealMappings: { [key: string]: string } = {
+    'desayuno': 'Desayuno',
+    'desayune': 'Desayuno',
+    'almuerzo': 'Almuerzo', 
+    'comida': 'Almuerzo',
+    'cena': 'Cena',
+    'cene': 'Cena',
+    'snack': 'Merienda',
+    'merienda': 'Merienda'
+  };
+
+  // Check if any category matches common meal types
+  for (const [keyword, mealType] of Object.entries(mealMappings)) {
+    if (messageLower.includes(keyword)) {
+      // Check if this meal type exists in user's categories
+      const matchingCategory = categories.find(cat => 
+        cat.name.toLowerCase().includes(mealType.toLowerCase())
+      );
+      if (matchingCategory) {
+        console.log(`✅ Found matching category via mapping: ${matchingCategory.name}`);
+        return matchingCategory.name;
+      }
+    }
+  }
+
+  console.log('No category match found, using Desayuno as default');
+  return 'Desayuno'; // default fallback
+}
+
 async function executeCreatePlate(args: any, userContext: any) {
   console.log('🍽️ CREATE_PLATE - Executing create_plate with args:', JSON.stringify(args, null, 2));
   
@@ -1052,6 +1110,11 @@ async function executeCreatePlate(args: any, userContext: any) {
     // Debug: Log the user ID for verification
     console.log('👤 CREATE_PLATE - User ID from auth:', user.id);
     console.log('📋 CREATE_PLATE - User email:', user.email);
+
+    // Determine the correct meal category based on user's original message and their categories
+    const userMessage = userContext.originalUserMessage || '';
+    const determinedMealType = await findMealCategoryInAssistant(userMessage, user.id, supabase);
+    console.log(`🎯 Determined meal type: ${determinedMealType} (original: ${args.meal_type}, message: "${userMessage}")`)
 
     // Process each food in the plate
     const mealEntries = [];
@@ -1131,7 +1194,7 @@ async function executeCreatePlate(args: any, userContext: any) {
           user_id: user.id,
           food_id: foodId,
           servings: food.servings || 1,
-          meal_type: args.meal_type,
+          meal_type: determinedMealType,
           consumed_at: new Date().toISOString()
         })
         .select()
