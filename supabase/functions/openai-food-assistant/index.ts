@@ -1073,9 +1073,10 @@ async function executeCreateMeal(args: any, userContext: any) {
   }
 }
 
-async function findMealCategoryInAssistant(userMessage: string, userId: string, supabase: any): Promise<string> {
+async function findMealCategoryInAssistant(userMessage: string, userId: string, supabase: any, aiSuggestedType?: string): Promise<string> {
   console.log('🏷️ FINDMEALCATEGORY - Starting categorization process');
   console.log('🏷️ FINDMEALCATEGORY - User message:', `"${userMessage}"`);
+  console.log('🏷️ FINDMEALCATEGORY - AI suggested type:', `"${aiSuggestedType}"`);
   console.log('🏷️ FINDMEALCATEGORY - User ID:', userId);
   
   // Get user's meal categories
@@ -1092,7 +1093,55 @@ async function findMealCategoryInAssistant(userMessage: string, userId: string, 
     return 'Desayuno'; // default fallback
   }
 
-  // Convert user message to lowercase for matching
+  // Comprehensive meal type mappings (Spanish first as it's the primary language)
+  const mealMappings: { [key: string]: string } = {
+    // Spanish keywords
+    'desayuno': 'Desayuno',
+    'desayune': 'Desayuno', 
+    'desayuné': 'Desayuno',
+    'almuerzo': 'Almuerzo',
+    'almorcé': 'Almuerzo',
+    'almuerze': 'Almuerzo',
+    'comida': 'Almuerzo',
+    'comí': 'Almuerzo',
+    'cena': 'Cena',
+    'cené': 'Cena',
+    'cene': 'Cena',
+    'merienda': 'Merienda',
+    'merendé': 'Merienda',
+    'snack': 'Merienda',
+    'colación': 'Merienda',
+    // English keywords (AI suggestions)
+    'breakfast': 'Desayuno',
+    'lunch': 'Almuerzo', 
+    'dinner': 'Cena',
+    'supper': 'Cena'
+  };
+
+  console.log('🏷️ FINDMEALCATEGORY - Comprehensive meal mappings available:', Object.keys(mealMappings));
+
+  // First priority: Check AI suggested type if available
+  if (aiSuggestedType) {
+    const aiTypeLower = aiSuggestedType.toLowerCase();
+    console.log('🏷️ FINDMEALCATEGORY - Processing AI suggested type:', aiTypeLower);
+    
+    if (mealMappings[aiTypeLower]) {
+      const suggestedSpanishType = mealMappings[aiTypeLower];
+      console.log(`🏷️ FINDMEALCATEGORY - AI type "${aiTypeLower}" maps to "${suggestedSpanishType}"`);
+      
+      // Check if this meal type exists in user's categories
+      const matchingCategory = categories.find(cat => 
+        cat.name.toLowerCase() === suggestedSpanishType.toLowerCase()
+      );
+      
+      if (matchingCategory) {
+        console.log(`🏷️ FINDMEALCATEGORY - ✅ Found matching category via AI suggestion: ${matchingCategory.name}`);
+        return matchingCategory.name;
+      }
+    }
+  }
+
+  // Second priority: Check user message for direct category matches
   const messageLower = userMessage?.toLowerCase() || '';
   console.log('🏷️ FINDMEALCATEGORY - Message lowercase:', `"${messageLower}"`);
   
@@ -1109,36 +1158,17 @@ async function findMealCategoryInAssistant(userMessage: string, userId: string, 
     }
   }
 
-  // Fallback mappings for common Spanish meal types AND English from AI
-  const mealMappings: { [key: string]: string } = {
-    'desayuno': 'Desayuno',
-    'desayune': 'Desayuno',
-    'breakfast': 'Desayuno',  // Add English mapping
-    'almuerzo': 'Almuerzo', 
-    'almorcé': 'Almuerzo',
-    'comida': 'Almuerzo',
-    'comí': 'Almuerzo',
-    'lunch': 'Almuerzo',     // Add English mapping
-    'cena': 'Cena',
-    'cené': 'Cena',
-    'dinner': 'Cena',        // Add English mapping
-    'snack': 'Merienda',
-    'merienda': 'Merienda'
-  };
-
-  console.log('🏷️ FINDMEALCATEGORY - Checking against mappings:', Object.keys(mealMappings));
-
-  // Check if any category matches common meal types
+  // Third priority: Check user message against keyword mappings
   for (const [keyword, mealType] of Object.entries(mealMappings)) {
     console.log(`🏷️ FINDMEALCATEGORY - Testing keyword: "${keyword}" -> "${mealType}"`);
     if (messageLower.includes(keyword)) {
       console.log(`🏷️ FINDMEALCATEGORY - ✅ Found keyword match: "${keyword}" in message`);
       // Check if this meal type exists in user's categories
       const matchingCategory = categories.find(cat => 
-        cat.name.toLowerCase().includes(mealType.toLowerCase())
+        cat.name.toLowerCase() === mealType.toLowerCase()
       );
       if (matchingCategory) {
-        console.log(`🏷️ FINDMEALCATEGORY - ✅ Found matching category via mapping: ${matchingCategory.name}`);
+        console.log(`🏷️ FINDMEALCATEGORY - ✅ Found matching category via keyword mapping: ${matchingCategory.name}`);
         return matchingCategory.name;
       } else {
         console.log(`🏷️ FINDMEALCATEGORY - ❌ Meal type "${mealType}" not found in user categories`);
@@ -1209,7 +1239,7 @@ async function executeCreatePlate(args: any, userContext: any) {
     console.log('🏷️ CREATE_PLATE - Original user message:', `"${userMessage}"`);
     console.log('🏷️ CREATE_PLATE - Args meal_type from AI:', args.meal_type);
     
-    const determinedMealType = await findMealCategoryInAssistant(userMessage, user.id, supabase);
+    const determinedMealType = await findMealCategoryInAssistant(userMessage, user.id, supabase, args.meal_type);
     console.log(`🏷️ CREATE_PLATE - 🎯 Final determined meal type: "${determinedMealType}" (AI suggested: "${args.meal_type}", user said: "${userMessage}")`)
 
     // Process each food in the plate
