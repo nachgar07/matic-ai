@@ -148,16 +148,65 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
       return;
     }
 
+    // Close the popup immediately for better UX
+    onClose();
+
+    // Show progress toast
+    toast({
+      title: "Agregando comidas...",
+      description: `Procesando ${foodsWithMealType.length} alimentos en segundo plano.`
+    });
+
     try {
-      for (let i = 0; i < editedFoods.length; i++) {
-        if (selectedMealTypes[i]) {
-          await addFoodToMeal(editedFoods[i], i);
-        }
-      }
+      // Pre-create all manual foods in parallel for better performance
+      const foodCreationPromises = editedFoods.map(async (food, index) => {
+        if (!selectedMealTypes[index]) return null;
+
+        const foodPayload = {
+          food_id: `manual_${Date.now()}_${index}`,
+          food_name: food.name,
+          brand_name: "Analizado por IA",
+          calories_per_serving: food.estimated_calories,
+          protein_per_serving: food.estimated_protein,
+          carbs_per_serving: food.estimated_carbs,
+          fat_per_serving: food.estimated_fat,
+          serving_description: food.estimated_portion
+        };
+
+        const { data: insertedFood, error: foodError } = await supabase.functions.invoke('add-manual-food', {
+          body: foodPayload
+        });
+
+        if (foodError) throw foodError;
+        return { insertedFood, index };
+      });
+
+      const createdFoods = await Promise.all(foodCreationPromises);
+
+      // Add all meals in parallel
+      const mealPromises = createdFoods.map(async (result) => {
+        if (!result) return null;
+
+        const { insertedFood, index } = result;
+        const mealPayload = {
+          foodId: insertedFood.food_id,
+          servings: servings[index] || 1,
+          mealType: selectedMealTypes[index],
+          plateImage: analysis.originalImage,
+          consumedAt: selectedDate
+        };
+
+        return addMealMutation.mutateAsync(mealPayload);
+      });
+
+      await Promise.all(mealPromises);
+
+      // Invalidate queries to refresh the UI
+      await queryClient.invalidateQueries({ queryKey: ['user-meals'] });
 
       toast({
         title: "¡Comidas agregadas!",
-        description: `Se agregaron ${foodsWithMealType.length} alimentos a tu registro.`
+        description: `Se agregaron exitosamente ${foodsWithMealType.length} alimentos a tu registro.`
       });
 
       onSuccess();
@@ -165,7 +214,7 @@ export const FoodAnalysisResults = ({ analysis, onClose, onSuccess, selectedDate
       console.error('Error adding all foods:', error);
       toast({
         title: "Error",
-        description: "Hubo un problema agregando algunas comidas.",
+        description: "Hubo un problema agregando algunas comidas. Por favor intenta de nuevo.",
         variant: "destructive"
       });
     }
