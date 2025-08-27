@@ -100,10 +100,20 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
   };
 
   const calculateTDEE = () => {
-    const { age, gender, weight, height, activity_level, goal, progress_speed, target_weight } = data;
+    const { age, gender, weight, height, activity_level, target_weight } = data;
     
     if (!age || !gender || !weight || !height || !activity_level) {
       return;
+    }
+
+    // Determinar objetivo automáticamente basado en peso objetivo vs peso actual
+    let goal: 'lose' | 'maintain' | 'gain' = 'maintain';
+    if (target_weight && weight) {
+      if (target_weight < weight) {
+        goal = 'lose';
+      } else if (target_weight > weight) {
+        goal = 'gain';
+      }
     }
 
     // Mifflin-St Jeor equation
@@ -117,16 +127,18 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
     const tdee = bmr * ACTIVITY_FACTORS[activity_level];
     
     let goalAdjustment = 0;
-    // Solo aplicar ajuste de calorías si hay peso objetivo definido
-    if (goal && goal !== 'maintain' && progress_speed && target_weight && weight) {
+    // Solo aplicar ajuste de calorías si hay peso objetivo definido y es diferente al actual
+    if (goal !== 'maintain' && target_weight && weight) {
+      // Usar velocidad moderada por defecto
+      const progress_speed = 'moderate';
       goalAdjustment = PROGRESS_SPEED_ADJUSTMENTS[progress_speed][goal];
       
       // Ajuste adicional basado en la diferencia de peso objetivo
       const weightDiff = Math.abs(target_weight - weight);
       // Agregar 50 calorías por kg de diferencia para que el proceso sea más eficiente
-      if (goal === 'gain' && target_weight > weight) {
+      if (goal === 'gain') {
         goalAdjustment += weightDiff * 50;
-      } else if (goal === 'lose' && target_weight < weight) {
+      } else if (goal === 'lose') {
         goalAdjustment -= weightDiff * 50;
       }
     }
@@ -135,6 +147,8 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
 
     setData(prev => ({
       ...prev,
+      goal,
+      progress_speed: goal !== 'maintain' ? 'moderate' : undefined,
       calculated_tdee: Math.round(tdee),
       calculated_calories: targetCalories
     }));
@@ -298,43 +312,10 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
           </RadioGroup>
         </div>
 
-        {/* Objetivo */}
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            Objetivo Principal
-          </Label>
-          <Select value={data.goal || ''} onValueChange={(value) => updateData('goal', value as 'lose' | 'maintain' | 'gain')}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona tu objetivo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="lose">
-                <div className="flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4" />
-                  Perder peso
-                </div>
-              </SelectItem>
-              <SelectItem value="maintain">
-                <div className="flex items-center gap-2">
-                  <Minus className="h-4 w-4" />
-                  Mantener peso
-                </div>
-              </SelectItem>
-              <SelectItem value="gain">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Ganar peso
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Peso objetivo */}
         <div className="space-y-2">
           <Label htmlFor="target_weight">
-            Peso objetivo (kg)
+            Peso objetivo (kg) - Opcional
           </Label>
           <Input
             id="target_weight"
@@ -342,41 +323,13 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
             step="0.1"
             value={data.target_weight || ''}
             onChange={(e) => updateData('target_weight', parseFloat(e.target.value) || undefined)}
-            placeholder={data.goal === 'lose' ? 'Ej: 65.0' : data.goal === 'gain' ? 'Ej: 80.0' : 'Ej: 70.0'}
+            placeholder="Ej: 70.0 (opcional)"
           />
+          <p className="text-xs text-muted-foreground">
+            Si completas este campo, se calculará automáticamente tu objetivo basado en la diferencia con tu peso actual
+          </p>
         </div>
 
-        {/* Velocidad del progreso - solo si el objetivo no es mantener */}
-        {data.goal && data.goal !== 'maintain' && (
-          <div className="space-y-2">
-            <Label>Velocidad del progreso</Label>
-            <Select value={data.progress_speed || ''} onValueChange={(value) => updateData('progress_speed', value as 'slow' | 'moderate' | 'fast')}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona la velocidad" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="slow">
-                  <div>
-                    <div className="font-medium">Lenta</div>
-                    <div className="text-sm text-muted-foreground">0.25 kg por semana</div>
-                  </div>
-                </SelectItem>
-                <SelectItem value="moderate">
-                  <div>
-                    <div className="font-medium">Moderada</div>
-                    <div className="text-sm text-muted-foreground">0.5 kg por semana</div>
-                  </div>
-                </SelectItem>
-                <SelectItem value="fast">
-                  <div>
-                    <div className="font-medium">Rápida</div>
-                    <div className="text-sm text-muted-foreground">0.75-1 kg por semana</div>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
 
         {/* Nivel de actividad */}
         <div className="space-y-2">
