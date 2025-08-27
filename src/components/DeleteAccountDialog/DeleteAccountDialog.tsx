@@ -40,12 +40,32 @@ export const DeleteAccountDialog = ({ isOpen, onOpenChange, userEmail }: DeleteA
     try {
       setIsDeleting(true);
       
-      // Sign out the user first
-      await supabase.auth.signOut();
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "No hay sesión activa",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Call the delete account function
+      const { error: deleteError } = await supabase.functions.invoke('delete-user-account', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (deleteError) {
+        throw deleteError;
+      }
       
       toast({
         title: "Cuenta eliminada",
-        description: "Tu cuenta ha sido eliminada exitosamente. Los datos se eliminarán automáticamente en los próximos días.",
+        description: "Tu cuenta y todos tus datos han sido eliminados permanentemente.",
       });
       
       // Redirect to auth page
