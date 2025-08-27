@@ -22,6 +22,11 @@ export interface MealEntry {
   consumed_at: string;
   plate_image?: string;
   foods: Food;
+  meal_categories?: {
+    name: string;
+    color: string;
+    icon: string;
+  };
 }
 
 export interface DailyTotals {

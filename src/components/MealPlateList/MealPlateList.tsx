@@ -20,10 +20,12 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
   console.log("📋 MealPlateList received plateImages:", plateImages);
 
   const groupedMeals = meals.reduce((acc, meal) => {
-    if (!acc[meal.meal_type]) {
-      acc[meal.meal_type] = [];
+    // Usar el nombre de la categoría o un fallback
+    const groupKey = meal.meal_categories?.name || meal.meal_type || 'Comida';
+    if (!acc[groupKey]) {
+      acc[groupKey] = [];
     }
-    acc[meal.meal_type].push(meal);
+    acc[groupKey].push(meal);
     return acc;
   }, {} as Record<string, MealEntry[]>);
 
@@ -122,26 +124,28 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
 
       {/* Meal Plates */}
       <div className="space-y-3">
-        {Object.entries(groupedMeals).map(([mealType, mealList]) => {
-          // Use the plate_image from the first meal entry in this meal type, or fallback to plateImages prop
-          const plateImageFromDB = mealList.find(meal => meal.plate_image)?.plate_image;
-          const finalPlateImage = plateImageFromDB || plateImages[mealType];
-          
-          console.log(`🍽️ Rendering MealPlate for ${mealType}, DB image:`, !!plateImageFromDB, "Prop image:", !!plateImages[mealType]);
-          return (
-            <MealPlate
-              key={mealType}
-              mealType={mealType}
-              meals={mealList}
-              isSelected={selectedPlates.has(mealType)}
-              onSelectionChange={(selected) => handlePlateSelection(mealType, selected)}
-              onPlateNameChange={handlePlateNameChange}
-              plateName={plateNames[mealType]}
-              onDeleteMeal={onDeleteMeal}
-              plateImage={finalPlateImage}
-            />
-          );
-        })}
+      {Object.entries(groupedMeals).map(([groupName, mealList]) => {
+        // Use the plate_image from the first meal entry in this group, or fallback to plateImages prop
+        const plateImageFromDB = mealList.find(meal => meal.plate_image)?.plate_image;
+        const firstMeal = mealList[0];
+        const mealTypeKey = firstMeal.meal_type; // Keep original for backwards compatibility with plateImages
+        const finalPlateImage = plateImageFromDB || plateImages[mealTypeKey];
+        
+        console.log(`🍽️ Rendering MealPlate for ${groupName}, DB image:`, !!plateImageFromDB, "Prop image:", !!plateImages[mealTypeKey]);
+        return (
+          <MealPlate
+            key={groupName}
+            mealType={mealTypeKey} // Keep for backwards compatibility
+            meals={mealList}
+            isSelected={selectedPlates.has(groupName)}
+            onSelectionChange={(selected) => handlePlateSelection(groupName, selected)}
+            onPlateNameChange={handlePlateNameChange}
+            plateName={plateNames[groupName]}
+            onDeleteMeal={onDeleteMeal}
+            plateImage={finalPlateImage}
+          />
+        );
+      })}
       </div>
     </div>
   );

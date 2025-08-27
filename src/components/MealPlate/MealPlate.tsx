@@ -37,11 +37,22 @@ export const MealPlate = ({
 }: MealPlateProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [editingName, setEditingName] = useState(plateName || getDefaultPlateName(mealType));
+  
+  // Usar el primer meal para obtener la información de la categoría
+  const firstMeal = meals[0];
+  const defaultName = getDefaultPlateName(firstMeal);
+  const [editingName, setEditingName] = useState(plateName || defaultName);
 
   console.log("🍽️ MealPlate render:", { mealType, plateImage: !!plateImage });
 
-  function getDefaultPlateName(mealType: string) {
+  function getDefaultPlateName(meal: MealEntry) {
+    // Si hay datos de meal_categories, usar esos
+    if (meal.meal_categories?.name) {
+      return meal.meal_categories.name;
+    }
+    
+    // Fallback a nombres por defecto basados en el UUID o string
+    const mealType = meal.meal_type;
     const names = {
       breakfast: "Desayuno",
       lunch: "Almuerzo", 
@@ -52,10 +63,17 @@ export const MealPlate = ({
       cena: "Cena",
       merienda: "Merienda"
     };
-    return names[mealType as keyof typeof names] || mealType;
+    return names[mealType as keyof typeof names] || "Comida";
   }
 
-  function getMealTypeColor(mealType: string) {
+  function getMealTypeColor(firstMeal: MealEntry) {
+    // Si hay información de categoría, usar su color
+    if (firstMeal.meal_categories?.color) {
+      return firstMeal.meal_categories.color;
+    }
+    
+    // Fallback a colores por defecto
+    const mealType = firstMeal.meal_type;
     const colors = {
       breakfast: "#ff9500",
       lunch: "#34c759",
@@ -90,7 +108,7 @@ export const MealPlate = ({
   };
 
   const handleNameCancel = () => {
-    setEditingName(plateName || getDefaultPlateName(mealType));
+    setEditingName(plateName || defaultName);
     setIsEditingName(false);
   };
 
@@ -112,7 +130,7 @@ export const MealPlate = ({
             <button className="shrink-0">
               <Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
                 <AvatarImage src={plateImage} alt={`Foto de ${editingName}`} />
-                <AvatarFallback className="text-sm font-semibold" style={{ backgroundColor: getMealTypeColor(mealType) }}>
+                <AvatarFallback className="text-sm font-semibold" style={{ backgroundColor: getMealTypeColor(firstMeal) }}>
                   {editingName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -169,7 +187,7 @@ export const MealPlate = ({
               {/* Title row */}
               <div className="flex items-center gap-2 overflow-hidden">
                 <Badge 
-                  style={{ backgroundColor: getMealTypeColor(mealType) }}
+                  style={{ backgroundColor: getMealTypeColor(firstMeal) }}
                   className="text-white shrink-0"
                 >
                   {editingName}

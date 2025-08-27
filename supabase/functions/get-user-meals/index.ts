@@ -83,8 +83,11 @@ serve(async (req) => {
       );
     }
 
-    // Build query based on whether we have a date range or single date
-    let query = supabase
+    // First, let's try to get meals with category information
+    let mealsWithCategories = [];
+    
+    // Get basic meals first
+    let basicQuery = supabase
       .from('meal_entries')
       .select(`
         *,
@@ -94,25 +97,44 @@ serve(async (req) => {
 
     if (startDate && endDate) {
       // Date range query
-      query = query
+      basicQuery = basicQuery
         .gte('consumed_at', `${startDate}T00:00:00`)
         .lte('consumed_at', `${endDate}T23:59:59`);
     } else {
       // Single date query
-      query = query
+      basicQuery = basicQuery
         .gte('consumed_at', `${date}T00:00:00`)
         .lt('consumed_at', `${date}T23:59:59`);
     }
 
-    const { data: meals, error } = await query.order('consumed_at', { ascending: true });
+    const { data: basicMeals, error: mealsError } = await basicQuery.order('consumed_at', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching meals:', error);
+    if (mealsError) {
+      console.error('Error fetching meals:', mealsError);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch meals' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Now get meal categories for each meal
+    const mealsWithCategoryInfo = await Promise.all(
+      (basicMeals || []).map(async (meal) => {
+        const { data: category } = await supabase
+          .from('meal_categories')
+          .select('name, color, icon')
+          .eq('id', meal.meal_type)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        return {
+          ...meal,
+          meal_categories: category || { name: 'Comida', color: '#6366f1', icon: '🍽️' }
+        };
+      })
+    );
+
+    const meals = mealsWithCategoryInfo;
 
     // If it's a date range query, return all meals without calculating daily totals
     if (startDate && endDate) {
