@@ -17,6 +17,7 @@ import { translations } from "@/lib/translations";
 import { isHabitActiveOnDate } from "@/utils/habitUtils";
 import { useExpenses } from "@/hooks/useExpenses";
 import { TermsAcceptanceModal } from "@/components/TermsAcceptanceModal/TermsAcceptanceModal";
+import { useProfileCompletion } from "@/hooks/useProfile";
 
 export const Home = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -68,6 +69,9 @@ export const Home = () => {
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
   const [checkingTerms, setCheckingTerms] = useState(false);
 
+  // Profile completion status
+  const { hasPersonalData, hasNutritionGoals, isNewUser } = useProfileCompletion();
+
   // Calculate real values from meal data
   const dailyTotals = mealsData?.dailyTotals || {
     calories: 0,
@@ -75,8 +79,10 @@ export const Home = () => {
     protein: 0,
     fat: 0
   };
+  
+  // Show 0 for new users until they complete their profile
   const caloriesConsumed = Math.round(dailyTotals.calories);
-  const caloriesTarget = nutritionGoals?.daily_calories || 2586;
+  const caloriesTarget = isNewUser ? 0 : (nutritionGoals?.daily_calories || 2586);
   const steps = 0; // Still mock data - not implemented
   const activeCalories = 0; // Still mock data - not implemented
 
@@ -254,23 +260,23 @@ export const Home = () => {
       <div className="px-4 py-6 flex justify-center">
         <CalorieRing 
           consumed={caloriesConsumed} 
-          target={caloriesTarget} 
+          target={Math.max(caloriesTarget, 1)} // Avoid division by zero
           protein={Math.round(dailyTotals.protein)} 
           carbs={Math.round(dailyTotals.carbs)} 
           fat={Math.round(dailyTotals.fat)} 
           size={220} 
           waterGlasses={waterGlasses} 
           simple={true} 
-          waterTarget={nutritionGoals?.daily_water_glasses || 12} 
+          waterTarget={nutritionGoals?.daily_water_glasses || 12}
         />
       </div>
 
       {/* Macronutrients */}
       <div className="px-4 mb-6">
         <div className="flex gap-3">
-          <MacroCard icon="🥩" label={t('protein')} current={Math.round(dailyTotals.protein)} target={nutritionGoals?.daily_protein || 129} unit="g" />
-          <MacroCard icon="🍞" label={t('carbohydrates')} current={Math.round(dailyTotals.carbs)} target={nutritionGoals?.daily_carbs || 323} unit="g" />
-          <MacroCard icon="🥑" label={t('fats')} current={Math.round(dailyTotals.fat)} target={nutritionGoals?.daily_fat || 86} unit="g" />
+          <MacroCard icon="🥩" label={t('protein')} current={Math.round(dailyTotals.protein)} target={isNewUser ? 0 : (nutritionGoals?.daily_protein || 129)} unit="g" />
+          <MacroCard icon="🍞" label={t('carbohydrates')} current={Math.round(dailyTotals.carbs)} target={isNewUser ? 0 : (nutritionGoals?.daily_carbs || 323)} unit="g" />
+          <MacroCard icon="🥑" label={t('fats')} current={Math.round(dailyTotals.fat)} target={isNewUser ? 0 : (nutritionGoals?.daily_fat || 86)} unit="g" />
         </div>
       </div>
 

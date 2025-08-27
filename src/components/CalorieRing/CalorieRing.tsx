@@ -9,15 +9,15 @@ interface CalorieRingProps {
   size?: number;
   waterGlasses?: number;
   onWaterClick?: () => void;
-  simple?: boolean; // Nueva prop para modo simple
-  waterTarget?: number; // Nueva prop para el objetivo de agua
-  // Props para targets específicos de macros
+  simple?: boolean;
+  waterTarget?: number;
   proteinTarget?: number;
   carbsTarget?: number;
   fatTarget?: number;
+  customCenter?: React.ReactNode;
 }
 
-export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200, waterGlasses = 0, onWaterClick, simple = false, waterTarget = 12, proteinTarget, carbsTarget, fatTarget }: CalorieRingProps) => {
+export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200, waterGlasses = 0, onWaterClick, simple = false, waterTarget = 12, proteinTarget, carbsTarget, fatTarget, customCenter }: CalorieRingProps) => {
   const [showWaterAnimation, setShowWaterAnimation] = useState(false);
   
   const remaining = Math.max(0, target - consumed);
@@ -306,13 +306,17 @@ export const CalorieRing = ({ consumed, target, protein, carbs, fat, size = 200,
         </div>
         
         {/* Center content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="text-3xl font-bold text-primary">{remaining}</div>
-          <div className="text-sm text-muted-foreground">Calorías restantes</div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {Math.round(percentage)}%
+        {customCenter ? (
+          customCenter
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="text-3xl font-bold text-primary">{remaining}</div>
+            <div className="text-sm text-muted-foreground">Calorías restantes</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {Math.round(percentage)}%
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       {/* Stats below */}
