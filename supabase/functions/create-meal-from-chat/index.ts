@@ -16,7 +16,7 @@ interface MealCreateRequest {
   // For multiple foods (original format)
   foods?: FoodItem[];
   // For single meal from openai-food-assistant
-  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  meal_type: string;
   food_name?: string;
   servings?: number;
   calories_per_serving?: number;
@@ -25,6 +25,61 @@ interface MealCreateRequest {
   fat_per_serving?: number;
   user_message?: string;
   consumed_at?: string;
+}
+
+async function findMealCategory(userMessage: string, userId: string, supabase: any): Promise<string> {
+  // Get user's meal categories
+  const { data: categories, error } = await supabase
+    .from('meal_categories')
+    .select('name')
+    .eq('user_id', userId);
+
+  if (error || !categories) {
+    console.log('No meal categories found, using default meal_type');
+    return 'lunch'; // default fallback
+  }
+
+  // Convert user message to lowercase for matching
+  const messageLower = userMessage?.toLowerCase() || '';
+  
+  // Try to match user message with existing categories
+  for (const category of categories) {
+    const categoryName = category.name.toLowerCase();
+    
+    // Check for exact word matches or partial matches
+    if (messageLower.includes(categoryName) || 
+        categoryName.includes(messageLower.split(' ')[0])) {
+      console.log(`✅ Found matching category: ${category.name} for message: ${userMessage}`);
+      return category.name.toLowerCase();
+    }
+  }
+
+  // Fallback mappings for common Spanish meal types
+  const mealMappings: { [key: string]: string } = {
+    'desayuno': 'desayuno',
+    'almuerzo': 'almuerzo', 
+    'comida': 'almuerzo',
+    'cena': 'cena',
+    'snack': 'snack',
+    'merienda': 'merienda'
+  };
+
+  // Check if any category matches common meal types
+  for (const [keyword, mealType] of Object.entries(mealMappings)) {
+    if (messageLower.includes(keyword)) {
+      // Check if this meal type exists in user's categories
+      const matchingCategory = categories.find(cat => 
+        cat.name.toLowerCase().includes(mealType)
+      );
+      if (matchingCategory) {
+        console.log(`✅ Found matching category via mapping: ${matchingCategory.name}`);
+        return matchingCategory.name.toLowerCase();
+      }
+    }
+  }
+
+  console.log('No category match found, using lunch as default');
+  return 'lunch'; // default fallback
 }
 
 async function getNutritionalInfoFromOpenAI(foodName: string, servings: number, apiKey: string) {
@@ -141,6 +196,10 @@ serve(async (req) => {
 
     console.log('User authenticated:', userId);
 
+    // Find the appropriate meal category based on user message and existing categories
+    const determinedMealType = await findMealCategory(user_message || '', userId, supabase);
+    console.log(`🎯 Determined meal type: ${determinedMealType} (original: ${meal_type})`);
+
     // Generate nutritional information using OpenAI for each food
     const mealEntries = [];
     const nutritionalResults = [];
@@ -207,7 +266,7 @@ serve(async (req) => {
           user_id: userId,
           food_id: foodId,
           servings: servings || 1,
-          meal_type: meal_type,
+          meal_type: determinedMealType,
           consumed_at: consumed_at ? new Date(consumed_at).toISOString() : new Date().toISOString()
         })
         .select()
@@ -305,7 +364,7 @@ serve(async (req) => {
             user_id: userId,
             food_id: foodId,
             servings: food.servings,
-            meal_type: meal_type,
+            meal_type: determinedMealType,
             consumed_at: consumed_at ? new Date(consumed_at).toISOString() : new Date().toISOString()
           })
           .select()
@@ -344,7 +403,7 @@ serve(async (req) => {
 
     const response = {
       success: true,
-      meal_type,
+      meal_type: determinedMealType,
       foods_processed: foods ? foods.length : 1,
       foods_saved: mealEntries.length,
       totals: {
