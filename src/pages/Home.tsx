@@ -56,8 +56,8 @@ export const Home = () => {
   const { data: tasks = [] } = useTasks(shouldFetchData ? format(selectedDate, 'yyyy-MM-dd') : '');
   const { data: goals = [] } = useGoals();
   
-  // Filter active habits for selected date
-  const activeHabitsForDate = goals.filter(goal => isHabitActiveOnDate(goal, selectedDate));
+  // Filter active habits for selected date (only if we have goals)
+  const activeHabitsForDate = shouldFetchData ? goals.filter(goal => isHabitActiveOnDate(goal, selectedDate)) : [];
 
   // Get expenses for selected date (only when authenticated)
   const { expenses, chartData, totalAmount, loading: expensesLoading } = useExpenses(
@@ -187,8 +187,8 @@ export const Home = () => {
     }
   };
 
-  // Show loading while checking auth or loading meal data 
-  if (loading || mealsLoading || checkingTerms) {
+  // Show loading while checking auth or terms - only show meals loading if we should be fetching data
+  if (loading || checkingTerms || (shouldFetchData && mealsLoading)) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="text-muted-foreground">{t('loading')}</div>
