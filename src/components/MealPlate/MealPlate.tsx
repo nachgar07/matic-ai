@@ -436,9 +436,15 @@ export const MealPlate = ({
                          step="0.1"
                        />
                        <span className="text-xs">gramos</span>
+                       <Input
+                         value={editData.serving_description}
+                         onChange={(e) => updateEditingMeal(meal.id, 'serving_description', e.target.value)}
+                         className="h-6 w-20 text-xs"
+                         placeholder="porción"
+                       />
                      </div>
                    ) : (
-                     <span>{editData.grams}g</span>
+                     <span>{editData.grams}g • {meal.foods.serving_description || 'porción'}</span>
                    )}
                    <span>{Math.round(calories)} cal</span>
                  </div>
