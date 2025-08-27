@@ -42,7 +42,7 @@ export const MealPlate = ({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingMeals, setEditingMeals] = useState<Record<string, {
     food_name: string;
-    servings: number;
+    grams: number;
     serving_description: string;
   }>>({});
   
@@ -123,12 +123,22 @@ export const MealPlate = ({
     setIsEditingName(false);
   };
 
+  const getGramsPerServing = (meal: MealEntry) => {
+    // Asumimos 100g por porción como estándar si no se especifica
+    const description = meal.foods.serving_description || '';
+    const gramsMatch = description.match(/(\d+)\s*g/i);
+    return gramsMatch ? parseInt(gramsMatch[1]) : 100;
+  };
+
   const handleMealEdit = (mealId: string, meal: MealEntry) => {
+    const gramsPerServing = getGramsPerServing(meal);
+    const currentGrams = gramsPerServing * meal.servings;
+    
     setEditingMeals(prev => ({
       ...prev,
       [mealId]: {
         food_name: meal.foods.food_name,
-        servings: meal.servings,
+        grams: currentGrams,
         serving_description: meal.foods.serving_description || ''
       }
     }));
@@ -154,11 +164,18 @@ export const MealPlate = ({
 
       if (foodError) throw foodError;
 
+      // Calculate new servings based on grams
+      const targetMeal = meals.find(m => m.id === mealId);
+      if (!targetMeal) return;
+      
+      const gramsPerServing = getGramsPerServing(targetMeal);
+      const newServings = editData.grams / gramsPerServing;
+
       // Update the meal entry servings
       const { error: mealError } = await supabase
         .from('meal_entries')
         .update({
-          servings: editData.servings
+          servings: newServings
         })
         .eq('id', mealId);
 
@@ -330,14 +347,19 @@ export const MealPlate = ({
             const isEditing = editingMeals[meal.id];
             const editData = isEditing || {
               food_name: meal.foods.food_name,
-              servings: meal.servings,
+              grams: getGramsPerServing(meal) * meal.servings,
               serving_description: meal.foods.serving_description || ''
             };
             
-            const calories = (meal.foods.calories_per_serving || 0) * editData.servings;
-            const protein = (meal.foods.protein_per_serving || 0) * editData.servings;
-            const carbs = (meal.foods.carbs_per_serving || 0) * editData.servings;
-            const fat = (meal.foods.fat_per_serving || 0) * editData.servings;
+            // Calculate servings from grams for nutritional calculations
+            const currentServings = isEditing ? 
+              editData.grams / getGramsPerServing(meal) : 
+              meal.servings;
+            
+            const calories = (meal.foods.calories_per_serving || 0) * currentServings;
+            const protein = (meal.foods.protein_per_serving || 0) * currentServings;
+            const carbs = (meal.foods.carbs_per_serving || 0) * currentServings;
+            const fat = (meal.foods.fat_per_serving || 0) * currentServings;
 
             return (
               <div key={meal.id} className="p-3 rounded-lg bg-muted/50">
@@ -402,29 +424,24 @@ export const MealPlate = ({
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
-                  {isEditing ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={editData.servings}
-                        onChange={(e) => updateEditingMeal(meal.id, 'servings', parseFloat(e.target.value) || 0)}
-                        className="h-6 w-16 text-xs"
-                        min="0"
-                        step="0.1"
-                      />
-                      <Input
-                        value={editData.serving_description}
-                        onChange={(e) => updateEditingMeal(meal.id, 'serving_description', e.target.value)}
-                        className="h-6 w-20 text-xs"
-                        placeholder="porción"
-                      />
-                    </div>
-                  ) : (
-                    <span>{meal.servings} {meal.foods.serving_description || 'porción'}</span>
-                  )}
-                  <span>{Math.round(calories)} cal</span>
-                </div>
+                 <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
+                   {isEditing ? (
+                     <div className="flex items-center gap-2">
+                       <Input
+                         type="number"
+                         value={editData.grams}
+                         onChange={(e) => updateEditingMeal(meal.id, 'grams', parseFloat(e.target.value) || 0)}
+                         className="h-6 w-16 text-xs"
+                         min="0"
+                         step="0.1"
+                       />
+                       <span className="text-xs">gramos</span>
+                     </div>
+                   ) : (
+                     <span>{editData.grams}g</span>
+                   )}
+                   <span>{Math.round(calories)} cal</span>
+                 </div>
                 
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="text-center p-2 rounded bg-background">
