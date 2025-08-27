@@ -416,10 +416,12 @@ Instrucciones importantes:
 }
 
 async function handleConversation(text: string, conversationHistory: any[], apiKey: string, userContext: any) {
-  console.log('🗨️ HANDLE CONVERSATION START - Using O4-mini for precise calculations');
+  console.log('🗨️ HANDLE CONVERSATION START - Using GPT-4.1 for precise calculations');
   console.log('🗨️ TEXT LENGTH:', text?.length);
   console.log('🗨️ HISTORY LENGTH:', conversationHistory?.length);
   console.log('🗨️ USER CONTEXT:', userContext ? 'present' : 'missing');
+  console.log('🗨️ USER MESSAGE FOR CATEGORIZATION DEBUG:', text);
+  console.log('🏷️ USER MEAL CATEGORIES AVAILABLE:', userContext.mealCategories?.map((cat: any) => `${cat.name} (${cat.icon})`));
   
   try {
   console.log('User context received:', userContext ? 'yes' : 'no');
@@ -776,6 +778,8 @@ INFORMACION DEL USUARIO:
           };
         }
         console.log('Function arguments:', functionArgs);
+        console.log('🏷️ CREATE_MEAL - AI suggested meal_type:', functionArgs.meal_type);
+        console.log('🏷️ CREATE_MEAL - Food name:', functionArgs.food_name);
         
         try {
           const mealResult = await executeCreateMeal(functionArgs, userContext);
@@ -803,6 +807,8 @@ INFORMACION DEL USUARIO:
           };
         }
         console.log('🍽️ CREATE_PLATE - Function arguments:', JSON.stringify(functionArgs, null, 2));
+        console.log('🏷️ CREATE_PLATE - AI suggested meal_type:', functionArgs.meal_type);
+        console.log('🏷️ CREATE_PLATE - AI suggested plate_name:', functionArgs.plate_name);
         
         try {
           const plateResult = await executeCreatePlate(functionArgs, userContext);
@@ -1068,59 +1074,79 @@ async function executeCreateMeal(args: any, userContext: any) {
 }
 
 async function findMealCategoryInAssistant(userMessage: string, userId: string, supabase: any): Promise<string> {
+  console.log('🏷️ FINDMEALCATEGORY - Starting categorization process');
+  console.log('🏷️ FINDMEALCATEGORY - User message:', `"${userMessage}"`);
+  console.log('🏷️ FINDMEALCATEGORY - User ID:', userId);
+  
   // Get user's meal categories
   const { data: categories, error } = await supabase
     .from('meal_categories')
     .select('name')
     .eq('user_id', userId);
 
+  console.log('🏷️ FINDMEALCATEGORY - Categories query result:', { error, categoriesCount: categories?.length });
+  console.log('🏷️ FINDMEALCATEGORY - Available categories:', categories?.map(c => c.name));
+
   if (error || !categories) {
-    console.log('No meal categories found, using default meal_type');
-    return 'desayuno'; // default fallback
+    console.log('🏷️ FINDMEALCATEGORY - No meal categories found, using default meal_type');
+    return 'Desayuno'; // default fallback
   }
 
   // Convert user message to lowercase for matching
   const messageLower = userMessage?.toLowerCase() || '';
+  console.log('🏷️ FINDMEALCATEGORY - Message lowercase:', `"${messageLower}"`);
   
   // Try to match user message with existing categories
   for (const category of categories) {
     const categoryName = category.name.toLowerCase();
+    console.log('🏷️ FINDMEALCATEGORY - Checking category:', categoryName);
     
     // Check for exact word matches or partial matches
     if (messageLower.includes(categoryName) || 
         categoryName.includes(messageLower.split(' ')[0])) {
-      console.log(`✅ Found matching category: ${category.name} for message: ${userMessage}`);
+      console.log(`🏷️ FINDMEALCATEGORY - ✅ Found matching category: ${category.name} for message: ${userMessage}`);
       return category.name;
     }
   }
 
-  // Fallback mappings for common Spanish meal types
+  // Fallback mappings for common Spanish meal types AND English from AI
   const mealMappings: { [key: string]: string } = {
     'desayuno': 'Desayuno',
     'desayune': 'Desayuno',
+    'breakfast': 'Desayuno',  // Add English mapping
     'almuerzo': 'Almuerzo', 
+    'almorcé': 'Almuerzo',
     'comida': 'Almuerzo',
+    'comí': 'Almuerzo',
+    'lunch': 'Almuerzo',     // Add English mapping
     'cena': 'Cena',
-    'cene': 'Cena',
+    'cené': 'Cena',
+    'dinner': 'Cena',        // Add English mapping
     'snack': 'Merienda',
     'merienda': 'Merienda'
   };
 
+  console.log('🏷️ FINDMEALCATEGORY - Checking against mappings:', Object.keys(mealMappings));
+
   // Check if any category matches common meal types
   for (const [keyword, mealType] of Object.entries(mealMappings)) {
+    console.log(`🏷️ FINDMEALCATEGORY - Testing keyword: "${keyword}" -> "${mealType}"`);
     if (messageLower.includes(keyword)) {
+      console.log(`🏷️ FINDMEALCATEGORY - ✅ Found keyword match: "${keyword}" in message`);
       // Check if this meal type exists in user's categories
       const matchingCategory = categories.find(cat => 
         cat.name.toLowerCase().includes(mealType.toLowerCase())
       );
       if (matchingCategory) {
-        console.log(`✅ Found matching category via mapping: ${matchingCategory.name}`);
+        console.log(`🏷️ FINDMEALCATEGORY - ✅ Found matching category via mapping: ${matchingCategory.name}`);
         return matchingCategory.name;
+      } else {
+        console.log(`🏷️ FINDMEALCATEGORY - ❌ Meal type "${mealType}" not found in user categories`);
       }
     }
   }
 
-  console.log('No category match found, using Desayuno as default');
+  console.log('🏷️ FINDMEALCATEGORY - ❌ No category match found, using Desayuno as default');
   return 'Desayuno'; // default fallback
 }
 
@@ -1179,8 +1205,12 @@ async function executeCreatePlate(args: any, userContext: any) {
 
     // Determine the correct meal category based on user's original message and their categories
     const userMessage = userContext.originalUserMessage || '';
+    console.log('🏷️ CREATE_PLATE - About to categorize meal');
+    console.log('🏷️ CREATE_PLATE - Original user message:', `"${userMessage}"`);
+    console.log('🏷️ CREATE_PLATE - Args meal_type from AI:', args.meal_type);
+    
     const determinedMealType = await findMealCategoryInAssistant(userMessage, user.id, supabase);
-    console.log(`🎯 Determined meal type: ${determinedMealType} (original: ${args.meal_type}, message: "${userMessage}")`)
+    console.log(`🏷️ CREATE_PLATE - 🎯 Final determined meal type: "${determinedMealType}" (AI suggested: "${args.meal_type}", user said: "${userMessage}")`)
 
     // Process each food in the plate
     const mealEntries = [];
