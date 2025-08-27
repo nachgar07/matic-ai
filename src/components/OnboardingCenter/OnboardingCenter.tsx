@@ -26,7 +26,7 @@ export const OnboardingCenter = ({ hasPersonalData, hasNutritionGoals }: Onboard
           <Button
             variant={hasPersonalData ? "outline" : "default"}
             size="sm"
-            onClick={() => navigate('/perfil')}
+            onClick={() => navigate('/perfil?open=personal')}
             className="w-full text-xs py-1 h-auto flex items-center gap-2"
           >
             {hasPersonalData ? (
@@ -43,7 +43,7 @@ export const OnboardingCenter = ({ hasPersonalData, hasNutritionGoals }: Onboard
           <Button
             variant={hasNutritionGoals ? "outline" : "default"}
             size="sm"
-            onClick={() => navigate('/perfil')} // Asumiendo que la configuración de objetivos está en perfil
+            onClick={() => navigate('/perfil?open=goals')}
             className="w-full text-xs py-1 h-auto flex items-center gap-2"
           >
             {hasNutritionGoals ? (

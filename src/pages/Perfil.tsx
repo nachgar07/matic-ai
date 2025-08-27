@@ -14,7 +14,7 @@ import { DataExportDialog } from "@/components/DataExportDialog/DataExportDialog
 import { DeleteAccountDialog } from "@/components/DeleteAccountDialog/DeleteAccountDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useLanguage, Language } from "@/hooks/useLanguage";
 import { translations, TranslationKey } from "@/lib/translations";
 
@@ -22,6 +22,7 @@ export const Perfil = () => {
   const { theme, setTheme } = useTheme();
   const { language, changeLanguage } = useLanguage();
   const { data: nutritionGoals } = useNutritionGoals();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [editGoalsOpen, setEditGoalsOpen] = useState(false);
   const [personalDataOpen, setPersonalDataOpen] = useState(false);
   const [exportDataOpen, setExportDataOpen] = useState(false);
@@ -48,6 +49,20 @@ export const Perfil = () => {
     };
     getUser();
   }, []);
+
+  // Check for URL parameters to auto-open dialogs
+  useEffect(() => {
+    const openParam = searchParams.get('open');
+    if (openParam === 'personal') {
+      setPersonalDataOpen(true);
+      // Clear the parameter after opening
+      setSearchParams({});
+    } else if (openParam === 'goals') {
+      setEditGoalsOpen(true);
+      // Clear the parameter after opening
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
