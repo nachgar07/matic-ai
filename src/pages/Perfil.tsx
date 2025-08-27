@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { User, Settings, Target, TrendingDown, TrendingUp, Scale, Activity, Moon, Sun, Camera, FileText, ChevronRight, Languages } from "lucide-react";
+import { User, Settings, Target, TrendingDown, TrendingUp, Scale, Activity, Moon, Sun, Camera, FileText, ChevronRight, Languages, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNutritionGoals } from "@/hooks/useFatSecret";
 import { EditNutritionGoalsDialog } from "@/components/EditNutritionGoalsDialog/EditNutritionGoalsDialog";
@@ -14,7 +14,7 @@ import { DataExportDialog } from "@/components/DataExportDialog/DataExportDialog
 import { DeleteAccountDialog } from "@/components/DeleteAccountDialog/DeleteAccountDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useLanguage, Language } from "@/hooks/useLanguage";
 import { translations, TranslationKey } from "@/lib/translations";
 
@@ -23,6 +23,7 @@ export const Perfil = () => {
   const { language, changeLanguage } = useLanguage();
   const { data: nutritionGoals } = useNutritionGoals();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [editGoalsOpen, setEditGoalsOpen] = useState(false);
   const [personalDataOpen, setPersonalDataOpen] = useState(false);
   const [exportDataOpen, setExportDataOpen] = useState(false);
@@ -112,6 +113,26 @@ export const Perfil = () => {
       });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: t('success'),
+        description: "Sesión cerrada correctamente"
+      });
+      
+      navigate('/auth');
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message,
+        variant: "destructive"
+      });
     }
   };
 
@@ -363,6 +384,18 @@ export const Perfil = () => {
               <ChevronRight size={16} className="text-muted-foreground" />
             </Button>
           </div>
+        </Card>
+
+        {/* Logout Section */}
+        <Card className="p-4">
+          <Button 
+            variant="destructive" 
+            className="w-full justify-start" 
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-2" size={20} />
+            Cerrar sesión
+          </Button>
         </Card>
       </div>
 
