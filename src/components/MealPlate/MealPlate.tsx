@@ -13,6 +13,9 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { MealEntry } from "@/hooks/useFatSecret";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface MealPlateProps {
   mealType: string;
@@ -37,6 +40,14 @@ export const MealPlate = ({
 }: MealPlateProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [editingMeals, setEditingMeals] = useState<Record<string, {
+    food_name: string;
+    servings: number;
+    serving_description: string;
+  }>>({});
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Usar el primer meal para obtener la información de la categoría
   const firstMeal = meals[0];
@@ -110,6 +121,90 @@ export const MealPlate = ({
   const handleNameCancel = () => {
     setEditingName(plateName || defaultName);
     setIsEditingName(false);
+  };
+
+  const handleMealEdit = (mealId: string, meal: MealEntry) => {
+    setEditingMeals(prev => ({
+      ...prev,
+      [mealId]: {
+        food_name: meal.foods.food_name,
+        servings: meal.servings,
+        serving_description: meal.foods.serving_description || ''
+      }
+    }));
+  };
+
+  const handleMealSave = async (mealId: string) => {
+    const editData = editingMeals[mealId];
+    if (!editData) return;
+
+    try {
+      // Update the food name and serving description in the foods table
+      const meal = meals.find(m => m.id === mealId);
+      if (!meal) return;
+
+      // Update the foods table
+      const { error: foodError } = await supabase
+        .from('foods')
+        .update({
+          food_name: editData.food_name,
+          serving_description: editData.serving_description
+        })
+        .eq('id', meal.food_id);
+
+      if (foodError) throw foodError;
+
+      // Update the meal entry servings
+      const { error: mealError } = await supabase
+        .from('meal_entries')
+        .update({
+          servings: editData.servings
+        })
+        .eq('id', mealId);
+
+      if (mealError) throw mealError;
+
+      // Remove from editing state
+      setEditingMeals(prev => {
+        const updated = { ...prev };
+        delete updated[mealId];
+        return updated;
+      });
+
+      // Refresh the data
+      queryClient.invalidateQueries({ queryKey: ['user-meals'] });
+
+      toast({
+        title: "Ingrediente actualizado",
+        description: "Los cambios se han guardado correctamente"
+      });
+
+    } catch (error) {
+      console.error('Error updating meal:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el ingrediente",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleMealCancel = (mealId: string) => {
+    setEditingMeals(prev => {
+      const updated = { ...prev };
+      delete updated[mealId];
+      return updated;
+    });
+  };
+
+  const updateEditingMeal = (mealId: string, field: string, value: string | number) => {
+    setEditingMeals(prev => ({
+      ...prev,
+      [mealId]: {
+        ...prev[mealId],
+        [field]: value
+      }
+    }));
   };
 
   return (
@@ -232,36 +327,102 @@ export const MealPlate = ({
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleContent className="space-y-3 mt-3">
           {meals.map((meal) => {
-            const calories = (meal.foods.calories_per_serving || 0) * meal.servings;
-            const protein = (meal.foods.protein_per_serving || 0) * meal.servings;
-            const carbs = (meal.foods.carbs_per_serving || 0) * meal.servings;
-            const fat = (meal.foods.fat_per_serving || 0) * meal.servings;
+            const isEditing = editingMeals[meal.id];
+            const editData = isEditing || {
+              food_name: meal.foods.food_name,
+              servings: meal.servings,
+              serving_description: meal.foods.serving_description || ''
+            };
+            
+            const calories = (meal.foods.calories_per_serving || 0) * editData.servings;
+            const protein = (meal.foods.protein_per_serving || 0) * editData.servings;
+            const carbs = (meal.foods.carbs_per_serving || 0) * editData.servings;
+            const fat = (meal.foods.fat_per_serving || 0) * editData.servings;
 
             return (
               <div key={meal.id} className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <div className="flex items-center gap-2">
-                    <h5 className="font-medium text-sm">{meal.foods.food_name}</h5>
-                    {meal.foods.brand_name && (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {isEditing ? (
+                      <Input
+                        value={editData.food_name}
+                        onChange={(e) => updateEditingMeal(meal.id, 'food_name', e.target.value)}
+                        className="h-7 text-sm font-medium"
+                        placeholder="Nombre del ingrediente"
+                      />
+                    ) : (
+                      <h5 className="font-medium text-sm">{meal.foods.food_name}</h5>
+                    )}
+                    {meal.foods.brand_name && !isEditing && (
                       <span className="text-xs text-muted-foreground">
                         • {meal.foods.brand_name}
                       </span>
                     )}
                   </div>
-                  {onDeleteMeal && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0 shrink-0 hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => onDeleteMeal(meal.id)}
-                    >
-                      <Trash2 size={12} />
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {isEditing ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleMealSave(meal.id)}
+                        >
+                          <Check size={12} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleMealCancel(meal.id)}
+                        >
+                          <X size={12} />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 shrink-0 hover:bg-primary/10"
+                        onClick={() => handleMealEdit(meal.id, meal)}
+                      >
+                        <Edit2 size={12} />
+                      </Button>
+                    )}
+                    {onDeleteMeal && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => onDeleteMeal(meal.id)}
+                      >
+                        <Trash2 size={12} />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
-                  <span>{meal.servings} {meal.foods.serving_description || 'porción'}</span>
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={editData.servings}
+                        onChange={(e) => updateEditingMeal(meal.id, 'servings', parseFloat(e.target.value) || 0)}
+                        className="h-6 w-16 text-xs"
+                        min="0"
+                        step="0.1"
+                      />
+                      <Input
+                        value={editData.serving_description}
+                        onChange={(e) => updateEditingMeal(meal.id, 'serving_description', e.target.value)}
+                        className="h-6 w-20 text-xs"
+                        placeholder="porción"
+                      />
+                    </div>
+                  ) : (
+                    <span>{meal.servings} {meal.foods.serving_description || 'porción'}</span>
+                  )}
                   <span>{Math.round(calories)} cal</span>
                 </div>
                 
