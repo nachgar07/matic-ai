@@ -235,7 +235,7 @@ export const Home = () => {
       {/* Header */}
       <div className="p-4">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Calogram</h1>
+          <h1 className="text-2xl font-bold">Matic AI</h1>
           <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
             <LogOut className="h-4 w-4" />
           </Button>

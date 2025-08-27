@@ -30,7 +30,7 @@ export const PWAInstallPrompt = () => {
       <CardHeader className="flex-row items-center space-y-0 pb-2">
         <div className="flex-1">
           <CardTitle className="text-base">
-            {language === 'es' ? 'Instalar Vital AI' : 'Install Vital AI'}
+            {language === 'es' ? 'Instalar Matic AI' : 'Install Matic AI'}
           </CardTitle>
           <CardDescription className="text-sm">
             {language === 'es' ? 'Acceso rápido desde tu pantalla de inicio' : 'Quick access from your home screen'}
