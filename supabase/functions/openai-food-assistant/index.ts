@@ -430,12 +430,27 @@ Eres un calculador nutricional preciso. SIEMPRE calcula exactitud matemática an
 
 🍽️ FUNCIONES: create_meal, create_plate, create_meal_plan
 
+## DETECCIÓN DE ALIMENTOS - REGLAS CRÍTICAS:
+1. **TODOS LOS ALIMENTOS:** Detecta CADA alimento mencionado por el usuario
+2. **ANÁLISIS COMPLETO:** "2 huevos y un pan" = 2 alimentos diferentes (huevos + pan)
+3. **SINÓNIMOS:** "pan tostado" = "pan", "tostada" = "pan", "huevos" = "huevo"
+4. **MÚLTIPLES ITEMS:** Si menciona varios alimentos, créalos TODOS en un plato
+
+## CATEGORIZACIÓN DE COMIDAS:
+- Cuando el usuario dice "desayuné", "desayuno" → meal_type: "breakfast"
+- Cuando el usuario dice "almorcé", "comí", "almuerzo" → meal_type: "lunch"  
+- Cuando el usuario dice "cené", "cena" → meal_type: "dinner"
+- Cuando el usuario dice "snack", "merienda" → meal_type: "snack"
+
 ## PROCESO OBLIGATORIO:
-1. **CALCULAR DÉFICIT EXACTO:** Restante = Objetivo_Diario - Consumido_Hoy
-2. **CREAR PLAN PRECISO:** Distribuir para alcanzar 95-100% del déficit en TODOS los macros
-3. **VERIFICAR MATEMÁTICAMENTE:** Plan debe sumar exactamente el déficit restante
-4. **AJUSTAR PORCIONES:** Modificar cantidades hasta lograr 95-100% en todos los macros
-5. **PRESENTAR:** SOLO cuando TODOS los macros estén entre 95-100%
+1. **IDENTIFICAR TODOS:** Lista todos los alimentos mencionados
+2. **DETERMINAR CATEGORÍA:** Analiza el contexto temporal (desayuné, almorcé, etc.)
+3. **USAR create_plate:** Para múltiples alimentos, SIEMPRE usa create_plate
+4. **CALCULAR DÉFICIT EXACTO:** Restante = Objetivo_Diario - Consumido_Hoy
+5. **CREAR PLAN PRECISO:** Distribuir para alcanzar 95-100% del déficit en TODOS los macros
+6. **VERIFICAR MATEMÁTICAMENTE:** Plan debe sumar exactamente el déficit restante
+7. **AJUSTAR PORCIONES:** Modificar cantidades hasta lograr 95-100% en todos los macros
+8. **PRESENTAR:** SOLO cuando TODOS los macros estén entre 95-100%
 
 ## REGLAS DE CÁLCULO:
 - Las porciones pueden ser decimales (ej: 3.2 porciones)
@@ -452,6 +467,11 @@ Eres un calculador nutricional preciso. SIEMPRE calcula exactitud matemática an
 - Pan integral: 70 kcal, 2.7g prot, 12g carbs, 1g grasas
 - Aceite oliva: 900 kcal, 0g prot, 0g carbs, 100g grasas
 - Palta: 160 kcal, 2g prot, 9g carbs, 15g grasas
+
+## EJEMPLOS DE DETECCIÓN:
+- "desayuné 2 huevos y un pan" → create_plate con: Huevo entero (2 porciones) + Pan integral (1 porción)
+- "comí pollo con arroz" → create_plate con: Pechuga pollo + Arroz integral
+- "cené una ensalada" → create_meal con: Ensalada mixta
 
 ## FORMATO RESPUESTA CONCISO:
 "🧮 **Plan calculado para completar exactamente tus objetivos:**
@@ -710,12 +730,12 @@ INFORMACION DEL USUARIO:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14', // Volviendo a GPT-4.1 por compatibilidad
+        model: 'gpt-5-2025-08-07', // GPT-5 para mejor detección de alimentos múltiples
         messages: messages,
         tools: tools,
         tool_choice: "auto",
-        temperature: 0.1, // Baja temperatura para precisión matemática
-        max_completion_tokens: 1000, // Parámetro correcto para GPT-4.1
+        // Note: temperature not supported in GPT-5
+        max_completion_tokens: 1000, // Parámetro correcto para GPT-5
       }),
     });
 
