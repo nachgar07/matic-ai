@@ -4,6 +4,7 @@ import { CalorieRing } from "@/components/CalorieRing/CalorieRing";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar/WeeklyCalendar";
 import { MacroCard } from "@/components/MacroCard/MacroCard";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
+import { Header } from "@/components/Layout/Header";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { User, Session } from '@supabase/supabase-js';
@@ -239,13 +240,16 @@ export const Home = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Matic AI</h1>
+      <Header 
+        title="Matic AI" 
+        rightAction={
           <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
             <LogOut className="h-4 w-4" />
           </Button>
-        </div>
+        }
+      />
+      
+      <div className="p-4">
         <WeeklyCalendar 
           selectedDate={selectedDate} 
           onDateChange={setSelectedDate}
