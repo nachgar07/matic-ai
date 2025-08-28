@@ -9,6 +9,8 @@
   "scope": "/",
   "start_url": "/",
   "screenshots": [],
+  "capture_links": "none",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/lovable-uploads/f0a83c6d-2693-487a-91eb-7080ad19fbc1.png",
