@@ -250,7 +250,9 @@ export const Home = () => {
           </Button>
         }
       />
-      <div className="p-4 space-y-4">
+      
+      {/* Calendario Semanal */}
+      <div className="px-4 py-2">
         <WeeklyCalendar 
           selectedDate={selectedDate} 
           onDateChange={setSelectedDate}
