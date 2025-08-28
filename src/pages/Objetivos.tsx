@@ -15,18 +15,21 @@ import { es, enUS } from "date-fns/locale";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/translations";
 import { isHabitActiveOnDate } from "@/utils/habitUtils";
-
 export const Objetivos = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState<'tasks' | 'habits'>('tasks');
-
-  const { language } = useLanguage();
+  const {
+    language
+  } = useLanguage();
   const t = (key: keyof typeof translations.es) => translations[language][key];
   const locale = language === 'es' ? es : enUS;
-
-  const { data: tasks = [] } = useTasks(format(selectedDate, 'yyyy-MM-dd'));
-  const { data: goals = [] } = useGoals();
+  const {
+    data: tasks = []
+  } = useTasks(format(selectedDate, 'yyyy-MM-dd'));
+  const {
+    data: goals = []
+  } = useGoals();
 
   // Filtrar hábitos que deben mostrarse en la fecha seleccionada
   const activeHabitsForDate = goals.filter(goal => isHabitActiveOnDate(goal, selectedDate));
@@ -37,50 +40,37 @@ export const Objetivos = () => {
     if (format(selectedDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
       return t('today');
     }
-    return format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", { locale });
+    return format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", {
+      locale
+    });
   };
-
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       setUser(user);
     };
     getUser();
   }, []);
-
-  return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header 
-        title={getHeaderTitle()} 
-        rightAction={
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm">
-              <Search size={16} />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Filter size={16} />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Calendar size={16} />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Settings size={16} />
-            </Button>
-          </div>
-        }
-      />
+  return <div className="min-h-screen bg-background pb-20">
+      <Header title={getHeaderTitle()} rightAction={<div className="flex gap-2">
+            
+            
+            
+            
+          </div>} />
 
       {/* Calendario Semanal */}
       <div className="px-4 py-2">
-        <WeeklyCalendar 
-          selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
-        />
+        <WeeklyCalendar selectedDate={selectedDate} onDateChange={setSelectedDate} />
       </div>
 
       {/* Tabs segmentadas Tareas / Hábitos */}
       <div className="px-4 py-4">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'tasks' | 'habits')} className="w-full">
+        <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'tasks' | 'habits')} className="w-full">
           <div className="flex items-center justify-center">
             <TabsList className="rounded-full bg-muted p-1 grid grid-cols-2 w-[280px]">
               <TabsTrigger value="tasks" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
@@ -94,41 +84,32 @@ export const Objetivos = () => {
 
           <div className="pt-4">
             <TabsContent value="tasks" className="m-0">
-              {(tasks.length > 0 || activeHabitsForDate.length > 0) ? (
-                <div className="space-y-3">
+              {tasks.length > 0 || activeHabitsForDate.length > 0 ? <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground">
-                    {t('tasksAndHabitsFor')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", { locale })}
+                    {t('tasksAndHabitsFor')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", {
+                  locale
+                })}
                   </h3>
                   {/* Tareas */}
-                  {tasks.map((task) => (
-                    <TaskCard key={`task-${task.id}`} task={task} itemType="tarea" />
-                  ))}
+                  {tasks.map(task => <TaskCard key={`task-${task.id}`} task={task} itemType="tarea" />)}
                   {/* Solo hábitos activos para la fecha seleccionada */}
-                  {activeHabitsForDate.map((goal) => (
-                    <TaskCard 
-                      key={`habit-${goal.id}`} 
-                      task={{
-                        id: goal.id,
-                        title: goal.name,
-                        description: goal.description || '',
-                        category: goal.category,
-                        priority: goal.priority,
-                        is_completed: false, // Los hábitos no tienen estado completado simple
-                        is_recurring: true,
-                        due_date: format(selectedDate, 'yyyy-MM-dd'),
-                        due_time: null,
-                        created_at: goal.created_at,
-                        updated_at: goal.updated_at,
-                        user_id: goal.user_id,
-                        reminder_time: null
-                      }}
-                      itemType="hábito"
-                      isHabit={true}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-center px-4">
+                  {activeHabitsForDate.map(goal => <TaskCard key={`habit-${goal.id}`} task={{
+                id: goal.id,
+                title: goal.name,
+                description: goal.description || '',
+                category: goal.category,
+                priority: goal.priority,
+                is_completed: false,
+                // Los hábitos no tienen estado completado simple
+                is_recurring: true,
+                due_date: format(selectedDate, 'yyyy-MM-dd'),
+                due_time: null,
+                created_at: goal.created_at,
+                updated_at: goal.updated_at,
+                user_id: goal.user_id,
+                reminder_time: null
+              }} itemType="hábito" isHabit={true} />)}
+                </div> : <div className="flex-1 flex items-center justify-center px-4">
                   <div className="text-center py-16">
                     <div className="w-20 h-20 mx-auto mb-6 bg-primary/10 rounded-2xl flex items-center justify-center">
                       <Calendar className="text-primary" size={32} />
@@ -138,22 +119,18 @@ export const Objetivos = () => {
                       {t('tryAddingNew')}
                     </p>
                   </div>
-                </div>
-              )}
+                </div>}
             </TabsContent>
 
             <TabsContent value="habits" className="m-0">
-              {activeHabitsForDate.length > 0 ? (
-                <div className="space-y-4">
+              {activeHabitsForDate.length > 0 ? <div className="space-y-4">
                   <h3 className="text-sm font-medium text-muted-foreground">
-                    {t('activeHabitsFor')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", { locale })}
+                    {t('activeHabitsFor')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", {
+                  locale
+                })}
                   </h3>
-                  {activeHabitsForDate.map((goal) => (
-                    <HabitTracker key={goal.id} goal={goal} />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-center px-4">
+                  {activeHabitsForDate.map(goal => <HabitTracker key={goal.id} goal={goal} />)}
+                </div> : <div className="flex-1 flex items-center justify-center px-4">
                   <div className="text-center py-16">
                     <div className="w-20 h-20 mx-auto mb-6 bg-secondary/10 rounded-2xl flex items-center justify-center">
                       <Calendar className="text-secondary" size={32} />
@@ -163,8 +140,7 @@ export const Objetivos = () => {
                       {t('habitsOnlyScheduled')}
                     </p>
                   </div>
-                </div>
-              )}
+                </div>}
             </TabsContent>
           </div>
         </Tabs>
@@ -180,6 +156,5 @@ export const Objetivos = () => {
       </div>
 
       <BottomNavigation />
-    </div>
-  );
+    </div>;
 };
