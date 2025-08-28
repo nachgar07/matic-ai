@@ -4,9 +4,11 @@ import { CalorieRing } from "@/components/CalorieRing/CalorieRing";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar/WeeklyCalendar";
 import { MacroCard } from "@/components/MacroCard/MacroCard";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
-import { Header } from "@/components/Layout/Header";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+
+// Import Header component
+import { Header } from "@/components/Layout/Header";
 import { User, Session } from '@supabase/supabase-js';
 import { useUserMeals, useUserMealsForDateRange, useNutritionGoals } from "@/hooks/useFatSecret";
 import { useWaterIntake } from "@/hooks/useWaterIntake";
