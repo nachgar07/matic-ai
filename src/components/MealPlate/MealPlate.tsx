@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChevronDown, ChevronRight, Edit2, Check, X, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Edit2, Check, X, Trash2, Share2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -16,6 +16,7 @@ import { MealEntry } from "@/hooks/useFatSecret";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMealImageShare } from "@/hooks/useMealImageShare";
 
 interface MealPlateProps {
   mealType: string;
@@ -48,6 +49,7 @@ export const MealPlate = ({
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { shareMealImage } = useMealImageShare();
   
   // Usar el primer meal para obtener la información de la categoría
   const firstMeal = meals[0];
@@ -238,6 +240,17 @@ export const MealPlate = ({
     }));
   };
 
+  const handleShare = () => {
+    shareMealImage({
+      plateName: editingName,
+      calories: totals.calories,
+      protein: totals.protein,
+      carbs: totals.carbs,
+      fat: totals.fat,
+      plateImage
+    });
+  };
+
   return (
     <Card className="p-4">
       {/* Header Section - Perfectly aligned */}
@@ -325,6 +338,15 @@ export const MealPlate = ({
                   onClick={() => setIsEditingName(true)}
                 >
                   <Edit2 size={12} />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0 shrink-0 hover:bg-primary/10"
+                  onClick={handleShare}
+                  title="Compartir plato"
+                >
+                  <Share2 size={12} />
                 </Button>
                 <span className="text-sm text-muted-foreground truncate">
                   {meals.length} {meals.length === 1 ? 'ingrediente' : 'ingredientes'}
