@@ -135,7 +135,7 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
         return (
           <MealPlate
             key={groupName}
-            mealType={mealTypeKey} // Keep for backwards compatibility
+            mealType={groupName} // Use the category name instead of UUID
             meals={mealList}
             isSelected={selectedPlates.has(groupName)}
             onSelectionChange={(selected) => handlePlateSelection(groupName, selected)}
