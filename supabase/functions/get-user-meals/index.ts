@@ -125,7 +125,7 @@ serve(async (req) => {
         const { data: category, error: categoryError } = await supabase
           .from('meal_categories')
           .select('name, color, icon')
-          .eq('name', meal.meal_type) // Buscar por nombre, no por ID
+          .eq('id', meal.meal_type) // Buscar por ID, ya que meal_type contiene el UUID de la categoría
           .eq('user_id', user.id)
           .maybeSingle();
 
