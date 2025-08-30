@@ -17,12 +17,24 @@ export const useMealCategories = () => {
   return useQuery({
     queryKey: ['meal-categories'],
     queryFn: async () => {
-      // Verificar autenticación
-      const { data: { user } } = await supabase.auth.getUser();
+      // Verificar autenticación con retry
+      let user = null;
+      for (let i = 0; i < 3; i++) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          user = currentUser;
+          break;
+        }
+        // Esperar un poco antes del siguiente intento
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
       if (!user) {
-        console.log('Usuario no autenticado para categorías');
+        console.log('❌ Usuario no autenticado después de 3 intentos');
         return [];
       }
+
+      console.log('✅ Usuario autenticado:', user.id);
 
       // Buscar categorías del usuario
       const { data, error } = await supabase
@@ -31,26 +43,43 @@ export const useMealCategories = () => {
         .eq('user_id', user.id)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error buscando categorías:', error);
+        throw error;
+      }
+
+      console.log('📋 Categorías encontradas:', data?.length || 0);
 
       // Si no tiene categorías, crear las por defecto
       if (!data || data.length === 0) {
-        console.log('Creando categorías por defecto para usuario:', user.id);
-        await createDefaultCategories(user.id);
-        
-        // Volver a consultar después de crear las categorías
-        const { data: newData, error: newError } = await supabase
-          .from('meal_categories')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('name');
+        console.log('🏗️ Creando categorías por defecto para usuario:', user.id);
+        try {
+          await createDefaultCategories(user.id);
+          
+          // Volver a consultar después de crear las categorías
+          const { data: newData, error: newError } = await supabase
+            .from('meal_categories')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('name');
 
-        if (newError) throw newError;
-        return newData as MealCategory[];
+          if (newError) {
+            console.error('Error obteniendo categorías después de crearlas:', newError);
+            throw newError;
+          }
+          
+          console.log('✅ Categorías creadas exitosamente:', newData?.length || 0);
+          return newData as MealCategory[];
+        } catch (createError) {
+          console.error('Error creando categorías por defecto:', createError);
+          return [];
+        }
       }
 
       return data as MealCategory[];
     },
+    retry: 3,
+    retryDelay: 1000,
   });
 };
 
@@ -63,8 +92,8 @@ const createDefaultCategories = async (userId: string) => {
     { name: 'Cena', color: '#3b82f6', icon: '🌙' }
   ];
 
-  for (const category of defaultCategories) {
-    await supabase
+  const promises = defaultCategories.map(category => 
+    supabase
       .from('meal_categories')
       .insert({
         user_id: userId,
@@ -72,8 +101,10 @@ const createDefaultCategories = async (userId: string) => {
         color: category.color,
         icon: category.icon,
         is_default: true,
-      });
-  }
+      })
+  );
+
+  await Promise.all(promises);
 };
 
 export const useCreateMealCategory = () => {
