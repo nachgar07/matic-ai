@@ -17,15 +17,63 @@ export const useMealCategories = () => {
   return useQuery({
     queryKey: ['meal-categories'],
     queryFn: async () => {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('Usuario no autenticado para categorías');
+        return [];
+      }
+
+      // Buscar categorías del usuario
       const { data, error } = await supabase
         .from('meal_categories')
         .select('*')
+        .eq('user_id', user.id)
         .order('name');
 
       if (error) throw error;
+
+      // Si no tiene categorías, crear las por defecto
+      if (!data || data.length === 0) {
+        console.log('Creando categorías por defecto para usuario:', user.id);
+        await createDefaultCategories(user.id);
+        
+        // Volver a consultar después de crear las categorías
+        const { data: newData, error: newError } = await supabase
+          .from('meal_categories')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('name');
+
+        if (newError) throw newError;
+        return newData as MealCategory[];
+      }
+
       return data as MealCategory[];
     },
   });
+};
+
+// Función auxiliar para crear categorías por defecto
+const createDefaultCategories = async (userId: string) => {
+  const defaultCategories = [
+    { name: 'Desayuno', color: '#f97316', icon: '🌅' },
+    { name: 'Almuerzo', color: '#10b981', icon: '🍽️' },
+    { name: 'Merienda', color: '#8b5cf6', icon: '🥪' },
+    { name: 'Cena', color: '#3b82f6', icon: '🌙' }
+  ];
+
+  for (const category of defaultCategories) {
+    await supabase
+      .from('meal_categories')
+      .insert({
+        user_id: userId,
+        name: category.name,
+        color: category.color,
+        icon: category.icon,
+        is_default: true,
+      });
+  }
 };
 
 export const useCreateMealCategory = () => {
