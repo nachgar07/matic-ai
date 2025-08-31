@@ -1181,6 +1181,54 @@ async function findMealCategoryInAssistant(userMessage: string, userId: string, 
   return 'Desayuno'; // default fallback
 }
 
+async function searchFoodInAPIs(foodName: string, servings: number) {
+  console.log(`🔍 SEARCH_APIS - Searching for better match: "${foodName}" (${servings} servings)`);
+  
+  try {
+    // First try FatSecret API
+    const fatSecretResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fatsecret-search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+      },
+      body: JSON.stringify({
+        query: foodName,
+        page: 0
+      })
+    });
+
+    if (fatSecretResponse.ok) {
+      const fatSecretData = await fatSecretResponse.json();
+      console.log(`🔍 SEARCH_APIS - FatSecret returned ${fatSecretData.foods?.length || 0} results for "${foodName}"`);
+      
+      if (fatSecretData.foods && fatSecretData.foods.length > 0) {
+        // Use the first (best) result from FatSecret
+        const bestMatch = fatSecretData.foods[0];
+        console.log(`✅ SEARCH_APIS - Found good FatSecret match: ${bestMatch.food_name} (${bestMatch.calories_per_serving} kcal)`);
+        
+        return {
+          food_name: bestMatch.food_name,
+          brand_name: bestMatch.brand_name,
+          serving_description: bestMatch.serving_description,
+          calories_per_serving: bestMatch.calories_per_serving,
+          protein_per_serving: bestMatch.protein_per_serving,
+          carbs_per_serving: bestMatch.carbs_per_serving,
+          fat_per_serving: bestMatch.fat_per_serving,
+          source: 'fatsecret'
+        };
+      }
+    }
+    
+    console.log(`🔍 SEARCH_APIS - No good matches found in APIs for "${foodName}"`);
+    return null;
+    
+  } catch (error) {
+    console.error(`❌ SEARCH_APIS - Error searching for "${foodName}":`, error);
+    return null;
+  }
+}
+
 async function executeCreatePlate(args: any, userContext: any) {
   console.log('🍽️ CREATE_PLATE - Executing create_plate with args:', JSON.stringify(args, null, 2));
   
@@ -1253,15 +1301,24 @@ async function executeCreatePlate(args: any, userContext: any) {
     };
 
     for (let i = 0; i < args.foods.length; i++) {
-      const food = args.foods[i];
-      console.log(`🥘 CREATE_PLATE - Processing food ${i + 1}/${args.foods.length}: ${food.food_name}`);
+      const originalFood = args.foods[i];
+      console.log(`🥘 CREATE_PLATE - Processing food ${i + 1}/${args.foods.length}: ${originalFood.food_name}`);
+      
+      // First, try to find a better match in external APIs
+      console.log(`🔍 CREATE_PLATE - Searching APIs for better match of "${originalFood.food_name}"`);
+      const apiMatch = await searchFoodInAPIs(originalFood.food_name, originalFood.servings);
+      
+      // Use API match if found, otherwise use OpenAI data
+      const food = apiMatch || originalFood;
+      console.log(`🍽️ CREATE_PLATE - Using ${apiMatch ? 'API' : 'OpenAI'} data for: ${food.food_name}`);
       console.log(`🍽️ CREATE_PLATE - Food details:`, {
         name: food.food_name,
-        servings: food.servings,
+        servings: originalFood.servings, // Always use original servings
         calories: food.calories_per_serving,
         protein: food.protein_per_serving,
         carbs: food.carbs_per_serving,
-        fat: food.fat_per_serving
+        fat: food.fat_per_serving,
+        source: apiMatch?.source || 'openai'
       });
 
       // Find or create food entry with exact nutritional match
@@ -1290,17 +1347,18 @@ async function executeCreatePlate(args: any, userContext: any) {
         foodId = matchedFood.id;
         console.log(`✅ CREATE_PLATE - Found nutritionally matching food: ${food.food_name} (${matchedFood.calories_per_serving} kcal vs ${food.calories_per_serving} kcal)`);
       } else {
-        // Create new food entry
+      // Create new food entry
         const { data: newFood, error: insertError } = await supabase
           .from('foods')
           .insert({
-            food_id: `openai_plate_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            food_id: `${apiMatch ? 'api' : 'openai'}_plate_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             food_name: food.food_name,
+            brand_name: food.brand_name || null,
+            serving_description: food.serving_description || 'Porción estándar',
             calories_per_serving: food.calories_per_serving,
             protein_per_serving: food.protein_per_serving,
             carbs_per_serving: food.carbs_per_serving,
-            fat_per_serving: food.fat_per_serving,
-            serving_description: 'Porción estándar'
+            fat_per_serving: food.fat_per_serving
           })
           .select()
           .single();
@@ -1311,7 +1369,7 @@ async function executeCreatePlate(args: any, userContext: any) {
         }
 
         foodId = newFood.id;
-        console.log(`✅ CREATE_PLATE - Created new food entry: ${food.food_name} (${food.calories_per_serving} kcal) - no exact nutritional match found`);
+        console.log(`✅ CREATE_PLATE - Created new food entry: ${food.food_name} (${food.calories_per_serving} kcal) from ${apiMatch ? 'API' : 'OpenAI'} source`);
       }
 
       // Create meal entry for this food
@@ -1320,7 +1378,7 @@ async function executeCreatePlate(args: any, userContext: any) {
         .insert({
           user_id: user.id,
           food_id: foodId,
-          servings: food.servings || 1,
+          servings: originalFood.servings || 1, // Use original servings from user input
           meal_type: determinedMealType,
           consumed_at: new Date().toISOString()
         })
@@ -1334,12 +1392,12 @@ async function executeCreatePlate(args: any, userContext: any) {
 
       mealEntries.push(mealEntry);
       
-      // Add to totals
+      // Add to totals (using original servings)
       const foodTotals = {
-        calories: food.calories_per_serving * food.servings,
-        protein: food.protein_per_serving * food.servings,
-        carbs: food.carbs_per_serving * food.servings,
-        fat: food.fat_per_serving * food.servings
+        calories: food.calories_per_serving * originalFood.servings,
+        protein: food.protein_per_serving * originalFood.servings,
+        carbs: food.carbs_per_serving * originalFood.servings,
+        fat: food.fat_per_serving * originalFood.servings
       };
       
       consumedTotals.calories += foodTotals.calories;
