@@ -1184,40 +1184,118 @@ async function findMealCategoryInAssistant(userMessage: string, userId: string, 
 async function searchFoodInAPIs(foodName: string, servings: number) {
   console.log(`🔍 SEARCH_APIS - Searching for better match: "${foodName}" (${servings} servings)`);
   
-  try {
-    // First try FatSecret API
-    const fatSecretResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fatsecret-search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
-      },
-      body: JSON.stringify({
-        query: foodName,
-        page: 0
-      })
-    });
-
-    if (fatSecretResponse.ok) {
-      const fatSecretData = await fatSecretResponse.json();
-      console.log(`🔍 SEARCH_APIS - FatSecret returned ${fatSecretData.foods?.length || 0} results for "${foodName}"`);
-      
-      if (fatSecretData.foods && fatSecretData.foods.length > 0) {
-        // Use the first (best) result from FatSecret
-        const bestMatch = fatSecretData.foods[0];
-        console.log(`✅ SEARCH_APIS - Found good FatSecret match: ${bestMatch.food_name} (${bestMatch.calories_per_serving} kcal)`);
-        
-        return {
-          food_name: bestMatch.food_name,
-          brand_name: bestMatch.brand_name,
-          serving_description: bestMatch.serving_description,
-          calories_per_serving: bestMatch.calories_per_serving,
-          protein_per_serving: bestMatch.protein_per_serving,
-          carbs_per_serving: bestMatch.carbs_per_serving,
-          fat_per_serving: bestMatch.fat_per_serving,
-          source: 'fatsecret'
-        };
+  // Create simplified search terms to find basic foods
+  const getSimplifiedSearchTerms = (name: string): string[] => {
+    const original = name.toLowerCase().trim();
+    
+    // Food simplification mappings
+    const simplifications = {
+      'huevo entero': ['huevo frito', 'huevo', 'egg'],
+      'huevo frito': ['huevo frito', 'huevo', 'fried egg'],
+      'huevos fritos': ['huevo frito', 'huevo', 'fried egg'],
+      'palta': ['palta', 'aguacate', 'avocado'],
+      'aguacate': ['aguacate', 'palta', 'avocado'],
+      'pollo': ['pollo', 'chicken breast', 'chicken'],
+      'arroz': ['arroz', 'rice'],
+      'papa': ['papa', 'patata', 'potato'],
+      'tomate': ['tomate', 'tomato'],
+      'cebolla': ['cebolla', 'onion']
+    };
+    
+    // Try to find simplification for this food
+    for (const [key, terms] of Object.entries(simplifications)) {
+      if (original.includes(key) || key.includes(original)) {
+        return terms;
       }
+    }
+    
+    // If no specific simplification, use original and basic version
+    const basicTerm = original.replace(/\b(entero|frito|cocido|hervido|asado|a la plancha)\b/g, '').trim();
+    return [original, basicTerm].filter(term => term.length > 0);
+  };
+  
+  const searchTerms = getSimplifiedSearchTerms(foodName);
+  console.log(`🔍 SEARCH_APIS - Search terms for "${foodName}":`, searchTerms);
+  
+  try {
+    let bestResults: any[] = [];
+    
+    // Try each search term
+    for (const searchTerm of searchTerms) {
+      console.log(`🔍 SEARCH_APIS - Trying term: "${searchTerm}"`);
+      
+      const fatSecretResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fatsecret-search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+        },
+        body: JSON.stringify({
+          query: searchTerm,
+          page: 0
+        })
+      });
+
+      if (fatSecretResponse.ok) {
+        const fatSecretData = await fatSecretResponse.json();
+        console.log(`🔍 SEARCH_APIS - FatSecret returned ${fatSecretData.foods?.length || 0} results for "${searchTerm}"`);
+        
+        if (fatSecretData.foods && fatSecretData.foods.length > 0) {
+          bestResults.push(...fatSecretData.foods.slice(0, 3)); // Take top 3 from each search
+        }
+      }
+    }
+    
+    if (bestResults.length > 0) {
+      // Score and rank results
+      const scoredResults = bestResults.map(food => {
+        let score = 0;
+        const name = (food.food_name || '').toLowerCase();
+        const brand = (food.brand_name || '').toLowerCase();
+        
+        // Boost score for simple, generic foods
+        if (!brand || brand === 'generic' || brand === '') score += 50;
+        
+        // Penalize complex preparations or branded items
+        const complexWords = ['rancheros', 'burrito', 'sandwich', 'wrap', 'grande', 'grado', 'calidad', 'style'];
+        const hasComplexWords = complexWords.some(word => name.includes(word) || brand.includes(word));
+        if (hasComplexWords) score -= 30;
+        
+        // Boost score for exact or simple matches
+        const originalLower = foodName.toLowerCase();
+        if (name === originalLower) score += 40;
+        if (name.includes('frito') && originalLower.includes('frito')) score += 30;
+        if (name.includes('huevo') && originalLower.includes('huevo')) score += 20;
+        if (name.includes('palta') && originalLower.includes('palta')) score += 20;
+        
+        // Penalize very long names (usually more processed/complex)
+        if (name.length > 30) score -= 10;
+        
+        // Boost generic/simple names
+        const simpleNames = ['huevo', 'egg', 'palta', 'avocado', 'pollo', 'chicken', 'arroz', 'rice'];
+        if (simpleNames.some(simple => name === simple || name === `${simple} frito`)) score += 25;
+        
+        console.log(`🏷️ SEARCH_APIS - Scoring "${name}" (brand: "${brand}"): ${score} points`);
+        
+        return { ...food, score };
+      });
+      
+      // Sort by score (highest first) and take the best match
+      scoredResults.sort((a, b) => b.score - a.score);
+      const bestMatch = scoredResults[0];
+      
+      console.log(`✅ SEARCH_APIS - Best match: "${bestMatch.food_name}" (score: ${bestMatch.score}, ${bestMatch.calories_per_serving} kcal)`);
+        
+      return {
+        food_name: bestMatch.food_name,
+        brand_name: bestMatch.brand_name,
+        serving_description: bestMatch.serving_description,
+        calories_per_serving: bestMatch.calories_per_serving,
+        protein_per_serving: bestMatch.protein_per_serving,
+        carbs_per_serving: bestMatch.carbs_per_serving,
+        fat_per_serving: bestMatch.fat_per_serving,
+        source: 'fatsecret'
+      };
     }
     
     console.log(`🔍 SEARCH_APIS - No good matches found in APIs for "${foodName}"`);
