@@ -377,7 +377,7 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
       console.log('🏷️ User meal categories:', userContext?.meal_categories);
 
       // Get auth session to pass to edge function
-      const { data: { session } } = await supabase.auth.getSession();
+      let { data: { session } } = await supabase.auth.getSession();
       
       console.log('🔐 Session check:', {
         hasSession: !!session,
@@ -387,8 +387,37 @@ export const NutriAssistant = ({ onClose, initialContext, selectedDate }: NutriA
         isExpired: session?.expires_at ? new Date(session.expires_at * 1000) < new Date() : 'no-expiry-info'
       });
 
-      if (!session?.access_token) {
-        throw new Error('No hay sesión de usuario válida. Por favor, recarga la página o inicia sesión nuevamente.');
+      // If no session or expired, try to refresh
+      if (!session?.access_token || (session.expires_at && new Date(session.expires_at * 1000) < new Date())) {
+        console.log('🔄 Session invalid/expired, attempting refresh...');
+        
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshData.session) {
+          console.error('❌ Session refresh failed:', refreshError);
+          
+          // Clear any invalid session data
+          await supabase.auth.signOut();
+          
+          toast({
+            title: "Sesión expirada",
+            description: "Tu sesión ha expirado. Por favor, recarga la página para volver a iniciar sesión.",
+            variant: "destructive",
+            action: (
+              <button 
+                onClick={() => window.location.reload()} 
+                className="bg-primary text-primary-foreground px-3 py-1 rounded text-sm"
+              >
+                Recargar
+              </button>
+            )
+          });
+          
+          throw new Error('Sesión expirada. Por favor, recarga la página.');
+        }
+        
+        session = refreshData.session;
+        console.log('✅ Session refreshed successfully');
       }
       
       console.log('📤 Invoking OpenAI assistant...');
