@@ -48,7 +48,7 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("tarea");
   const [priority, setPriority] = useState(3);
-  const [dueDate, setDueDate] = useState<Date>();
+  const [dueDate, setDueDate] = useState<Date>(new Date());
   const [dueTime, setDueTime] = useState("");
   const [reminders, setReminders] = useState(0);
   const [notes, setNotes] = useState("");
@@ -84,7 +84,7 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
       setDescription("");
       setCategory("tarea");
       setPriority(3);
-      setDueDate(undefined);
+      setDueDate(new Date());
       setDueTime("");
       setNotes("");
       setReminders(0);
