@@ -62,17 +62,22 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
     
     if (!title.trim()) return;
 
+    const taskData = {
+      title,
+      description: description || undefined,
+      category,
+      priority,
+      due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined,
+      due_time: dueTime || undefined,
+      is_completed: false,
+      is_recurring: isRecurring,
+    };
+
+    console.log('🚀 Enviando datos de tarea:', taskData);
+
     try {
-      await createTask.mutateAsync({
-        title,
-        description: description || undefined,
-        category,
-        priority,
-        due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined,
-        due_time: dueTime || undefined,
-        is_completed: false,
-        is_recurring: isRecurring,
-      });
+      const result = await createTask.mutateAsync(taskData);
+      console.log('✅ Tarea creada exitosamente:', result);
 
       // Resetear formulario
       setTitle("");

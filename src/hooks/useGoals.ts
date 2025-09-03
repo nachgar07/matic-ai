@@ -138,6 +138,7 @@ export const useTasks = (date?: string) => {
   return useQuery({
     queryKey: ['tasks', targetDate],
     queryFn: async () => {
+      console.log('📋 useTasks: Consultando tareas para fecha:', targetDate);
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -145,17 +146,23 @@ export const useTasks = (date?: string) => {
         .order('priority', { ascending: false })
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ useTasks: Error al consultar tareas:', error);
+        throw error;
+      }
+      
+      console.log('📊 useTasks: Tareas encontradas en BD:', data?.length || 0, data);
       
       // Filtrar tareas que deben mostrarse: 
       // 1. Tareas sin fecha (is_recurring = true) se muestran todos los días
       // 2. Tareas con fecha específica solo se muestran en esa fecha
       const filteredTasks = data?.filter(task => {
-        if (!task.due_date && task.is_recurring) return true; // Tareas pendientes recurrentes
-        if (task.due_date === targetDate) return true; // Tareas para la fecha específica
-        return false;
+        const shouldShow = (!task.due_date && task.is_recurring) || (task.due_date === targetDate);
+        console.log(`🔍 useTasks: Evaluando tarea "${task.title}" - due_date: ${task.due_date}, is_recurring: ${task.is_recurring}, targetDate: ${targetDate}, shouldShow: ${shouldShow}`);
+        return shouldShow;
       }) || [];
       
+      console.log('✅ useTasks: Tareas filtradas para mostrar:', filteredTasks.length, filteredTasks);
       return filteredTasks as Task[];
     },
     enabled: !!date // Only run when date is provided
@@ -260,21 +267,36 @@ export const useCreateTask = () => {
 
   return useMutation({
     mutationFn: async (taskData: Omit<Task, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      console.log('🔧 useCreateTask: Iniciando creación de tarea');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuario no autenticado');
+      if (!user) {
+        console.error('❌ useCreateTask: Usuario no autenticado');
+        throw new Error('Usuario no autenticado');
+      }
+
+      console.log('👤 useCreateTask: Usuario autenticado:', user.id);
+      const insertData = { ...taskData, user_id: user.id };
+      console.log('📝 useCreateTask: Datos a insertar:', insertData);
 
       const { data, error } = await supabase
         .from('tasks')
-        .insert([{ ...taskData, user_id: user.id }])
+        .insert([insertData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ useCreateTask: Error en inserción:', error);
+        throw error;
+      }
+      
+      console.log('✅ useCreateTask: Tarea insertada exitosamente:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🎉 useCreateTask: onSuccess ejecutado con datos:', data);
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.refetchQueries({ queryKey: ['tasks'] });
+      console.log('🔄 useCreateTask: Queries invalidadas y refetch iniciado');
       toast({
         title: "Tarea creada",
         description: "Tu nueva tarea se ha creado exitosamente.",
