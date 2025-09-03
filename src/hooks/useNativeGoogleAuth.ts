@@ -11,7 +11,7 @@ export const useNativeGoogleAuth = () => {
   const initializeGoogleAuth = async () => {
     if (Capacitor.isNativePlatform()) {
       await GoogleAuth.initialize({
-        clientId: 'YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com',
+        clientId: 'TU_WEB_CLIENT_ID.apps.googleusercontent.com', // Mismo Web client ID
         scopes: ['profile', 'email'],
         grantOfflineAccess: true,
       });
