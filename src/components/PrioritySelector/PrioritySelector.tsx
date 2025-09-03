@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Flag } from "lucide-react";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface PrioritySelectorProps {
   open: boolean;
@@ -47,6 +48,12 @@ export const PrioritySelector = ({ open, onOpenChange, value, onValueChange }: P
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogContent className="sm:max-w-[300px] bg-background border border-border">
+        <VisuallyHidden>
+          <DialogTitle>Selector de Prioridad</DialogTitle>
+          <DialogDescription>
+            Ajusta la prioridad de tu tarea usando los botones más y menos
+          </DialogDescription>
+        </VisuallyHidden>
         <div className="space-y-6 p-4">
           <h2 className="text-lg font-medium text-center text-foreground">
             Selecciona una prioridad
