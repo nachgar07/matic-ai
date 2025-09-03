@@ -274,6 +274,7 @@ export const useCreateTask = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.refetchQueries({ queryKey: ['tasks'] });
       toast({
         title: "Tarea creada",
         description: "Tu nueva tarea se ha creado exitosamente.",

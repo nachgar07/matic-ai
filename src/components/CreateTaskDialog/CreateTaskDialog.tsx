@@ -287,9 +287,10 @@ export const CreateTaskDialog = ({ children }: CreateTaskDialogProps) => {
                   CANCELAR
                 </Button>
                 <Button 
-                  onClick={handleSubmit}
+                  type="submit"
                   disabled={!title.trim() || createTask.isPending} 
                   className="flex-1 h-12 text-lg font-semibold bg-destructive hover:bg-destructive/90"
+                  onClick={handleSubmit}
                 >
                   CONFIRMAR
                 </Button>
