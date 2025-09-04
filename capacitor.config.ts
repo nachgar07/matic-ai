@@ -22,8 +22,8 @@ const config: CapacitorConfig = {
     },
     GoogleAuth: {
       scopes: ['profile', 'email'],
-      serverClientId: 'TU_WEB_CLIENT_ID.apps.googleusercontent.com', // Reemplaza con tu Web Client ID real
-      androidClientId: 'TU_ANDROID_CLIENT_ID.apps.googleusercontent.com', // Reemplaza con tu Android Client ID real  
+      serverClientId: '831364630977-7v0fjumfc4jvn5vf88a5amc5dc9oldsc.apps.googleusercontent.com', // Reemplaza con tu Web Client ID real
+      androidClientId: '831364630977-58d69jpaht5o5k3fjacdpmqa001ghc94.apps.googleusercontent.com', // Reemplaza con tu Android Client ID real  
       forceCodeForRefreshToken: true
     }
   }
