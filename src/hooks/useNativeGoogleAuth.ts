@@ -22,33 +22,56 @@ export const useNativeGoogleAuth = () => {
     setLoading(true);
     
     try {
-      // Check if we're on a native platform
+      // Check if we're on a native platform (Android/iOS)
       if (Capacitor.isNativePlatform()) {
-        // Use native Google Sign-In
-        await initializeGoogleAuth();
-        
-        const googleUser = await GoogleAuth.signIn();
-        
-        if (googleUser.authentication?.idToken) {
-          // Sign in to Supabase with the ID token
-          const { data, error } = await supabase.auth.signInWithIdToken({
-            provider: 'google',
-            token: googleUser.authentication.idToken,
-          });
+        try {
+          // Use native Google Sign-In as default
+          await initializeGoogleAuth();
+          
+          const googleUser = await GoogleAuth.signIn();
+          
+          if (googleUser.authentication?.idToken) {
+            // Sign in to Supabase with the ID token
+            const { data, error } = await supabase.auth.signInWithIdToken({
+              provider: 'google',
+              token: googleUser.authentication.idToken,
+            });
 
-          if (error) throw error;
+            if (error) throw error;
 
+            toast({
+              title: "¡Bienvenido!",
+              description: "Has iniciado sesión correctamente.",
+            });
+
+            return { data, error: null };
+          } else {
+            throw new Error('No se pudo obtener el token de autenticación nativo');
+          }
+        } catch (nativeError: any) {
+          console.log('Native Google Sign-In failed, trying web fallback:', nativeError);
+          
+          // Fallback to web OAuth if native fails
           toast({
-            title: "¡Bienvenido!",
-            description: "Has iniciado sesión correctamente.",
+            title: "Intentando método alternativo...",
+            description: "Probando autenticación web.",
           });
 
-          return { data, error: null };
-        } else {
-          throw new Error('No se pudo obtener el token de autenticación');
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: `${window.location.origin}/`,
+              queryParams: {
+                access_type: 'offline',
+                prompt: 'consent',
+              },
+            },
+          });
+
+          return { data, error };
         }
       } else {
-        // Fallback to web OAuth for browser/PWA
+        // Web platform - use OAuth directly
         toast({
           title: "Redirigiendo a Google...",
           description: "Te redirigiremos de vuelta en unos segundos.",
