@@ -32,15 +32,17 @@ export const Auth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Redirect logic optimized for mobile
+        // Redirect logic optimized for both web and native
         if (session?.user && event === 'SIGNED_IN') {
           console.log('✅ User signed in, preparing redirect...');
           
-          // Use a longer delay for mobile to ensure state is properly set
+          // For native platforms, use shorter delay since no web redirects are involved
+          const delay = isNative ? 100 : 500;
+          
           setTimeout(() => {
             console.log('🏠 Redirecting to home page...');
             window.location.replace(`${window.location.origin}/`);
-          }, 500);
+          }, delay);
         }
       }
     );
@@ -183,7 +185,7 @@ export const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    console.log('📱 Iniciando Google Sign-In desde móvil...');
+    console.log(`📱 Iniciando Google Sign-In - Plataforma: ${isNative ? 'Nativa' : 'Web'}`);
     try {
       const result = await signInWithGoogle();
       console.log('🎯 Resultado Google Sign-In:', result);
