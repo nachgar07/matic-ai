@@ -22,28 +22,42 @@ export const Auth = () => {
   const { signInWithGoogle, loading: googleLoading, isNative } = useNativeGoogleAuth();
 
   useEffect(() => {
+    console.log('🔄 Auth component mounted, setting up auth listener');
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('🔐 Auth state change:', { event, userId: session?.user?.id, hasSession: !!session });
+        
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Only redirect if we have a complete session and it's not during OAuth flow
+        // Redirect logic optimized for mobile
         if (session?.user && event === 'SIGNED_IN') {
+          console.log('✅ User signed in, preparing redirect...');
+          
+          // Use a longer delay for mobile to ensure state is properly set
           setTimeout(() => {
-            window.location.href = `${window.location.origin}/`;
-          }, 100);
+            console.log('🏠 Redirecting to home page...');
+            window.location.replace(`${window.location.origin}/`);
+          }, 500);
         }
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔍 Checking existing session:', { userId: session?.user?.id, hasSession: !!session });
+      
       setSession(session);
       setUser(session?.user ?? null);
       
+      // If already authenticated, redirect immediately
       if (session?.user) {
-        window.location.href = `${window.location.origin}/`;
+        console.log('👤 User already authenticated, redirecting...');
+        setTimeout(() => {
+          window.location.replace(`${window.location.origin}/`);
+        }, 100);
       }
     });
 
@@ -169,7 +183,13 @@ export const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    await signInWithGoogle();
+    console.log('📱 Iniciando Google Sign-In desde móvil...');
+    try {
+      const result = await signInWithGoogle();
+      console.log('🎯 Resultado Google Sign-In:', result);
+    } catch (error) {
+      console.error('❌ Error en Google Sign-In:', error);
+    }
   };
 
   // If user is already logged in, show loading state while redirecting

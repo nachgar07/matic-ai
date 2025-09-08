@@ -17,10 +17,12 @@ export const useNativeGoogleAuth = () => {
         description: "Te redirigiremos de vuelta en unos segundos.",
       });
 
+      console.log('🚀 Iniciando Google OAuth con redirectTo:', `${window.location.origin}/`);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
