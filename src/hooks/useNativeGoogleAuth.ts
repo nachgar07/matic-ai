@@ -13,12 +13,19 @@ export const useNativeGoogleAuth = () => {
     try {
       console.log('🚀 Iniciando Google Auth nativo con Capacitor...');
       
+      // Verificar si estamos en un entorno nativo válido
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error('Google Auth nativo solo funciona en dispositivos móviles');
+      }
+
       // Inicializar GoogleAuth si es necesario
+      console.log('📱 Inicializando GoogleAuth...');
       await GoogleAuth.initialize({
         clientId: '831364630977-7v0fjumfc4jvn5vf88a5amc5dc9oldsc.apps.googleusercontent.com',
         scopes: ['profile', 'email'],
         grantOfflineAccess: true,
       });
+      console.log('✅ GoogleAuth inicializado');
 
       // Obtener el token de Google de forma nativa
       const googleUser = await GoogleAuth.signIn();

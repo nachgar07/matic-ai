@@ -193,8 +193,14 @@ export const Auth = () => {
     try {
       const result = await signInWithGoogle();
       console.log('🎯 Resultado Google Sign-In:', result);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error en Google Sign-In:', error);
+      // Show error to user since the hook might not have shown it
+      toast({
+        title: "Error al iniciar sesión",
+        description: error.message || "No se pudo conectar con Google. Intenta nuevamente.",
+        variant: "destructive",
+      });
     }
   };
 
