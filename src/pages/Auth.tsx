@@ -199,7 +199,7 @@ export const Auth = () => {
       toast({
         title: "Error al iniciar sesión",
         description: error.message || "No se pudo conectar con Google. Intenta nuevamente.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -216,7 +216,7 @@ export const Auth = () => {
   return <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Maticf AI</CardTitle>
+          <CardTitle className="text-2xl font-bold">Matic AI</CardTitle>
           <CardDescription>
             Inicia sesión o crea una cuenta para comenzar
           </CardDescription>
