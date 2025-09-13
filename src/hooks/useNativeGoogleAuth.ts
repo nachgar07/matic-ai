@@ -18,14 +18,9 @@ export const useNativeGoogleAuth = () => {
         throw new Error('Google Auth nativo solo funciona en dispositivos móviles');
       }
 
-      // Inicializar GoogleAuth si es necesario
-      console.log('📱 Inicializando GoogleAuth...');
-      await GoogleAuth.initialize({
-        clientId: '831364630977-7v0fjumfc4jvn5vf88a5amc5dc9oldsc.apps.googleusercontent.com',
-        scopes: ['profile', 'email'],
-        grantOfflineAccess: true,
-      });
-      console.log('✅ GoogleAuth inicializado');
+      // En Android, el plugin ya está configurado via capacitor.config.ts
+      // No necesitamos llamar initialize() ya que puede causar conflictos
+      console.log('📱 Usando configuración nativa de Capacitor...');
 
       // Obtener el token de Google de forma nativa
       const googleUser = await GoogleAuth.signIn();
