@@ -71,12 +71,26 @@ serve(async (req) => {
 
     console.log('✅ User authenticated:', user.id);
 
-    // Look up the food by foodId to get the internal food ID
-    const { data: food, error: foodError } = await supabase
+    // Look up the food by foodId (supports UUID `id` or string `food_id`)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(foodId);
+
+    let foodLookup = await supabase
       .from('foods')
       .select('id')
-      .eq('id', foodId)
+      .eq(isUuid ? 'id' : 'food_id', foodId)
       .single();
+
+    // Fallback: if we tried as UUID and failed, try by `food_id`
+    if ((foodLookup.error || !foodLookup.data) && isUuid) {
+      foodLookup = await supabase
+        .from('foods')
+        .select('id')
+        .eq('food_id', foodId)
+        .single();
+    }
+
+    const food = foodLookup.data;
+    const foodError = foodLookup.error;
 
     if (foodError || !food) {
       console.error('❌ Food not found:', foodError);
