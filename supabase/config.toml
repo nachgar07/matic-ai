@@ -1,5 +1,8 @@
 project_id = "rdzfizthbykgfqfgftpv"
 
+[functions.add-meal]
+verify_jwt = true
+
 [functions.google-drive-sync]
 verify_jwt = true
 
