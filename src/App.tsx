@@ -12,6 +12,7 @@ import { Auth } from "./pages/Auth";
 import { TermsAndConditions } from "./pages/TermsAndConditions";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
+import Estadisticas from "./pages/Estadisticas";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -24,9 +25,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/comidas" element={<Comidas />} />
-          <Route path="/objetivos" element={<Objetivos />} />
-          <Route path="/perfil" element={<Perfil />} />
+            <Route path="/comidas" element={<Comidas />} />
+            <Route path="/objetivos" element={<Objetivos />} />
+            <Route path="/estadisticas" element={<Estadisticas />} />
+            <Route path="/perfil" element={<Perfil />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

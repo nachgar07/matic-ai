@@ -1,4 +1,4 @@
-import { Home, Utensils, Target, User } from "lucide-react";
+import { Home, Utensils, Target, User, BarChart3 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/translations";
@@ -13,6 +13,7 @@ export const BottomNavigation = () => {
     { icon: Home, label: t('home'), path: "/" },
     { icon: Utensils, label: t('meals'), path: "/comidas" },
     { icon: Target, label: t('goals'), path: "/objetivos" },
+    { icon: BarChart3, label: "Stats", path: "/estadisticas" },
     { icon: User, label: t('profile'), path: "/perfil" },
   ];
 
