@@ -18,7 +18,6 @@ import { es, enUS } from "date-fns/locale";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/translations";
 import { isHabitActiveOnDate } from "@/utils/habitUtils";
-import { useExpenses } from "@/hooks/useExpenses";
 import { TermsAcceptanceModal } from "@/components/TermsAcceptanceModal/TermsAcceptanceModal";
 import { useProfileCompletion } from "@/hooks/useProfile";
 
@@ -62,11 +61,6 @@ export const Home = () => {
   
   // Filter active habits for selected date (only if we have goals)
   const activeHabitsForDate = shouldFetchData ? goals.filter(goal => isHabitActiveOnDate(goal, selectedDate)) : [];
-
-  // Get expenses for selected date (only when authenticated)
-  const { expenses, chartData, totalAmount, loading: expensesLoading } = useExpenses(
-    shouldFetchData ? selectedDate : null
-  );
 
   // Terms acceptance - only initialize when user is ready
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
@@ -259,7 +253,6 @@ export const Home = () => {
           mealsData={mealsData}
           mealsRangeData={mealsRangeData}
           tasksCount={tasks.length + activeHabitsForDate.length}
-          expensesCount={expenses.length}
         />
       </div>
 
@@ -386,74 +379,6 @@ export const Home = () => {
             </div>
             <div className="text-sm text-muted-foreground">
               {t('goToGoals')}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Expenses Section */}
-      <div className="px-4 mt-6">
-        <h2 className="text-xl font-bold mb-4">
-          {t('expensesOf')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", { locale })}
-        </h2>
-        
-        {expensesLoading ? (
-          <div className="bg-card rounded-lg p-6 text-center">
-            <div className="text-muted-foreground">{t('loading')} gastos...</div>
-          </div>
-        ) : expenses.length > 0 ? (
-          <div className="space-y-4">
-            {/* Expense Summary */}
-            <div className="bg-card rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-foreground">{t('expensesSummary')}</h3>
-                <span className="text-lg font-bold text-foreground">
-                  ${totalAmount.toLocaleString()}
-                </span>
-              </div>
-              
-              <div className="space-y-2">
-                {expenses.slice(0, 3).map((expense) => (
-                  <div key={expense.id} className="flex items-center gap-3 py-2">
-                    <div 
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
-                      style={{ backgroundColor: expense.category_color }}
-                    >
-                      {expense.category_icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate text-foreground">
-                        {expense.store_name || t('unknownStore')}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {expense.category_name}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-foreground">
-                        ${expense.total_amount.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                
-                {expenses.length > 3 && (
-                  <div className="text-center pt-2">
-                    <span className="text-xs text-muted-foreground">
-                      {t('and')} {expenses.length - 3} gastos {t('more')}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-card rounded-lg p-6 text-center">
-            <div className="text-muted-foreground mb-2">
-              {t('noExpensesToday')}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {t('goToExpenses')}
             </div>
           </div>
         )}

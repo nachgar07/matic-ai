@@ -8,10 +8,9 @@ interface WeeklyCalendarProps {
   mealsData?: any;
   mealsRangeData?: { mealsByDate: Record<string, any[]>; meals: any[] };
   tasksCount?: number;
-  expensesCount?: number;
 }
 
-export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, mealsRangeData, tasksCount, expensesCount }: WeeklyCalendarProps) => {
+export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, mealsRangeData, tasksCount }: WeeklyCalendarProps) => {
   const today = new Date();
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState(0);
@@ -151,11 +150,6 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, mealsRan
     
     // Si es hoy y hay tareas, mostrar indicador
     if (dateString === todayString && tasksCount && tasksCount > 0) {
-      return true;
-    }
-    
-    // Si es hoy y hay gastos, mostrar indicador
-    if (dateString === todayString && expensesCount && expensesCount > 0) {
       return true;
     }
     

@@ -7,7 +7,6 @@ import { ThemeProvider } from "next-themes";
 import { Home } from "./pages/Home";
 import { Comidas } from "./pages/Comidas";
 import { Objetivos } from "./pages/Objetivos";
-import { Archivos } from "./pages/Archivos";
 import { Perfil } from "./pages/Perfil";
 import { Auth } from "./pages/Auth";
 import { TermsAndConditions } from "./pages/TermsAndConditions";
@@ -27,7 +26,6 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/comidas" element={<Comidas />} />
           <Route path="/objetivos" element={<Objetivos />} />
-          <Route path="/archivos" element={<Archivos />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
