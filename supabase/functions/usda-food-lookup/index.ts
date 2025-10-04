@@ -69,84 +69,193 @@ serve(async (req) => {
 });
 
 async function lookupFoodInUSDA(foodName: string): Promise<FoodMatch | null> {
-  console.log(`Looking up food in USDA: ${foodName}`);
+  console.log(`🔍 Looking up food in USDA: ${foodName}`);
   
-  // Mapeo de nombres en español a términos de búsqueda en inglés más efectivos
-  // Usa búsqueda por palabra clave para ser más flexible
+  // 📚 Diccionario expandido de traducciones español-inglés con términos USDA precisos
   const foodMapping: { [key: string]: string } = {
-    'miel': 'honey',
-    'aguacate': 'avocado',
-    'pollo': 'chicken breast cooked',
-    'arroz': 'rice white cooked',
+    // Proteínas
+    'pollo': 'chicken breast cooked without skin',
+    'pechuga': 'chicken breast cooked without skin',
+    'pavo': 'turkey breast cooked',
+    'carne': 'beef cooked lean',
+    'res': 'beef cooked lean',
+    'cerdo': 'pork cooked lean',
+    'pescado': 'fish cooked',
+    'salmon': 'salmon cooked',
+    'atun': 'tuna cooked',
+    'camarón': 'shrimp cooked',
+    'camaron': 'shrimp cooked',
     'huevo': 'egg whole cooked',
-    'pan': 'bread wheat',
-    'leche': 'milk whole',
-    'queso': 'cheese cheddar',
-    'tomate': 'tomato raw',
-    'cebolla': 'onion raw',
-    'ajo': 'garlic raw',
-    'aceite': 'oil olive',
+    
+    // Carbohidratos
+    'arroz': 'rice white cooked',
+    'pasta': 'pasta cooked',
+    'pan': 'bread whole wheat',
     'papa': 'potato cooked',
     'patata': 'potato cooked',
-    'carne': 'beef cooked',
-    'pescado': 'fish cooked',
-    'pasta': 'pasta cooked'
+    'camote': 'sweet potato cooked',
+    'batata': 'sweet potato cooked',
+    'tortilla': 'corn tortilla',
+    'avena': 'oats cooked',
+    'quinoa': 'quinoa cooked',
+    
+    // Verduras
+    'tomate': 'tomato raw',
+    'jitomate': 'tomato raw',
+    'lechuga': 'lettuce raw',
+    'espinaca': 'spinach raw',
+    'brócoli': 'broccoli cooked',
+    'brocoli': 'broccoli cooked',
+    'zanahoria': 'carrot raw',
+    'calabacita': 'zucchini cooked',
+    'calabaza': 'squash cooked',
+    'cebolla': 'onion raw',
+    'ajo': 'garlic raw',
+    'pimiento': 'pepper sweet raw',
+    'chile': 'pepper hot raw',
+    'pepino': 'cucumber raw',
+    'apio': 'celery raw',
+    'coliflor': 'cauliflower cooked',
+    'ejote': 'green beans cooked',
+    'chícharo': 'peas cooked',
+    'elote': 'corn cooked',
+    'maíz': 'corn cooked',
+    
+    // Frutas
+    'manzana': 'apple raw',
+    'plátano': 'banana raw',
+    'platano': 'banana raw',
+    'naranja': 'orange raw',
+    'fresa': 'strawberry raw',
+    'uva': 'grapes raw',
+    'piña': 'pineapple raw',
+    'mango': 'mango raw',
+    'papaya': 'papaya raw',
+    'sandía': 'watermelon raw',
+    'melón': 'melon raw',
+    'pera': 'pear raw',
+    'durazno': 'peach raw',
+    'kiwi': 'kiwi raw',
+    
+    // Lácteos
+    'leche': 'milk whole',
+    'yogur': 'yogurt plain',
+    'yogurt': 'yogurt plain',
+    'queso': 'cheese cheddar',
+    'requesón': 'cottage cheese',
+    'crema': 'cream',
+    
+    // Grasas y aceites
+    'aguacate': 'avocado raw',
+    'aceite': 'oil olive',
+    'mantequilla': 'butter',
+    'nuez': 'nuts mixed',
+    'almendra': 'almonds',
+    'cacahuate': 'peanuts',
+    
+    // Otros
+    'frijol': 'beans cooked',
+    'lenteja': 'lentils cooked',
+    'garbanzo': 'chickpeas cooked',
+    'miel': 'honey'
   };
   
-  // Buscar por palabra clave en lugar de coincidencia exacta
+  // 🔄 Sinónimos y variaciones comunes
+  const synonyms: { [key: string]: string[] } = {
+    'pollo': ['pechuga', 'pollo cocido', 'pechuga de pollo'],
+    'tomate': ['jitomate'],
+    'papa': ['patata'],
+    'camote': ['batata'],
+    'plátano': ['platano', 'banana'],
+    'calabacita': ['calabacín', 'zucchini'],
+    'camarón': ['camaron', 'gamba']
+  };
+  
   const lowerFoodName = foodName.toLowerCase();
-  let searchTerm = foodName;
+  let searchTerm = '';
+  let matchedKeyword = '';
   
-  // Buscar coincidencias parciales en el mapeo
-  for (const [key, value] of Object.entries(foodMapping)) {
-    if (lowerFoodName.includes(key)) {
-      searchTerm = value;
-      console.log(`Mapped "${foodName}" -> "${searchTerm}" (matched keyword: ${key})`);
-      break;
-    }
-  }
-  
-  // Si no hay mapeo, agregar "cooked" a alimentos comunes que suelen servirse cocinados
-  if (searchTerm === foodName) {
-    const needsCookedSuffix = ['arroz', 'rice', 'pollo', 'chicken', 'carne', 'meat', 'pescado', 'fish', 'pasta', 'papa', 'potato'];
-    for (const keyword of needsCookedSuffix) {
-      if (lowerFoodName.includes(keyword) && !lowerFoodName.includes('cooked') && !lowerFoodName.includes('cocido')) {
-        searchTerm = `${foodName} cooked`;
-        console.log(`Added "cooked" suffix: "${foodName}" -> "${searchTerm}"`);
+  // 1️⃣ Buscar coincidencia exacta en diccionario
+  if (foodMapping[lowerFoodName]) {
+    searchTerm = foodMapping[lowerFoodName];
+    matchedKeyword = lowerFoodName;
+    console.log(`✅ Exact match: "${foodName}" -> "${searchTerm}"`);
+  } else {
+    // 2️⃣ Buscar por palabras clave parciales (más flexible)
+    for (const [key, value] of Object.entries(foodMapping)) {
+      if (lowerFoodName.includes(key) || key.includes(lowerFoodName)) {
+        searchTerm = value;
+        matchedKeyword = key;
+        console.log(`✅ Partial match: "${foodName}" -> "${searchTerm}" (keyword: ${key})`);
         break;
       }
     }
   }
   
-  // USDA FoodData Central API (público, no requiere API key)
-  const searchUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query=${encodeURIComponent(searchTerm)}&pageSize=3&dataType=Foundation,SR%20Legacy`;
+  // 3️⃣ Si no hay coincidencia, agregar "cooked" a alimentos que suelen cocinarse
+  if (!searchTerm) {
+    const needsCookedSuffix = [
+      'arroz', 'rice', 'pollo', 'chicken', 'carne', 'meat', 'beef',
+      'pescado', 'fish', 'pasta', 'papa', 'potato', 'pavo', 'turkey',
+      'cerdo', 'pork', 'frijol', 'beans', 'lenteja', 'lentils',
+      'verdura', 'vegetable', 'brócoli', 'broccoli'
+    ];
+    
+    for (const keyword of needsCookedSuffix) {
+      if (lowerFoodName.includes(keyword) && 
+          !lowerFoodName.includes('cooked') && 
+          !lowerFoodName.includes('cocido') &&
+          !lowerFoodName.includes('raw') &&
+          !lowerFoodName.includes('crudo')) {
+        searchTerm = `${foodName} cooked`;
+        console.log(`➕ Added "cooked" suffix: "${foodName}" -> "${searchTerm}"`);
+        break;
+      }
+    }
+    
+    // Si aún no hay término, usar el nombre original
+    if (!searchTerm) {
+      searchTerm = foodName;
+      console.log(`⚠️ No mapping found, using original: "${searchTerm}"`);
+    }
+  }
   
-  console.log(`USDA search URL: ${searchUrl}`);
+  // 🌐 USDA FoodData Central API (público, no requiere API key)
+  const searchUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query=${encodeURIComponent(searchTerm)}&pageSize=5&dataType=Foundation,SR%20Legacy`;
+  
+  console.log(`🌐 USDA search URL: ${searchUrl}`);
   
   try {
     const response = await fetch(searchUrl);
-    console.log(`USDA API response status: ${response.status}`);
+    console.log(`📡 USDA API response status: ${response.status}`);
     
     if (!response.ok) {
-      console.error(`USDA API error: ${response.status} - ${response.statusText}`);
+      console.error(`❌ USDA API error: ${response.status} - ${response.statusText}`);
       return null;
     }
 
     const data = await response.json();
-    console.log(`USDA API response for ${searchTerm}:`, JSON.stringify(data, null, 2));
     
     if (!data.foods || data.foods.length === 0) {
-      console.log(`No USDA data found for: ${searchTerm} (original: ${foodName})`);
+      console.log(`❌ No USDA data found for: ${searchTerm} (original: ${foodName})`);
       return null;
     }
 
     // Tomar el primer resultado (mejor match)
     const food: USDAFood = data.foods[0];
-    console.log(`Found USDA match for ${foodName}: ${food.description}`);
+    console.log(`✅ Found USDA match: ${food.description}`);
+    console.log(`📊 Food nutrients array length: ${food.foodNutrients?.length || 0}`);
 
     // Extraer nutrientes principales
     const nutrients = extractMainNutrients(food.foodNutrients);
-    console.log(`Extracted nutrients for ${foodName}:`, nutrients);
+    console.log(`📊 Extracted nutrients for "${foodName}":`, nutrients);
+    
+    // ⚠️ Validación de datos: rechazar si los valores son sospechosamente incorrectos
+    const isValid = validateNutrients(nutrients, foodName, matchedKeyword);
+    if (!isValid) {
+      console.log(`⚠️ Nutrient values failed validation, returning null`);
+      return null;
+    }
     
     return {
       name: foodName,
@@ -158,9 +267,57 @@ async function lookupFoodInUSDA(foodName: string): Promise<FoodMatch | null> {
     };
 
   } catch (error) {
-    console.error(`Error fetching USDA data for ${foodName}:`, error);
+    console.error(`❌ Error fetching USDA data for ${foodName}:`, error);
     return null;
   }
+}
+
+// 🔍 Validación de valores nutricionales para detectar datos incorrectos
+function validateNutrients(nutrients: any, foodName: string, matchedKeyword: string): boolean {
+  const { calories, protein, carbs, fat } = nutrients;
+  
+  // Valores básicos que deben cumplirse
+  if (calories < 0 || protein < 0 || carbs < 0 || fat < 0) {
+    console.log(`❌ Validation failed: Negative values found`);
+    return false;
+  }
+  
+  // Verificar que las calorías calculadas sean razonables (1g proteína = 4 cal, 1g carbs = 4 cal, 1g fat = 9 cal)
+  const calculatedCalories = (protein * 4) + (carbs * 4) + (fat * 9);
+  const calorieDiff = Math.abs(calories - calculatedCalories);
+  
+  // Permitir hasta 20% de diferencia (algunos alimentos tienen fibra, alcohol, etc.)
+  if (calorieDiff > calories * 0.3) {
+    console.log(`⚠️ Warning: Calorie calculation mismatch. Reported: ${calories}, Calculated: ${calculatedCalories.toFixed(0)}`);
+    // No fallar por esto, solo advertir
+  }
+  
+  // Validaciones específicas por tipo de alimento
+  const lowerFood = foodName.toLowerCase();
+  const lowerKeyword = matchedKeyword.toLowerCase();
+  
+  // Verduras: generalmente bajas en calorías (< 100 cal/100g)
+  if (['lechuga', 'espinaca', 'calabacita', 'pepino', 'apio', 'tomate', 'jitomate'].some(v => lowerFood.includes(v) || lowerKeyword.includes(v))) {
+    if (calories > 100) {
+      console.log(`❌ Validation failed: Vegetable has too many calories (${calories} > 100)`);
+      return false;
+    }
+  }
+  
+  // Proteínas magras: alto en proteína, bajo en grasa
+  if (['pollo', 'pechuga', 'pavo', 'pescado'].some(p => lowerFood.includes(p) || lowerKeyword.includes(p))) {
+    if (protein < 15) {
+      console.log(`❌ Validation failed: Lean protein has too little protein (${protein}g < 15g)`);
+      return false;
+    }
+    if (carbs > 2) {
+      console.log(`❌ Validation failed: Meat has too many carbs (${carbs}g > 2g)`);
+      return false;
+    }
+  }
+  
+  console.log(`✅ Validation passed for "${foodName}"`);
+  return true;
 }
 
 function extractMainNutrients(nutrients: USDANutrient[]) {

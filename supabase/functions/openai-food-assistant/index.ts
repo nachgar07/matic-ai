@@ -183,27 +183,35 @@ async function analyzeFoodImage(base64Image: string, apiKey: string): Promise<Fo
     throw new Error('Invalid base64 image format');
   }
   
-  const prompt = `Analiza esta imagen de comida e identifica unicamente los alimentos y sus porciones estimadas en formato JSON:
+  const prompt = `Analiza esta imagen de comida e identifica TODOS los alimentos visibles con sus porciones REALISTAS en gramos.
 
+RESPONDE EXACTAMENTE en este formato JSON (sin texto adicional):
 {
   "foods": [
     {
-      "name": "nombre del alimento en español (simple y comun)",
-      "estimated_portion": "peso estimado en gramos (ej: 150g, 200g, 50g)",
-      "confidence": nivel_de_confianza_del_0_al_1
+      "name": "nombre simple del alimento en español",
+      "estimated_portion": "peso en gramos (ej: 15g, 80g, 100g, 200g)",
+      "confidence": 0.X
     }
   ],
-  "suggestions": ["consejos nutricionales breves en español"]
+  "suggestions": ["consejo nutricional 1", "consejo 2"]
 }
 
-Instrucciones importantes:
-- Identifica TODOS los alimentos visibles en la imagen
-- Usa nombres SIMPLES y COMUNES (ej: "aguacate", "miel", "pan", "pollo")
-- Estima el PESO EN GRAMOS de cada porcion de manera realista
-- NO incluyas informacion nutricional (calorias, proteinas, etc.) - eso se calculara con datos USDA
-- Si hay multiples elementos del mismo alimento, agregalos como elementos separados
-- Incluye 2-3 consejos nutricionales relevantes
-- Responde SOLO con el JSON, sin texto adicional`;
+INSTRUCCIONES CRÍTICAS:
+✅ USA NOMBRES SIMPLES Y COMUNES: "pollo", "arroz", "tomate", "lechuga", "calabacita", "zanahoria"
+✅ ESTIMA PORCIONES REALISTAS EN GRAMOS - Ejemplos:
+   - Verduras cocidas: 50-150g por porción
+   - Proteínas (pollo, pescado): 100-200g por porción  
+   - Arroz/pasta cocidos: 150-250g por porción
+   - Lechuga/espinacas crudas: 20-50g por porción
+   - Aguacate: 50-100g
+   - Miel: 15-30g (1-2 cucharadas)
+   
+❌ NO inventes valores nutricionales (calorías, proteínas, etc.)
+❌ NO uses nombres complejos o marcas
+❌ NO agregues preparaciones innecesarias
+
+Identifica TODO lo visible y estima porciones razonables basándote en el tamaño del plato.`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -341,25 +349,87 @@ Instrucciones importantes:
           };
         } else {
           // Fallback con valores especificos conocidos si no hay datos USDA
-          console.log(`No USDA data found for ${food.name}, using precise fallback values`);
+          console.log(`⚠️ No USDA data found for ${food.name}, using verified fallback values`);
           
-          // Base de datos de valores nutricionales precisos para alimentos comunes (por 100g) - Datos corregidos según USDA
+          // 📊 Base de datos de valores nutricionales VERIFICADOS (por 100g) según USDA/FAO
           const knownNutrients: { [key: string]: { cal: number, protein: number, carbs: number, fat: number } } = {
-            'miel': { cal: 304, protein: 0.3, carbs: 82.4, fat: 0 },
-            'aguacate': { cal: 160, protein: 2, carbs: 8, fat: 14.7 }, // Corregido: carbs de 8.5 a 8
-            'huevo': { cal: 143, protein: 12.6, carbs: 1.1, fat: 9.5 }, // Corregido según datos USDA verificados
+            // Proteínas
             'pollo': { cal: 165, protein: 31, carbs: 0, fat: 3.6 },
+            'pechuga': { cal: 165, protein: 31, carbs: 0, fat: 3.6 },
+            'pechuga de pollo': { cal: 165, protein: 31, carbs: 0, fat: 3.6 },
+            'pavo': { cal: 135, protein: 30, carbs: 0, fat: 0.7 },
+            'carne': { cal: 250, protein: 26, carbs: 0, fat: 15 },
+            'pescado': { cal: 206, protein: 22, carbs: 0, fat: 12 },
+            'salmon': { cal: 206, protein: 22, carbs: 0, fat: 12 },
+            'huevo': { cal: 143, protein: 12.6, carbs: 1.1, fat: 9.5 },
+            
+            // Carbohidratos
             'arroz': { cal: 130, protein: 2.7, carbs: 28, fat: 0.3 },
-            'pan': { cal: 265, protein: 11.7, carbs: 49, fat: 3.2 }, // Corregido: proteína de 9 a 11.7
-            'pan de molde integral': { cal: 265, protein: 11.7, carbs: 49, fat: 3.2 } // Agregado específicamente
+            'pasta': { cal: 131, protein: 5, carbs: 25, fat: 1.1 },
+            'pan': { cal: 265, protein: 11.7, carbs: 49, fat: 3.2 },
+            'pan de molde': { cal: 265, protein: 11.7, carbs: 49, fat: 3.2 },
+            'papa': { cal: 87, protein: 2, carbs: 20, fat: 0.1 },
+            'patata': { cal: 87, protein: 2, carbs: 20, fat: 0.1 },
+            'tortilla': { cal: 218, protein: 5.7, carbs: 44, fat: 2.8 },
+            'avena': { cal: 71, protein: 2.5, carbs: 12, fat: 1.5 },
+            
+            // Verduras
+            'lechuga': { cal: 15, protein: 1.4, carbs: 2.9, fat: 0.2 },
+            'tomate': { cal: 18, protein: 0.9, carbs: 3.9, fat: 0.2 },
+            'jitomate': { cal: 18, protein: 0.9, carbs: 3.9, fat: 0.2 },
+            'zanahoria': { cal: 41, protein: 0.9, carbs: 10, fat: 0.2 },
+            'calabacita': { cal: 17, protein: 1.2, carbs: 3.1, fat: 0.3 },
+            'calabaza': { cal: 26, protein: 1, carbs: 6.5, fat: 0.1 },
+            'brócoli': { cal: 35, protein: 2.4, carbs: 7, fat: 0.4 },
+            'brocoli': { cal: 35, protein: 2.4, carbs: 7, fat: 0.4 },
+            'cebolla': { cal: 40, protein: 1.1, carbs: 9.3, fat: 0.1 },
+            'pepino': { cal: 15, protein: 0.7, carbs: 3.6, fat: 0.1 },
+            'espinaca': { cal: 23, protein: 2.9, carbs: 3.6, fat: 0.4 },
+            
+            // Frutas
+            'manzana': { cal: 52, protein: 0.3, carbs: 14, fat: 0.2 },
+            'plátano': { cal: 89, protein: 1.1, carbs: 23, fat: 0.3 },
+            'platano': { cal: 89, protein: 1.1, carbs: 23, fat: 0.3 },
+            'naranja': { cal: 47, protein: 0.9, carbs: 12, fat: 0.1 },
+            'fresa': { cal: 32, protein: 0.7, carbs: 7.7, fat: 0.3 },
+            'uva': { cal: 69, protein: 0.7, carbs: 18, fat: 0.2 },
+            
+            // Lácteos
+            'leche': { cal: 61, protein: 3.2, carbs: 4.8, fat: 3.3 },
+            'yogur': { cal: 59, protein: 3.5, carbs: 4.7, fat: 3.3 },
+            'yogurt': { cal: 59, protein: 3.5, carbs: 4.7, fat: 3.3 },
+            'queso': { cal: 402, protein: 25, carbs: 1.3, fat: 33 },
+            
+            // Grasas
+            'aguacate': { cal: 160, protein: 2, carbs: 8.5, fat: 14.7 },
+            'aceite': { cal: 884, protein: 0, carbs: 0, fat: 100 },
+            'miel': { cal: 304, protein: 0.3, carbs: 82.4, fat: 0 },
+            
+            // Leguminosas
+            'frijol': { cal: 127, protein: 8.7, carbs: 23, fat: 0.5 },
+            'lenteja': { cal: 116, protein: 9, carbs: 20, fat: 0.4 }
           };
           
           const portionWeight = parseFloat(food.estimated_portion.replace(/[^\d.]/g, '')) || 100;
           const factor = portionWeight / 100;
           
-          const nutrientData = knownNutrients[food.name.toLowerCase()];
+          // Buscar por coincidencia exacta o parcial
+          let nutrientData = knownNutrients[food.name.toLowerCase()];
+          
+          // Si no hay coincidencia exacta, buscar por palabras clave
+          if (!nutrientData) {
+            const lowerName = food.name.toLowerCase();
+            for (const [key, value] of Object.entries(knownNutrients)) {
+              if (lowerName.includes(key) || key.includes(lowerName)) {
+                nutrientData = value;
+                console.log(`✅ Found partial match in fallback: "${food.name}" -> "${key}"`);
+                break;
+              }
+            }
+          }
           
           if (nutrientData) {
+            console.log(`✅ Using verified fallback data for "${food.name}":`, nutrientData);
             return {
               name: food.name,
               estimated_portion: food.estimated_portion,
@@ -367,19 +437,21 @@ Instrucciones importantes:
               estimated_protein: Math.round(nutrientData.protein * factor * 10) / 10,
               estimated_carbs: Math.round(nutrientData.carbs * factor * 10) / 10,
               estimated_fat: Math.round(nutrientData.fat * factor * 10) / 10,
-              confidence: food.confidence,
-              source: 'known_values'
+              confidence: food.confidence * 0.9, // Alta confianza en datos verificados
+              source: 'verified_fallback'
             };
           } else {
+            // Último recurso: valores muy conservadores
+            console.log(`⚠️ NO DATA FOUND for "${food.name}" - using conservative estimates`);
             return {
               name: food.name,
               estimated_portion: food.estimated_portion,
-              estimated_calories: 50, // Valor conservador
-              estimated_protein: 1,
-              estimated_carbs: 10,
-              estimated_fat: 1,
-              confidence: food.confidence * 0.5, // Reducir confianza
-              source: 'fallback'
+              estimated_calories: Math.round(30 * factor), // Valor muy bajo y conservador
+              estimated_protein: Math.round(1 * factor * 10) / 10,
+              estimated_carbs: Math.round(5 * factor * 10) / 10,
+              estimated_fat: Math.round(0.5 * factor * 10) / 10,
+              confidence: food.confidence * 0.3, // Baja confianza
+              source: 'conservative_estimate'
             };
           }
         }
