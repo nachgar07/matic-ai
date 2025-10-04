@@ -72,22 +72,51 @@ async function lookupFoodInUSDA(foodName: string): Promise<FoodMatch | null> {
   console.log(`Looking up food in USDA: ${foodName}`);
   
   // Mapeo de nombres en español a términos de búsqueda en inglés más efectivos
+  // Usa búsqueda por palabra clave para ser más flexible
   const foodMapping: { [key: string]: string } = {
     'miel': 'honey',
     'aguacate': 'avocado',
-    'pollo': 'chicken breast',
-    'arroz': 'rice cooked',
-    'huevo': 'egg whole',
-    'pan': 'bread',
-    'leche': 'milk',
-    'queso': 'cheese',
-    'tomate': 'tomato',
-    'cebolla': 'onion',
-    'ajo': 'garlic',
-    'aceite': 'oil olive'
+    'pollo': 'chicken breast cooked',
+    'arroz': 'rice white cooked',
+    'huevo': 'egg whole cooked',
+    'pan': 'bread wheat',
+    'leche': 'milk whole',
+    'queso': 'cheese cheddar',
+    'tomate': 'tomato raw',
+    'cebolla': 'onion raw',
+    'ajo': 'garlic raw',
+    'aceite': 'oil olive',
+    'papa': 'potato cooked',
+    'patata': 'potato cooked',
+    'carne': 'beef cooked',
+    'pescado': 'fish cooked',
+    'pasta': 'pasta cooked'
   };
   
-  const searchTerm = foodMapping[foodName.toLowerCase()] || foodName;
+  // Buscar por palabra clave en lugar de coincidencia exacta
+  const lowerFoodName = foodName.toLowerCase();
+  let searchTerm = foodName;
+  
+  // Buscar coincidencias parciales en el mapeo
+  for (const [key, value] of Object.entries(foodMapping)) {
+    if (lowerFoodName.includes(key)) {
+      searchTerm = value;
+      console.log(`Mapped "${foodName}" -> "${searchTerm}" (matched keyword: ${key})`);
+      break;
+    }
+  }
+  
+  // Si no hay mapeo, agregar "cooked" a alimentos comunes que suelen servirse cocinados
+  if (searchTerm === foodName) {
+    const needsCookedSuffix = ['arroz', 'rice', 'pollo', 'chicken', 'carne', 'meat', 'pescado', 'fish', 'pasta', 'papa', 'potato'];
+    for (const keyword of needsCookedSuffix) {
+      if (lowerFoodName.includes(keyword) && !lowerFoodName.includes('cooked') && !lowerFoodName.includes('cocido')) {
+        searchTerm = `${foodName} cooked`;
+        console.log(`Added "cooked" suffix: "${foodName}" -> "${searchTerm}"`);
+        break;
+      }
+    }
+  }
   
   // USDA FoodData Central API (público, no requiere API key)
   const searchUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query=${encodeURIComponent(searchTerm)}&pageSize=3&dataType=Foundation,SR%20Legacy`;
