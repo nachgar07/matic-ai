@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
-import { Camera, Plus, Search, Sparkles, Calendar } from "lucide-react";
+import { Camera, Plus, Search, Sparkles, Calendar, MoreVertical } from "lucide-react";
 import { FoodSearch } from "@/components/FoodSearch/FoodSearch";
 import { MealLogger } from "@/components/MealLogger/MealLogger";
 import { FoodPhotoCapture } from "@/components/FoodPhotoCapture/FoodPhotoCapture";
@@ -10,12 +10,13 @@ import { FoodAnalysisResults } from "@/components/FoodAnalysisResults/FoodAnalys
 import { NutriAssistant } from "@/components/NutriAssistant/NutriAssistant";
 import { MealPlateList } from "@/components/MealPlateList/MealPlateList";
 import { NutritionSummary } from "@/components/NutritionSummary/NutritionSummary";
-import { useUserMeals, Food, useDeleteMeal } from "@/hooks/useFatSecret";
+import { useUserMeals, Food, useDeleteMeal, useFavoriteFoods, useAddMeal } from "@/hooks/useFatSecret";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -44,6 +45,8 @@ export const Comidas = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { syncMealsToCalendar, isLoading: isCalendarLoading } = useGoogleCalendar();
+  const { data: favoriteFoods = [] } = useFavoriteFoods();
+  const addMeal = useAddMeal();
 
   // Listen for meal creation events from chat
   useEffect(() => {
@@ -141,6 +144,29 @@ export const Comidas = () => {
     setSelectedDate(new Date());
   };
 
+  const handleAddFavoriteFood = async (foodId: string) => {
+    try {
+      await addMeal.mutateAsync({
+        foodId,
+        servings: 1,
+        mealType: 'snack',
+        consumedAt: selectedDate
+      });
+      
+      toast({
+        title: "Comida agregada",
+        description: "La comida se ha añadido a tu registro del día"
+      });
+    } catch (error) {
+      console.error('Error adding favorite food:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo agregar la comida",
+        variant: "destructive"
+      });
+    }
+  };
+
   const isToday = selectedDate.toDateString() === new Date().toDateString();
   const formatDisplayDate = (date: Date) => {
     if (isToday) return t('today');
@@ -231,6 +257,40 @@ export const Comidas = () => {
                     {t('today')}
                   </Button>
                 )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64 max-h-96 overflow-y-auto">
+                    {favoriteFoods.length === 0 ? (
+                      <div className="p-4 text-sm text-muted-foreground text-center">
+                        No tienes alimentos favoritos aún
+                      </div>
+                    ) : (
+                      favoriteFoods.map((favorite) => (
+                        <DropdownMenuItem
+                          key={favorite.id}
+                          onClick={() => handleAddFavoriteFood(favorite.food_id)}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium">{favorite.foods?.food_name}</span>
+                            {favorite.foods?.brand_name && (
+                              <span className="text-xs text-muted-foreground">
+                                {favorite.foods.brand_name}
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {Math.round(favorite.foods?.calories_per_serving || 0)} cal
+                            </span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           <MealPlateList 

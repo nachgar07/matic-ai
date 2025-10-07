@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChevronDown, ChevronRight, Edit2, Check, X, Trash2, Share2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Edit2, Check, X, Trash2, Share2, Heart } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMealImageShare } from "@/hooks/useMealImageShare";
+import { useAddFavorite, useRemoveFavorite, useFavoriteFoods } from "@/hooks/useFatSecret";
 
 interface MealPlateProps {
   mealType: string;
@@ -50,6 +51,9 @@ export const MealPlate = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { shareMealImage } = useMealImageShare();
+  const addFavorite = useAddFavorite();
+  const removeFavorite = useRemoveFavorite();
+  const { data: favoriteFoods = [] } = useFavoriteFoods();
   
   // Usar el primer meal para obtener la información de la categoría
   const firstMeal = meals[0];
@@ -251,6 +255,36 @@ export const MealPlate = ({
     });
   };
 
+  const handleToggleFavorite = async (foodId: string) => {
+    const isFavorite = favoriteFoods.some(fav => fav.food_id === foodId);
+    
+    try {
+      if (isFavorite) {
+        const favorite = favoriteFoods.find(fav => fav.food_id === foodId);
+        if (favorite) {
+          await removeFavorite.mutateAsync(favorite.id);
+          toast({
+            title: "Eliminado de favoritos",
+            description: "El alimento se ha quitado de tus favoritos"
+          });
+        }
+      } else {
+        await addFavorite.mutateAsync(foodId);
+        toast({
+          title: "Añadido a favoritos",
+          description: "El alimento se ha guardado en tus favoritos"
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar los favoritos",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Card className="p-4">
       {/* Header Section - Perfectly aligned */}
@@ -396,6 +430,8 @@ export const MealPlate = ({
             const protein = (meal.foods.protein_per_serving || 0) * currentServings;
             const carbs = (meal.foods.carbs_per_serving || 0) * currentServings;
             const fat = (meal.foods.fat_per_serving || 0) * currentServings;
+            
+            const isFavorite = favoriteFoods.some(fav => fav.food_id === meal.food_id);
 
             return (
               <div key={meal.id} className="p-3 rounded-lg bg-muted/50">
@@ -438,14 +474,25 @@ export const MealPlate = ({
                         </Button>
                       </>
                     ) : (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0 shrink-0 hover:bg-primary/10"
-                        onClick={() => handleMealEdit(meal.id, meal)}
-                      >
-                        <Edit2 size={12} />
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0 shrink-0 hover:bg-primary/10"
+                          onClick={() => handleMealEdit(meal.id, meal)}
+                        >
+                          <Edit2 size={12} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className={`h-6 w-6 p-0 shrink-0 ${isFavorite ? 'text-red-500 hover:text-red-600' : 'hover:text-red-500'}`}
+                          onClick={() => handleToggleFavorite(meal.food_id)}
+                          title={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                        >
+                          <Heart size={12} fill={isFavorite ? "currentColor" : "none"} />
+                        </Button>
+                      </>
                     )}
                     {onDeleteMeal && (
                       <Button
