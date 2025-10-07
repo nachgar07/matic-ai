@@ -122,15 +122,37 @@ serve(async (req) => {
       (basicMeals || []).map(async (meal) => {
         console.log(`🏷️ GET-USER-MEALS - Looking for category: "${meal.meal_type}" for user: ${user.id}`);
         
-        const { data: category, error: categoryError } = await supabase
-          .from('meal_categories')
-          .select('name, color, icon')
-          .eq('id', meal.meal_type) // Buscar por ID, ya que meal_type contiene el UUID de la categoría
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (categoryError) {
-          console.log(`🏷️ GET-USER-MEALS - Error fetching category: ${categoryError.message}`);
+        // Verificar si meal_type es un UUID
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(meal.meal_type);
+        
+        let category = null;
+        
+        if (isUuid) {
+          // Buscar por ID si es UUID
+          const { data, error: categoryError } = await supabase
+            .from('meal_categories')
+            .select('name, color, icon')
+            .eq('id', meal.meal_type)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (categoryError) {
+            console.log(`🏷️ GET-USER-MEALS - Error fetching category by ID: ${categoryError.message}`);
+          }
+          category = data;
+        } else {
+          // Buscar por nombre si no es UUID (compatibilidad con datos antiguos)
+          const { data, error: categoryError } = await supabase
+            .from('meal_categories')
+            .select('name, color, icon')
+            .eq('name', meal.meal_type)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (categoryError) {
+            console.log(`🏷️ GET-USER-MEALS - Error fetching category by name: ${categoryError.message}`);
+          }
+          category = data;
         }
         
         console.log(`🏷️ GET-USER-MEALS - Found category for "${meal.meal_type}":`, category);

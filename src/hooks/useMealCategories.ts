@@ -31,7 +31,7 @@ export const useMealCategories = () => {
 
       if (!user) {
         console.log('❌ Usuario no autenticado después de 3 intentos');
-        return [];
+        throw new Error('Usuario no autenticado');
       }
 
       console.log('✅ Usuario autenticado:', user.id);
@@ -72,14 +72,15 @@ export const useMealCategories = () => {
           return newData as MealCategory[];
         } catch (createError) {
           console.error('Error creando categorías por defecto:', createError);
-          return [];
+          throw createError;
         }
       }
 
       return data as MealCategory[];
     },
-    retry: 3,
-    retryDelay: 1000,
+    retry: 1,
+    retryDelay: 500,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
