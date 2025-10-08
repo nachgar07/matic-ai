@@ -17,7 +17,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMealImageShare } from "@/hooks/useMealImageShare";
-import { useAddFavorite, useRemoveFavorite, useFavoriteFoods } from "@/hooks/useFatSecret";
+import { useAddFavoriteMealPlate } from "@/hooks/useFavoriteMealPlates";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 interface MealPlateProps {
   mealType: string;
@@ -51,9 +53,10 @@ export const MealPlate = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { shareMealImage } = useMealImageShare();
-  const addFavorite = useAddFavorite();
-  const removeFavorite = useRemoveFavorite();
-  const { data: favoriteFoods = [] } = useFavoriteFoods();
+  const addFavoritePlateMutation = useAddFavoriteMealPlate();
+  const [isSavingFavorite, setIsSavingFavorite] = useState(false);
+  const { language } = useLanguage();
+  const t = translations[language];
   
   // Usar el primer meal para obtener la información de la categoría
   const firstMeal = meals[0];
@@ -255,33 +258,36 @@ export const MealPlate = ({
     });
   };
 
-  const handleToggleFavorite = async (foodId: string) => {
-    const isFavorite = favoriteFoods.some(fav => fav.food_id === foodId);
+  const handleSavePlateAsFavorite = async () => {
+    if (isSavingFavorite) return;
     
+    setIsSavingFavorite(true);
     try {
-      if (isFavorite) {
-        const favorite = favoriteFoods.find(fav => fav.food_id === foodId);
-        if (favorite) {
-          await removeFavorite.mutateAsync(favorite.id);
-          toast({
-            title: "Eliminado de favoritos",
-            description: "El alimento se ha quitado de tus favoritos"
-          });
-        }
-      } else {
-        await addFavorite.mutateAsync(foodId);
-        toast({
-          title: "Añadido a favoritos",
-          description: "El alimento se ha guardado en tus favoritos"
-        });
-      }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar los favoritos",
-        variant: "destructive"
+      const plateName = editingName || defaultName;
+      const mealType = firstMeal.meal_categories?.name || firstMeal.meal_type;
+
+      await addFavoritePlateMutation.mutateAsync({
+        plateName,
+        plateImage,
+        mealType,
+        meals
       });
+
+      toast({
+        title: t.success,
+        description: `${plateName} ${t.addedToFavorites}`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['favorite-meal-plates'] });
+    } catch (error) {
+      console.error('Error saving plate as favorite:', error);
+      toast({
+        title: t.error,
+        description: t.errorSavingFavorite,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingFavorite(false);
     }
   };
 
@@ -382,6 +388,16 @@ export const MealPlate = ({
                 >
                   <Share2 size={12} />
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0 shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                  onClick={handleSavePlateAsFavorite}
+                  disabled={isSavingFavorite}
+                  title="Guardar plato en favoritos"
+                >
+                  <Heart size={12} fill="currentColor" />
+                </Button>
                 <span className="text-sm text-muted-foreground truncate">
                   {meals.length} {meals.length === 1 ? 'ingrediente' : 'ingredientes'}
                 </span>
@@ -430,8 +446,6 @@ export const MealPlate = ({
             const protein = (meal.foods.protein_per_serving || 0) * currentServings;
             const carbs = (meal.foods.carbs_per_serving || 0) * currentServings;
             const fat = (meal.foods.fat_per_serving || 0) * currentServings;
-            
-            const isFavorite = favoriteFoods.some(fav => fav.food_id === meal.food_id);
 
             return (
               <div key={meal.id} className="p-3 rounded-lg bg-muted/50">
@@ -482,15 +496,6 @@ export const MealPlate = ({
                           onClick={() => handleMealEdit(meal.id, meal)}
                         >
                           <Edit2 size={12} />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className={`h-6 w-6 p-0 shrink-0 ${isFavorite ? 'text-red-500 hover:text-red-600' : 'hover:text-red-500'}`}
-                          onClick={() => handleToggleFavorite(meal.food_id)}
-                          title={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
-                        >
-                          <Heart size={12} fill={isFavorite ? "currentColor" : "none"} />
                         </Button>
                       </>
                     )}

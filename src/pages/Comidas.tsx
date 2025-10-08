@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/Layout/Header";
 import { BottomNavigation } from "@/components/Layout/BottomNavigation";
 import { Button } from "@/components/ui/button";
-import { Camera, Plus, Search, Sparkles, Calendar, MoreVertical } from "lucide-react";
+import { Camera, Plus, Search, Sparkles, Calendar, Heart } from "lucide-react";
 import { FoodSearch } from "@/components/FoodSearch/FoodSearch";
 import { MealLogger } from "@/components/MealLogger/MealLogger";
 import { FoodPhotoCapture } from "@/components/FoodPhotoCapture/FoodPhotoCapture";
@@ -10,17 +10,18 @@ import { FoodAnalysisResults } from "@/components/FoodAnalysisResults/FoodAnalys
 import { NutriAssistant } from "@/components/NutriAssistant/NutriAssistant";
 import { MealPlateList } from "@/components/MealPlateList/MealPlateList";
 import { NutritionSummary } from "@/components/NutritionSummary/NutritionSummary";
-import { useUserMeals, Food, useDeleteMeal, useFavoriteFoods, useAddMeal } from "@/hooks/useFatSecret";
+import { useUserMeals, Food, useDeleteMeal, useAddMeal } from "@/hooks/useFatSecret";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/translations";
+import { FavoriteMealsDialog } from "@/components/FavoriteMealsDialog/FavoriteMealsDialog";
+import { useFavoriteMealPlates } from "@/hooks/useFavoriteMealPlates";
 
 import { useWaterIntake } from "@/hooks/useWaterIntake";
 
@@ -31,6 +32,7 @@ export const Comidas = () => {
   const [analysisResults, setAnalysisResults] = useState<any>(null);
   const [showAssistant, setShowAssistant] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [favoritesDialogOpen, setFavoritesDialogOpen] = useState(false);
   
   const { language } = useLanguage();
   const t = (key: keyof typeof translations.es) => translations[language][key];
@@ -45,7 +47,7 @@ export const Comidas = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { syncMealsToCalendar, isLoading: isCalendarLoading } = useGoogleCalendar();
-  const { data: favoriteFoods = [] } = useFavoriteFoods();
+  const { data: favoritePlates } = useFavoriteMealPlates();
   const addMeal = useAddMeal();
 
   // Listen for meal creation events from chat
@@ -144,25 +146,35 @@ export const Comidas = () => {
     setSelectedDate(new Date());
   };
 
-  const handleAddFavoriteFood = async (foodId: string) => {
+  const handleAddFavoritePlate = async (plateId: string) => {
     try {
-      await addMeal.mutateAsync({
-        foodId,
-        servings: 1,
-        mealType: 'snack',
-        consumedAt: selectedDate
-      });
+      const plate = favoritePlates?.find(p => p.id === plateId);
+      if (!plate) return;
+
+      // Add all items from the favorite plate to today's meals
+      for (const item of plate.favorite_meal_plate_items) {
+        await addMeal.mutateAsync({
+          foodId: item.food_id,
+          servings: item.servings,
+          mealType: plate.meal_type,
+          plateImage: plate.plate_image,
+          consumedAt: selectedDate
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['user-meals'] });
+      setFavoritesDialogOpen(false);
       
       toast({
-        title: "Comida agregada",
-        description: "La comida se ha añadido a tu registro del día"
+        title: t('success'),
+        description: `${plate.plate_name} ${t('addedToToday')}`
       });
     } catch (error) {
-      console.error('Error adding favorite food:', error);
+      console.error('Error adding favorite plate:', error);
       toast({
-        title: "Error",
-        description: "No se pudo agregar la comida",
-        variant: "destructive"
+        title: t('error'),
+        description: "No se pudo agregar el plato",
+        variant: "destructive",
       });
     }
   };
@@ -257,40 +269,15 @@ export const Comidas = () => {
                     {t('today')}
                   </Button>
                 )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64 max-h-96 overflow-y-auto">
-                    {favoriteFoods.length === 0 ? (
-                      <div className="p-4 text-sm text-muted-foreground text-center">
-                        No tienes alimentos favoritos aún
-                      </div>
-                    ) : (
-                      favoriteFoods.map((favorite) => (
-                        <DropdownMenuItem
-                          key={favorite.id}
-                          onClick={() => handleAddFavoriteFood(favorite.food_id)}
-                          className="cursor-pointer"
-                        >
-                          <div className="flex flex-col gap-1">
-                            <span className="font-medium">{favorite.foods?.food_name}</span>
-                            {favorite.foods?.brand_name && (
-                              <span className="text-xs text-muted-foreground">
-                                {favorite.foods.brand_name}
-                              </span>
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              {Math.round(favorite.foods?.calories_per_serving || 0)} cal
-                            </span>
-                          </div>
-                        </DropdownMenuItem>
-                      ))
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setFavoritesDialogOpen(true)}
+                  title={t('favoriteMeals')}
+                >
+                  <Heart className="h-4 w-4 text-red-500" fill="currentColor" />
+                </Button>
               </div>
             </div>
           <MealPlateList 
@@ -348,6 +335,13 @@ export const Comidas = () => {
           selectedDate={selectedDate}
         />
       )}
+
+      {/* Favorite Meals Dialog */}
+      <FavoriteMealsDialog
+        open={favoritesDialogOpen}
+        onOpenChange={setFavoritesDialogOpen}
+        onAddMeal={handleAddFavoritePlate}
+      />
     </>
   );
 };

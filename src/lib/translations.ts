@@ -111,7 +111,18 @@ export const translations = {
     editGoals: 'Editar objetivos',
     profileImageUpdated: 'Imagen de perfil actualizada correctamente',
     selectImage: 'Debes seleccionar una imagen',
-    perWeek: 'por semana'
+    perWeek: 'por semana',
+    
+    // Favorite meal plates
+    favoriteMeals: 'Comidas Favoritas',
+    noFavoriteMeals: 'No tienes comidas favoritas guardadas',
+    addedToFavorites: 'agregado a favoritos',
+    removedFromFavorites: 'eliminado de favoritos',
+    errorRemovingFavorite: 'Error al eliminar de favoritos',
+    addedToToday: 'agregado a las comidas de hoy',
+    errorSavingFavorite: 'Error al guardar en favoritos',
+    kcal: 'kcal',
+    items: 'items'
   },
   en: {
     // Navigation
@@ -225,7 +236,18 @@ export const translations = {
     editGoals: 'Edit goals',
     profileImageUpdated: 'Profile image updated successfully',
     selectImage: 'You must select an image',
-    perWeek: 'per week'
+    perWeek: 'per week',
+    
+    // Favorite meal plates
+    favoriteMeals: 'Favorite Meals',
+    noFavoriteMeals: 'You have no favorite meals saved',
+    addedToFavorites: 'added to favorites',
+    removedFromFavorites: 'removed from favorites',
+    errorRemovingFavorite: 'Error removing from favorites',
+    addedToToday: 'added to today\'s meals',
+    errorSavingFavorite: 'Error saving to favorites',
+    kcal: 'kcal',
+    items: 'items'
   }
 };
 

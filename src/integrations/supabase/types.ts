@@ -97,6 +97,72 @@ export type Database = {
           },
         ]
       }
+      favorite_meal_plate_items: {
+        Row: {
+          created_at: string
+          favorite_plate_id: string
+          food_id: string
+          id: string
+          servings: number
+        }
+        Insert: {
+          created_at?: string
+          favorite_plate_id: string
+          food_id: string
+          id?: string
+          servings?: number
+        }
+        Update: {
+          created_at?: string
+          favorite_plate_id?: string
+          food_id?: string
+          id?: string
+          servings?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_meal_plate_items_favorite_plate_id_fkey"
+            columns: ["favorite_plate_id"]
+            isOneToOne: false
+            referencedRelation: "favorite_meal_plates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorite_meal_plate_items_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorite_meal_plates: {
+        Row: {
+          created_at: string
+          id: string
+          meal_type: string
+          plate_image: string | null
+          plate_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meal_type: string
+          plate_image?: string | null
+          plate_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meal_type?: string
+          plate_image?: string | null
+          plate_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       foods: {
         Row: {
           brand_name: string | null
