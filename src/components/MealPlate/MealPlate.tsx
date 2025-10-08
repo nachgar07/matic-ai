@@ -388,16 +388,6 @@ export const MealPlate = ({
                 >
                   <Share2 size={12} />
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-                  onClick={handleSavePlateAsFavorite}
-                  disabled={isSavingFavorite}
-                  title="Guardar plato en favoritos"
-                >
-                  <Heart size={12} fill="currentColor" />
-                </Button>
                 <span className="text-sm text-muted-foreground truncate">
                   {meals.length} {meals.length === 1 ? 'ingrediente' : 'ingredientes'}
                 </span>
@@ -416,14 +406,26 @@ export const MealPlate = ({
           )}
         </div>
 
-        {/* Expand button */}
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="shrink-0">
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </Button>
-          </CollapsibleTrigger>
-        </Collapsible>
+        {/* Action buttons */}
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0 hover:bg-primary/10"
+            onClick={handleSavePlateAsFavorite}
+            disabled={isSavingFavorite}
+            title="Guardar plato en favoritos"
+          >
+            <Heart size={16} fill="none" className="text-muted-foreground hover:text-red-500" />
+          </Button>
+          <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </Button>
+            </CollapsibleTrigger>
+          </Collapsible>
+        </div>
       </div>
 
       {/* Collapsible Content */}
