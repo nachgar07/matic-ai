@@ -18,18 +18,31 @@ export const useNativeGoogleAuth = () => {
         throw new Error('Google Auth nativo solo funciona en dispositivos móviles');
       }
 
-      // En Android, el plugin ya está configurado via capacitor.config.ts
-      // No necesitamos llamar initialize() ya que puede causar conflictos
       console.log('📱 Usando configuración nativa de Capacitor...');
+      console.log('🔧 Platform:', Capacitor.getPlatform());
 
       // Obtener el token de Google de forma nativa
-      const googleUser = await GoogleAuth.signIn();
-      console.log('✅ Google Auth nativo exitoso:', googleUser);
+      let googleUser;
+      try {
+        googleUser = await GoogleAuth.signIn();
+        console.log('✅ Google Auth nativo exitoso:', {
+          email: googleUser.email,
+          name: googleUser.name,
+          hasIdToken: !!googleUser.authentication?.idToken,
+          hasAccessToken: !!googleUser.authentication?.accessToken,
+        });
+      } catch (googleError: any) {
+        console.error('❌ Error al hacer sign in con Google:', googleError);
+        throw new Error(`Error de Google Sign In: ${googleError.message || 'Error desconocido'}`);
+      }
 
       if (!googleUser.authentication?.idToken) {
+        console.error('❌ No se recibió idToken de Google');
         throw new Error('No se pudo obtener el token de autenticación de Google');
       }
 
+      console.log('🔄 Intercambiando token con Supabase...');
+      
       // Intercambiar el token de Google con Supabase
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
@@ -38,15 +51,27 @@ export const useNativeGoogleAuth = () => {
       });
 
       if (error) {
-        console.error('Error al autenticar con Supabase:', error);
-        throw error;
+        console.error('❌ Error al autenticar con Supabase:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+        });
+        throw new Error(`Error de Supabase: ${error.message}`);
       }
 
-      console.log('✅ Autenticación con Supabase exitosa');
+      console.log('✅ Autenticación con Supabase exitosa:', {
+        userId: data.user?.id,
+        email: data.user?.email,
+      });
+      
       return { data, error: null };
 
     } catch (error: any) {
-      console.error('❌ Error en Google Auth nativo:', error);
+      console.error('❌ Error completo en Google Auth nativo:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      });
       throw error;
     }
   };
