@@ -118,9 +118,9 @@ export const translations = {
     noFavoriteMeals: 'No tienes comidas favoritas guardadas',
     addedToFavorites: 'agregado a favoritos',
     removedFromFavorites: 'eliminado de favoritos',
-    errorRemovingFavorite: 'Error al eliminar de favoritos',
+    errorSavingFavorite: 'No se pudo guardar el plato en favoritos',
+    errorRemovingFavorite: 'No se pudo quitar el plato de favoritos',
     addedToToday: 'agregado a las comidas de hoy',
-    errorSavingFavorite: 'Error al guardar en favoritos',
     kcal: 'kcal',
     items: 'items'
   },
@@ -243,9 +243,9 @@ export const translations = {
     noFavoriteMeals: 'You have no favorite meals saved',
     addedToFavorites: 'added to favorites',
     removedFromFavorites: 'removed from favorites',
-    errorRemovingFavorite: 'Error removing from favorites',
+    errorSavingFavorite: 'Failed to save plate to favorites',
+    errorRemovingFavorite: 'Failed to remove plate from favorites',
     addedToToday: 'added to today\'s meals',
-    errorSavingFavorite: 'Error saving to favorites',
     kcal: 'kcal',
     items: 'items'
   }

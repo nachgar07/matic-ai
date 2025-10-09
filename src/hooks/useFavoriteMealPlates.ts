@@ -128,3 +128,41 @@ export const useRemoveFavoriteMealPlate = () => {
     }
   });
 };
+
+// Check if a plate is already in favorites
+export const useIsPlateInFavorites = (meals: MealEntry[], mealType: string) => {
+  const { data: favoritePlates } = useFavoriteMealPlates();
+
+  if (!favoritePlates || meals.length === 0) return { isInFavorites: false, favoriteId: null };
+
+  // Create a normalized representation of current plate items
+  const currentPlateItems = meals
+    .map(m => ({ food_id: m.food_id, servings: Number(m.servings) }))
+    .sort((a, b) => a.food_id.localeCompare(b.food_id));
+
+  // Check if any favorite plate matches
+  for (const favorite of favoritePlates) {
+    // Check if meal types match
+    if (favorite.meal_type !== mealType) continue;
+
+    // Create normalized representation of favorite items
+    const favoriteItems = favorite.favorite_meal_plate_items
+      .map(item => ({ food_id: item.food_id, servings: Number(item.servings) }))
+      .sort((a, b) => a.food_id.localeCompare(b.food_id));
+
+    // Compare if they have the same items
+    if (currentPlateItems.length !== favoriteItems.length) continue;
+
+    const itemsMatch = currentPlateItems.every((item, index) => {
+      const favoriteItem = favoriteItems[index];
+      return item.food_id === favoriteItem.food_id && 
+             Math.abs(item.servings - favoriteItem.servings) < 0.01; // Account for floating point
+    });
+
+    if (itemsMatch) {
+      return { isInFavorites: true, favoriteId: favorite.id };
+    }
+  }
+
+  return { isInFavorites: false, favoriteId: null };
+};

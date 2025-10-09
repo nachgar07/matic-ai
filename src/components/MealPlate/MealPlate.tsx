@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMealImageShare } from "@/hooks/useMealImageShare";
-import { useAddFavoriteMealPlate } from "@/hooks/useFavoriteMealPlates";
+import { useAddFavoriteMealPlate, useIsPlateInFavorites, useRemoveFavoriteMealPlate } from "@/hooks/useFavoriteMealPlates";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/translations";
 
@@ -54,6 +54,7 @@ export const MealPlate = ({
   const queryClient = useQueryClient();
   const { shareMealImage } = useMealImageShare();
   const addFavoritePlateMutation = useAddFavoriteMealPlate();
+  const removeFavoritePlateMutation = useRemoveFavoriteMealPlate();
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
   const { language } = useLanguage();
   const t = translations[language];
@@ -62,6 +63,9 @@ export const MealPlate = ({
   const firstMeal = meals[0];
   const defaultName = getDefaultPlateName(firstMeal);
   const [editingName, setEditingName] = useState(plateName || defaultName);
+  
+  // Check if this plate is already in favorites
+  const { isInFavorites, favoriteId } = useIsPlateInFavorites(meals, firstMeal?.meal_categories?.name || firstMeal?.meal_type || mealType);
 
   console.log("🍽️ MealPlate render:", { mealType, plateImage: !!plateImage });
 
@@ -258,7 +262,7 @@ export const MealPlate = ({
     });
   };
 
-  const handleSavePlateAsFavorite = async () => {
+  const handleToggleFavorite = async () => {
     if (isSavingFavorite) return;
     
     setIsSavingFavorite(true);
@@ -266,24 +270,33 @@ export const MealPlate = ({
       const plateName = editingName || defaultName;
       const mealType = firstMeal.meal_categories?.name || firstMeal.meal_type;
 
-      await addFavoritePlateMutation.mutateAsync({
-        plateName,
-        plateImage,
-        mealType,
-        meals
-      });
-
-      toast({
-        title: t.success,
-        description: `${plateName} ${t.addedToFavorites}`,
-      });
+      if (isInFavorites && favoriteId) {
+        // Remove from favorites
+        await removeFavoritePlateMutation.mutateAsync(favoriteId);
+        toast({
+          title: t.success,
+          description: `${plateName} ${t.removedFromFavorites}`,
+        });
+      } else {
+        // Add to favorites
+        await addFavoritePlateMutation.mutateAsync({
+          plateName,
+          plateImage,
+          mealType,
+          meals
+        });
+        toast({
+          title: t.success,
+          description: `${plateName} ${t.addedToFavorites}`,
+        });
+      }
       
       queryClient.invalidateQueries({ queryKey: ['favorite-meal-plates'] });
     } catch (error) {
-      console.error('Error saving plate as favorite:', error);
+      console.error('Error toggling favorite:', error);
       toast({
         title: t.error,
-        description: t.errorSavingFavorite,
+        description: isInFavorites ? t.errorRemovingFavorite : t.errorSavingFavorite,
         variant: "destructive",
       });
     } finally {
@@ -412,11 +425,15 @@ export const MealPlate = ({
             size="sm"
             variant="ghost"
             className="h-8 w-8 p-0 hover:bg-primary/10"
-            onClick={handleSavePlateAsFavorite}
+            onClick={handleToggleFavorite}
             disabled={isSavingFavorite}
-            title="Guardar plato en favoritos"
+            title={isInFavorites ? "Quitar de favoritos" : "Guardar plato en favoritos"}
           >
-            <Heart size={16} fill="none" className="text-muted-foreground hover:text-red-500" />
+            <Heart 
+              size={16} 
+              fill={isInFavorites ? "#ef4444" : "none"} 
+              className={isInFavorites ? "text-red-500" : "text-muted-foreground hover:text-red-500"} 
+            />
           </Button>
           <Collapsible open={isOpen} onOpenChange={setIsOpen}>
             <CollapsibleTrigger asChild>
