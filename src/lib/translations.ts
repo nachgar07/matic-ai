@@ -122,7 +122,26 @@ export const translations = {
     errorRemovingFavorite: 'No se pudo quitar el plato de favoritos',
     addedToToday: 'agregado a las comidas de hoy',
     kcal: 'kcal',
-    items: 'items'
+    items: 'items',
+    
+    // Subscriptions
+    subscriptionsOnlyAvailable: 'Las suscripciones solo están disponibles en la app móvil',
+    noPlansAvailable: 'No hay planes disponibles en este momento',
+    activeSub: 'Suscripción Activa',
+    renewsOn: 'Se renueva el',
+    current: 'Actual',
+    unlimitedMeals: 'Comidas ilimitadas',
+    aiAssistant: 'Asistente IA personalizado',
+    advancedStats: 'Estadísticas avanzadas',
+    noAds: 'Sin anuncios',
+    processing: 'Procesando...',
+    currentPlan: 'Plan actual',
+    subscribe: 'Suscribirse',
+    restorePurchases: 'Restaurar compras',
+    subscriptionStatus: 'Estado de suscripción',
+    manageSub: 'Gestionar suscripción',
+    noPremium: 'No tienes una suscripción activa',
+    getPremium: 'Obtener Premium'
   },
   en: {
     // Navigation
@@ -247,7 +266,26 @@ export const translations = {
     errorRemovingFavorite: 'Failed to remove plate from favorites',
     addedToToday: 'added to today\'s meals',
     kcal: 'kcal',
-    items: 'items'
+    items: 'items',
+    
+    // Subscriptions
+    subscriptionsOnlyAvailable: 'Subscriptions are only available in the mobile app',
+    noPlansAvailable: 'No plans available at the moment',
+    activeSub: 'Active Subscription',
+    renewsOn: 'Renews on',
+    current: 'Current',
+    unlimitedMeals: 'Unlimited meals',
+    aiAssistant: 'AI personal assistant',
+    advancedStats: 'Advanced statistics',
+    noAds: 'No ads',
+    processing: 'Processing...',
+    currentPlan: 'Current plan',
+    subscribe: 'Subscribe',
+    restorePurchases: 'Restore purchases',
+    subscriptionStatus: 'Subscription status',
+    manageSub: 'Manage subscription',
+    noPremium: 'You don\'t have an active subscription',
+    getPremium: 'Get Premium'
   }
 };
 

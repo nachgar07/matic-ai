@@ -587,6 +587,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          original_purchase_date: string | null
+          platform: string | null
+          product_id: string
+          revenuecat_customer_id: string
+          subscription_status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          original_purchase_date?: string | null
+          platform?: string | null
+          product_id: string
+          revenuecat_customer_id: string
+          subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          original_purchase_date?: string | null
+          platform?: string | null
+          product_id?: string
+          revenuecat_customer_id?: string
+          subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_terms_acceptance: {
         Row: {
           accepted_at: string
@@ -658,17 +697,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      cleanup_old_conversations: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_old_conversations: { Args: never; Returns: undefined }
       create_default_meal_categories_for_user: {
         Args: { user_uuid: string }
         Returns: undefined
       }
     }
     Enums: {
-      [_ in never]: never
+      subscription_status:
+        | "active"
+        | "expired"
+        | "canceled"
+        | "grace_period"
+        | "on_hold"
+        | "paused"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -795,6 +837,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      subscription_status: [
+        "active",
+        "expired",
+        "canceled",
+        "grace_period",
+        "on_hold",
+        "paused",
+      ],
+    },
   },
 } as const

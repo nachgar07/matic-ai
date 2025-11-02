@@ -9,6 +9,7 @@ import { Comidas } from "./pages/Comidas";
 import { Objetivos } from "./pages/Objetivos";
 import { Perfil } from "./pages/Perfil";
 import { Auth } from "./pages/Auth";
+import { Subscriptions } from "./pages/Subscriptions";
 import { TermsAndConditions } from "./pages/TermsAndConditions";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/objetivos" element={<Objetivos />} />
             <Route path="/estadisticas" element={<Estadisticas />} />
             <Route path="/perfil" element={<Perfil />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

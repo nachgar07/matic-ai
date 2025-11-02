@@ -25,6 +25,9 @@ const config: CapacitorConfig = {
       serverClientId: '831364630977-7v0fjumfc4jvn5vf88a5amc5dc9oldsc.apps.googleusercontent.com', // Tu Web Client ID
       androidClientId: '831364630977-58d69jpaht5o5k3fjacdpmqa001ghc94.apps.googleusercontent.com', // Tu Android Client ID  
       forceCodeForRefreshToken: false
+    },
+    PurchasesCapacitor: {
+      // RevenueCat se configurará dinámicamente en el código
     }
   }
 };
