@@ -141,7 +141,10 @@ export const translations = {
     subscriptionStatus: 'Estado de suscripción',
     manageSub: 'Gestionar suscripción',
     noPremium: 'No tienes una suscripción activa',
-    getPremium: 'Obtener Premium'
+    getPremium: 'Obtener Premium',
+    premium: 'Premium',
+    platform: 'Plataforma',
+    expiresOn: 'Expira el'
   },
   en: {
     // Navigation
@@ -285,7 +288,10 @@ export const translations = {
     subscriptionStatus: 'Subscription status',
     manageSub: 'Manage subscription',
     noPremium: 'You don\'t have an active subscription',
-    getPremium: 'Get Premium'
+    getPremium: 'Get Premium',
+    premium: 'Premium',
+    platform: 'Platform',
+    expiresOn: 'Expires on'
   }
 };
 

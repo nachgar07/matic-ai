@@ -17,6 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useLanguage, Language } from "@/hooks/useLanguage";
 import { translations, TranslationKey } from "@/lib/translations";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Crown, ExternalLink } from "lucide-react";
 
 export const Perfil = () => {
   const { theme, setTheme } = useTheme();
@@ -24,6 +26,7 @@ export const Perfil = () => {
   const { data: nutritionGoals } = useNutritionGoals();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { isNative, subscriptionInfo, loading: subLoading, restorePurchases } = useSubscription();
   const [editGoalsOpen, setEditGoalsOpen] = useState(false);
   const [personalDataOpen, setPersonalDataOpen] = useState(false);
   const [exportDataOpen, setExportDataOpen] = useState(false);
@@ -143,6 +146,20 @@ export const Perfil = () => {
     fat: nutritionGoals?.daily_fat || 0
   };
 
+  const handleManageSubscription = () => {
+    const packageName = 'app.lovable.bf11eb5fa7b84f8dbbf6236699e6b550';
+    window.open(`https://play.google.com/store/account/subscriptions?package=${packageName}`, '_blank');
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header title={t('profile')} />
@@ -183,6 +200,77 @@ export const Perfil = () => {
           <p className="text-muted-foreground">{user?.email || t('loading')}</p>
           {uploading && <p className="text-sm text-muted-foreground mt-2">{t('uploading')}</p>}
         </Card>
+
+        {/* Premium Section - Only on native */}
+        {isNative && (
+          <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Crown className="text-primary" size={20} />
+              </div>
+              <div>
+                <h3 className="font-semibold flex items-center gap-2">
+                  {t('premium')}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {subscriptionInfo?.isActive ? t('activeSub') : t('noPremium')}
+                </p>
+              </div>
+            </div>
+
+            {subscriptionInfo?.isActive ? (
+              <div className="space-y-3">
+                <div className="bg-background/50 rounded-lg p-3 space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">{t('currentPlan')}</span>
+                    <span className="font-medium">{subscriptionInfo.productId}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">
+                      {subscriptionInfo.expiresAt && subscriptionInfo.expiresAt > new Date() 
+                        ? t('renewsOn') 
+                        : t('expiresOn')}
+                    </span>
+                    <span className="font-medium">{formatDate(subscriptionInfo.expiresAt)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">{t('platform')}</span>
+                    <span className="font-medium">Google Play</span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={handleManageSubscription}
+                  >
+                    <ExternalLink size={14} className="mr-2" />
+                    {t('manageSub')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={restorePurchases}
+                    disabled={subLoading}
+                  >
+                    {t('restorePurchases')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button 
+                className="w-full"
+                onClick={() => navigate('/subscriptions')}
+              >
+                <Crown size={16} className="mr-2" />
+                {t('getPremium')}
+              </Button>
+            )}
+          </Card>
+        )}
 
         {/* Country and Currency Info */}
         {profile?.nationality && (

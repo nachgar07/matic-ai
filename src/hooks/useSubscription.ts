@@ -77,13 +77,16 @@ export const useSubscription = () => {
           return;
         }
 
-        // Configure RevenueCat with user ID
-        await Purchases.configure({
-          apiKey: Capacitor.getPlatform() === 'android' 
-            ? 'YOUR_ANDROID_API_KEY' // Usuario debe reemplazar esto
-            : 'YOUR_IOS_API_KEY',    // Usuario debe reemplazar esto
-          appUserID: user.id,
-        });
+        // Configure RevenueCat with user ID (Android only)
+        if (Capacitor.getPlatform() === 'android') {
+          await Purchases.configure({
+            apiKey: 'sk_SfWbRBJrLifCLGxXrNvQXOACUMHni',
+            appUserID: user.id,
+          });
+        } else {
+          console.log('Only Android platform is supported for subscriptions');
+          return;
+        }
 
         console.log('RevenueCat initialized for user:', user.id);
         setIsInitialized(true);
