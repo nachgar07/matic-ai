@@ -80,7 +80,7 @@ export const useSubscription = () => {
         // Configure RevenueCat with user ID (Android only)
         if (Capacitor.getPlatform() === 'android') {
           await Purchases.configure({
-            apiKey: 'sk_SfWbRBJrLifCLGxXrNvQXOACUMHni',
+            apiKey: 'goog_nfbHfLOoegGbSzfrYTfXodQlHZn',
             appUserID: user.id,
           });
         } else {
