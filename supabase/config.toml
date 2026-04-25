@@ -1,13 +1,1 @@
-project_id = "rdzfizthbykgfqfgftpv"
-
-[functions.add-meal]
-verify_jwt = true
-
-[functions.usda-food-lookup]
-verify_jwt = false
-
-[functions.test-openai]
-verify_jwt = false
-
-[functions.revenuecat-webhook]
-verify_jwt = false
+project_id = "ywqisluivxcrdodguecl"
