@@ -5,15 +5,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CaloriesChart } from "@/components/CaloriesChart/CaloriesChart";
 import { WeightProgressChart } from "@/components/WeightProgressChart/WeightProgressChart";
 import { useCaloriesDaily, useCaloriesWeekly, useCaloriesMonthly, useCaloriesAllTime } from "@/hooks/useCalorieStats";
-import { useWeightHistory } from "@/hooks/useWeightHistory";
+import { useWeightHistory, WeightPeriod } from "@/hooks/useWeightHistory";
 import { useProfile } from "@/hooks/useProfile";
 import { useNutritionGoals } from "@/hooks/useFatSecret";
 
 export default function Estadisticas() {
   const [selectedDate] = useState(new Date());
+  const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("all");
   const { data: profile } = useProfile();
   const { data: nutritionGoals } = useNutritionGoals();
-  const { data: weightHistory, isLoading: loadingWeight } = useWeightHistory();
+  const { data: weightHistory, isLoading: loadingWeight } = useWeightHistory(weightPeriod, selectedDate);
   
   const { data: dailyData, isLoading: loadingDaily } = useCaloriesDaily(selectedDate);
   const { data: weeklyData, isLoading: loadingWeekly } = useCaloriesWeekly(selectedDate);
@@ -86,6 +87,8 @@ export default function Estadisticas() {
               data={weightHistory || []}
               targetWeight={profile?.target_weight}
               isLoading={loadingWeight}
+              period={weightPeriod}
+              onPeriodChange={setWeightPeriod}
             />
           </div>
         </div>
