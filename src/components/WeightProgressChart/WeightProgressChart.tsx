@@ -12,14 +12,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAddWeightEntry, useDeleteWeightEntry } from "@/hooks/useWeightHistory";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface WeightProgressChartProps {
   data: WeightEntry[];
   targetWeight?: number | null;
   isLoading?: boolean;
+  period?: "day" | "week" | "month" | "all";
+  onPeriodChange?: (period: "day" | "week" | "month" | "all") => void;
 }
 
-export const WeightProgressChart = ({ data, targetWeight, isLoading }: WeightProgressChartProps) => {
+export const WeightProgressChart = ({ data, targetWeight, isLoading, period = "all", onPeriodChange }: WeightProgressChartProps) => {
   const [open, setOpen] = useState(false);
   const [weight, setWeight] = useState("");
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -126,6 +129,16 @@ export const WeightProgressChart = ({ data, targetWeight, isLoading }: WeightPro
             </DialogContent>
           </Dialog>
         </CardTitle>
+        {onPeriodChange && (
+          <Tabs value={period} onValueChange={(v) => onPeriodChange(v as "day" | "week" | "month" | "all")} className="w-full pt-2">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="day">Día</TabsTrigger>
+              <TabsTrigger value="week">Semana</TabsTrigger>
+              <TabsTrigger value="month">Mes</TabsTrigger>
+              <TabsTrigger value="all">Todo</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
         {currentWeight && (
           <div className="text-sm text-muted-foreground space-y-1">
             <p>Peso actual: {currentWeight} kg</p>

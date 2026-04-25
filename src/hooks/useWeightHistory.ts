@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 
 export interface WeightEntry {
   id: string;
@@ -12,19 +13,35 @@ export interface WeightEntry {
   updated_at: string;
 }
 
-export const useWeightHistory = () => {
+export type WeightPeriod = "day" | "week" | "month" | "all";
+
+export const useWeightHistory = (period: WeightPeriod = "all", referenceDate: Date = new Date()) => {
   return useQuery({
-    queryKey: ['weight-history'],
+    queryKey: ['weight-history', period, format(referenceDate, 'yyyy-MM-dd')],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('weight_history')
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false });
 
+      if (period === "day") {
+        const d = format(referenceDate, 'yyyy-MM-dd');
+        query = query.gte('date', d).lte('date', d);
+      } else if (period === "week") {
+        const start = format(startOfWeek(referenceDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const end = format(endOfWeek(referenceDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        query = query.gte('date', start).lte('date', end);
+      } else if (period === "month") {
+        const start = format(startOfMonth(referenceDate), 'yyyy-MM-dd');
+        const end = format(endOfMonth(referenceDate), 'yyyy-MM-dd');
+        query = query.gte('date', start).lte('date', end);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as WeightEntry[];
     }
