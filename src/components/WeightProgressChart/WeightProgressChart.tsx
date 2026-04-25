@@ -129,6 +129,16 @@ export const WeightProgressChart = ({ data, targetWeight, isLoading, period = "a
             </DialogContent>
           </Dialog>
         </CardTitle>
+        {onPeriodChange && (
+          <Tabs value={period} onValueChange={(v) => onPeriodChange(v as "day" | "week" | "month" | "all")} className="w-full pt-2">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="day">Día</TabsTrigger>
+              <TabsTrigger value="week">Semana</TabsTrigger>
+              <TabsTrigger value="month">Mes</TabsTrigger>
+              <TabsTrigger value="all">Todo</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
         {currentWeight && (
           <div className="text-sm text-muted-foreground space-y-1">
             <p>Peso actual: {currentWeight} kg</p>
