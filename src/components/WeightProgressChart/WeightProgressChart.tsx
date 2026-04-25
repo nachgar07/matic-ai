@@ -12,14 +12,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAddWeightEntry, useDeleteWeightEntry } from "@/hooks/useWeightHistory";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface WeightProgressChartProps {
   data: WeightEntry[];
   targetWeight?: number | null;
   isLoading?: boolean;
+  period?: "day" | "week" | "month" | "all";
+  onPeriodChange?: (period: "day" | "week" | "month" | "all") => void;
 }
 
-export const WeightProgressChart = ({ data, targetWeight, isLoading }: WeightProgressChartProps) => {
+export const WeightProgressChart = ({ data, targetWeight, isLoading, period = "all", onPeriodChange }: WeightProgressChartProps) => {
   const [open, setOpen] = useState(false);
   const [weight, setWeight] = useState("");
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
