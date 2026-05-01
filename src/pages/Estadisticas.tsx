@@ -8,10 +8,14 @@ import { useCaloriesDaily, useCaloriesWeekly, useCaloriesMonthly, useCaloriesAll
 import { useWeightHistory, WeightPeriod } from "@/hooks/useWeightHistory";
 import { useProfile } from "@/hooks/useProfile";
 import { useNutritionGoals } from "@/hooks/useFatSecret";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 export default function Estadisticas() {
   const [selectedDate] = useState(new Date());
   const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("all");
+  const { language } = useLanguage();
+  const t = (k: keyof typeof translations.es) => translations[language][k];
   const { data: profile } = useProfile();
   const { data: nutritionGoals } = useNutritionGoals();
   const { data: weightHistory, isLoading: loadingWeight } = useWeightHistory(weightPeriod, selectedDate);
@@ -25,27 +29,27 @@ export default function Estadisticas() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header title="Estadísticas" />
+      <Header title={t('statistics')} />
       
       <main className="flex-1 container mx-auto px-4 py-6 pb-24">
-        <h1 className="text-3xl font-bold mb-6">Estadísticas</h1>
+        <h1 className="text-3xl font-bold mb-6">{t('statistics')}</h1>
 
         <div className="space-y-6">
           {/* Calories Statistics */}
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Ingesta de Calorías</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t('calorieIntake')}</h2>
             <Tabs defaultValue="week" className="w-full">
               <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="day">Día</TabsTrigger>
-                <TabsTrigger value="week">Semana</TabsTrigger>
-                <TabsTrigger value="month">Mes</TabsTrigger>
-                <TabsTrigger value="all">Todo</TabsTrigger>
+                <TabsTrigger value="day">{t('day')}</TabsTrigger>
+                <TabsTrigger value="week">{t('week')}</TabsTrigger>
+                <TabsTrigger value="month">{t('month')}</TabsTrigger>
+                <TabsTrigger value="all">{t('allTime')}</TabsTrigger>
               </TabsList>
               
               <TabsContent value="day" className="mt-4">
                 <CaloriesChart
                   data={dailyData || []}
-                  title="Calorías del Día"
+                  title={t('caloriesDay')}
                   isLoading={loadingDaily}
                   goal={calorieGoal}
                 />
@@ -54,7 +58,7 @@ export default function Estadisticas() {
               <TabsContent value="week" className="mt-4">
                 <CaloriesChart
                   data={weeklyData || []}
-                  title="Calorías de la Semana"
+                  title={t('caloriesWeek')}
                   isLoading={loadingWeekly}
                   goal={calorieGoal}
                 />
@@ -63,7 +67,7 @@ export default function Estadisticas() {
               <TabsContent value="month" className="mt-4">
                 <CaloriesChart
                   data={monthlyData || []}
-                  title="Calorías del Mes"
+                  title={t('caloriesMonth')}
                   isLoading={loadingMonthly}
                   goal={calorieGoal}
                 />
@@ -72,7 +76,7 @@ export default function Estadisticas() {
               <TabsContent value="all" className="mt-4">
                 <CaloriesChart
                   data={allTimeData || []}
-                  title="Todas las Calorías"
+                  title={t('caloriesAll')}
                   isLoading={loadingAllTime}
                   goal={calorieGoal}
                 />
@@ -82,7 +86,7 @@ export default function Estadisticas() {
 
           {/* Weight Progress */}
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Progreso de Peso</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t('weightProgress')}</h2>
             <WeightProgressChart
               data={weightHistory || []}
               targetWeight={profile?.target_weight}

@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 interface CaloriesChartProps {
   data: Array<{ date: string; calories: number }>;
@@ -12,6 +14,9 @@ interface CaloriesChartProps {
 }
 
 export const CaloriesChart = ({ data, title, isLoading, goal }: CaloriesChartProps) => {
+  const { language } = useLanguage();
+  const t = (k: keyof typeof translations.es) => translations[language][k];
+  const locale = language === 'es' ? es : enUS;
   if (isLoading) {
     return (
       <Card>
@@ -26,7 +31,7 @@ export const CaloriesChart = ({ data, title, isLoading, goal }: CaloriesChartPro
   }
 
   const chartData = data.map(item => ({
-    date: format(new Date(item.date), 'dd MMM', { locale: es }),
+    date: format(new Date(item.date), 'dd MMM', { locale }),
     calories: Math.round(item.calories),
     fullDate: item.date
   }));
@@ -42,7 +47,7 @@ export const CaloriesChart = ({ data, title, isLoading, goal }: CaloriesChartPro
         <CardTitle className="flex justify-between items-center">
           <span>{title}</span>
           <span className="text-sm text-muted-foreground font-normal">
-            Promedio: {avgCalories} kcal
+            {t('average')}: {avgCalories} kcal
           </span>
         </CardTitle>
       </CardHeader>
@@ -75,7 +80,7 @@ export const CaloriesChart = ({ data, title, isLoading, goal }: CaloriesChartPro
                 stroke="hsl(var(--muted-foreground))" 
                 strokeDasharray="5 5"
                 dot={false}
-                name="Objetivo"
+                name={t('target')}
               />
             )}
             <Line 
@@ -85,7 +90,7 @@ export const CaloriesChart = ({ data, title, isLoading, goal }: CaloriesChartPro
               strokeWidth={2}
               dot={{ fill: 'hsl(var(--primary))', r: 4 }}
               activeDot={{ r: 6 }}
-              name="Calorías"
+              name={t('caloriesAxis')}
             />
           </LineChart>
         </ResponsiveContainer>

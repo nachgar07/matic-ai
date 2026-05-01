@@ -126,7 +126,7 @@ export const Perfil = () => {
       
       toast({
         title: t('success'),
-        description: "Sesión cerrada correctamente"
+        description: t('sessionClosed')
       });
       
       navigate('/auth');
@@ -482,7 +482,7 @@ export const Perfil = () => {
             onClick={handleLogout}
           >
             <LogOut className="mr-2" size={20} />
-            Cerrar sesión
+            {t('logout')}
           </Button>
         </Card>
       </div>
