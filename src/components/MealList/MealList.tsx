@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 interface MealListProps {
   meals: MealEntry[];
@@ -12,12 +14,14 @@ interface MealListProps {
 }
 
 export const MealList = ({ meals, onEditMeal, onDeleteMeal }: MealListProps) => {
+  const { language } = useLanguage();
+  const t = (k: keyof typeof translations.es) => translations[language][k];
   const getMealTypeLabel = (type: string) => {
     const labels = {
-      breakfast: "Desayuno",
-      lunch: "Almuerzo", 
-      dinner: "Cena",
-      snack: "Snack"
+      breakfast: t('breakfast'),
+      lunch: t('lunch'),
+      dinner: t('dinner'),
+      snack: t('snackMeal')
     };
     return labels[type as keyof typeof labels] || type;
   };
@@ -44,10 +48,10 @@ export const MealList = ({ meals, onEditMeal, onDeleteMeal }: MealListProps) => 
     return (
       <Card className="p-6 text-center">
         <div className="text-muted-foreground mb-2">
-          No has registrado comidas hoy
+          {t('noMealsRegistered')}
         </div>
         <div className="text-sm text-muted-foreground">
-          Comienza agregando tu primera comida
+          {t('startAddingFirst')}
         </div>
       </Card>
     );
@@ -109,14 +113,14 @@ export const MealList = ({ meals, onEditMeal, onDeleteMeal }: MealListProps) => 
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => onEditMeal?.(meal)}>
                           <Edit2 size={14} className="mr-2" />
-                          Editar
+                          {t('edit')}
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => onDeleteMeal?.(meal.id)}
                           className="text-red-600"
                         >
                           <Trash2 size={14} className="mr-2" />
-                          Eliminar
+                          {t('delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

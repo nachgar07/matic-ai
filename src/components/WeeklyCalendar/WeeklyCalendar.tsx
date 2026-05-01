@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { format, addDays, isSameDay } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface WeeklyCalendarProps {
   selectedDate: Date;
@@ -12,6 +13,8 @@ interface WeeklyCalendarProps {
 
 export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, mealsRangeData, tasksCount }: WeeklyCalendarProps) => {
   const today = new Date();
+  const { language } = useLanguage();
+  const locale = language === 'es' ? es : enUS;
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState(0);
   const [velocity, setVelocity] = useState(0);
@@ -242,7 +245,7 @@ export const WeeklyCalendar = ({ selectedDate, onDateChange, mealsData, mealsRan
                 onClick={() => handleDateClick(date)}
               >
                 <span className="text-xs font-medium capitalize">
-                  {format(date, "EEE", { locale: es }).slice(0, 3)}
+                  {format(date, "EEE", { locale }).slice(0, 3)}
                 </span>
                 <span className="text-xl font-semibold">{format(date, "d")}</span>
                 

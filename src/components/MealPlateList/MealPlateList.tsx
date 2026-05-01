@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { Trash2 } from "lucide-react";
 import { MealPlate } from "@/components/MealPlate/MealPlate";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 interface MealPlateListProps {
   meals: MealEntry[];
@@ -16,6 +18,8 @@ interface MealPlateListProps {
 export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plateImages = {} }: MealPlateListProps) => {
   const [selectedPlates, setSelectedPlates] = useState<Set<string>>(new Set());
   const [plateNames, setPlateNames] = useState<Record<string, string>>({});
+  const { language } = useLanguage();
+  const t = (k: keyof typeof translations.es) => translations[language][k];
 
   console.log("📋 MealPlateList received plateImages:", plateImages);
 
@@ -78,10 +82,10 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
     return (
       <Card className="p-6 text-center">
         <div className="text-muted-foreground mb-2">
-          No has registrado comidas hoy
+          {t('noMealsRegistered')}
         </div>
         <div className="text-sm text-muted-foreground">
-          Comienza agregando tu primera comida
+          {t('startAddingFirst')}
         </div>
       </Card>
     );
@@ -102,8 +106,8 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
             </button>
             <span className="text-sm font-medium">
               {isSomeSelected 
-                ? `${selectedPlates.size} plato${selectedPlates.size === 1 ? '' : 's'} seleccionado${selectedPlates.size === 1 ? '' : 's'}`
-                : 'Seleccionar todos los platos'
+                ? `${selectedPlates.size} ${selectedPlates.size === 1 ? t('plateSelected') : t('platesSelected')}`
+                : t('selectAllPlates')
               }
             </span>
           </div>
@@ -116,7 +120,7 @@ export const MealPlateList = ({ meals, onDeleteSelectedMeals, onDeleteMeal, plat
               className="gap-2 w-full sm:w-auto"
             >
               <Trash2 size={16} />
-              <span className="sm:inline">Eliminar seleccionados</span>
+              <span className="sm:inline">{t('deleteSelected')}</span>
             </Button>
           )}
         </div>

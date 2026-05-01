@@ -86,9 +86,7 @@ export const Objetivos = () => {
             <TabsContent value="tasks" className="m-0">
               {tasks.length > 0 || activeHabitsForDate.length > 0 ? <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground">
-                    {t('tasksAndHabitsFor')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", {
-                  locale
-                })}
+                    {t('tasksAndHabitsFor')} {format(selectedDate, language === 'es' ? "dd 'de' MMMM" : "MMMM d", { locale })}
                   </h3>
                   {/* Tareas */}
                   {tasks.map(task => <TaskCard key={`task-${task.id}`} task={task} itemType="tarea" />)}
