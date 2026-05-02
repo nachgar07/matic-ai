@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { useWaterIntake } from "@/hooks/useWaterIntake";
 import { useProfileCompletion } from "@/hooks/useProfile";
 import { OnboardingCenter } from "@/components/OnboardingCenter/OnboardingCenter";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 interface NutritionSummaryProps {
   dailyTotals: DailyTotals;
@@ -12,6 +14,8 @@ interface NutritionSummaryProps {
 }
 
 export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummaryProps) => {
+  const { language } = useLanguage();
+  const t = (k: keyof typeof translations.es) => translations[language][k];
   const { data: nutritionGoals, isLoading: isNutritionGoalsLoading } = useNutritionGoals();
   const { waterGlasses, addWaterGlass } = useWaterIntake(selectedDate);
   const { hasPersonalData, hasNutritionGoals, isNewUser, profile, nutritionGoals: profileNutritionGoals } = useProfileCompletion();
@@ -75,7 +79,7 @@ export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummary
       <div className="grid grid-cols-3 gap-3">
         <MacroCard
           icon="🍖"
-          label="Proteína"
+          label={t('proteinFull')}
           current={Math.round(dailyTotals.protein * 10) / 10}
           target={Math.max(displayGoals.protein, 1)} // Avoid division by zero
           unit="g"
@@ -83,7 +87,7 @@ export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummary
         />
         <MacroCard
           icon="🍞"
-          label="Carbohidratos"
+          label={t('carbsFull')}
           current={Math.round(dailyTotals.carbs * 10) / 10}
           target={Math.max(displayGoals.carbs, 1)} // Avoid division by zero
           unit="g"
@@ -91,7 +95,7 @@ export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummary
         />
         <MacroCard
           icon="🥑"
-          label="Grasas"
+          label={t('fatsFull')}
           current={Math.round(dailyTotals.fat * 10) / 10}
           target={Math.max(displayGoals.fat, 1)} // Avoid division by zero
           unit="g"
@@ -101,10 +105,10 @@ export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummary
 
       {/* Quick Stats */}
       <Card className="p-4">
-        <h3 className="font-semibold mb-3 text-sm">Progreso del día</h3>
+        <h3 className="font-semibold mb-3 text-sm">{t('progressOfDay')}</h3>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Calorías restantes</span>
+            <span className="text-muted-foreground">{t('caloriesRemaining')}</span>
             <span className={`font-medium ${
               displayGoals.calories > 0 && displayGoals.calories - dailyTotals.calories < 0 ? 'text-red-600' : 'text-green-600'
             }`}>
@@ -112,19 +116,19 @@ export const NutritionSummary = ({ dailyTotals, selectedDate }: NutritionSummary
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">% de proteína</span>
+            <span className="text-muted-foreground">{t('proteinPct')}</span>
             <span className="font-medium">
               {displayGoals.protein > 0 ? Math.round((dailyTotals.protein / displayGoals.protein) * 100) : 0}%
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">% de carbohidratos</span>
+            <span className="text-muted-foreground">{t('carbsPct')}</span>
             <span className="font-medium">
               {displayGoals.carbs > 0 ? Math.round((dailyTotals.carbs / displayGoals.carbs) * 100) : 0}%
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">% de grasas</span>
+            <span className="text-muted-foreground">{t('fatsPct')}</span>
             <span className="font-medium">
               {displayGoals.fat > 0 ? Math.round((dailyTotals.fat / displayGoals.fat) * 100) : 0}%
             </span>
