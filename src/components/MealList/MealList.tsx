@@ -91,16 +91,16 @@ export const MealList = ({ meals, onEditMeal, onDeleteMeal }: MealListProps) => 
                       </div>
                       
                       <p className="text-xs text-muted-foreground mb-2">
-                        {meal.servings}x {meal.foods.serving_description || "porción"}
+                        {meal.servings}x {meal.foods.serving_description || t('portion')}
                       </p>
                       
                       <div className="flex gap-4 text-xs">
                         <span className="font-medium text-primary">
-                          {totalCalories} cal
+                          {totalCalories} {language === 'es' ? 'cal' : 'cal'}
                         </span>
-                        <span>P: {totalProtein}g</span>
-                        <span>C: {totalCarbs}g</span>
-                        <span>G: {totalFat}g</span>
+                        <span>{language === 'es' ? 'P' : 'P'}: {totalProtein}g</span>
+                        <span>{language === 'es' ? 'C' : 'C'}: {totalCarbs}g</span>
+                        <span>{language === 'es' ? 'G' : 'F'}: {totalFat}g</span>
                       </div>
                     </div>
                     
