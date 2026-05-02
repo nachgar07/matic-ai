@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Calculator, User, Target, Activity, TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 interface PersonalData {
   age?: number;
@@ -69,6 +71,8 @@ const COUNTRIES_CURRENCIES = {
 
 export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ userId, onDataUpdate, open, onOpenChange }) => {
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = (k: keyof typeof translations.es) => translations[language][k];
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState<PersonalData>({});
@@ -194,8 +198,8 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
       }
 
       toast({
-        title: "Datos guardados",
-        description: "Tus datos personales y objetivos calóricos han sido actualizados."
+        title: t('dataSaved'),
+        description: t('dataSavedDesc')
       });
       
       // Close dialog after successful save
@@ -203,8 +207,8 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
     } catch (error) {
       console.error('Error saving personal data:', error);
       toast({
-        title: "Error",
-        description: "No se pudieron guardar los datos. Inténtalo de nuevo.",
+        title: t('error'),
+        description: t('couldNotSaveData'),
         variant: "destructive"
       });
     } finally {
@@ -224,7 +228,7 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
   };
 
   if (loading) {
-    return <div className="text-center py-8">Cargando datos personales...</div>;
+    return <div className="text-center py-8">{t('loadingPersonal')}</div>;
   }
 
   console.log('PersonalDataSettings render:', { open, loading, data });
@@ -235,10 +239,10 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Datos Personales
+            {t('personalData')}
           </DialogTitle>
           <DialogDescription>
-            Configura tus datos para calcular automáticamente tus necesidades calóricas
+            {t('personalDataDesc')}
           </DialogDescription>
         </DialogHeader>
         
@@ -246,45 +250,45 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
         {/* Información básica */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="age">Edad (años)</Label>
+            <Label htmlFor="age">{t('age')}</Label>
             <Input
               id="age"
               type="number"
               value={data.age || ''}
               onChange={(e) => updateData('age', parseInt(e.target.value) || undefined)}
-              placeholder="Ej: 25"
+              placeholder={language === 'es' ? 'Ej: 25' : 'e.g. 25'}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="weight">Peso (kg)</Label>
+            <Label htmlFor="weight">{t('weight')}</Label>
             <Input
               id="weight"
               type="number"
               step="0.1"
               value={data.weight || ''}
               onChange={(e) => updateData('weight', parseFloat(e.target.value) || undefined)}
-              placeholder="Ej: 70.5"
+              placeholder={language === 'es' ? 'Ej: 70.5' : 'e.g. 70.5'}
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="height">Altura (cm)</Label>
+          <Label htmlFor="height">{t('heightCm')}</Label>
           <Input
             id="height"
             type="number"
             value={data.height || ''}
             onChange={(e) => updateData('height', parseInt(e.target.value) || undefined)}
-            placeholder="Ej: 175"
+            placeholder={language === 'es' ? 'Ej: 175' : 'e.g. 175'}
           />
         </div>
 
         {/* Nacionalidad */}
         <div className="space-y-2">
-          <Label htmlFor="nationality">País/Nacionalidad</Label>
+          <Label htmlFor="nationality">{t('countryNationality')}</Label>
           <Select value={data.nationality || ''} onValueChange={(value) => updateData('nationality', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecciona tu país" />
+              <SelectValue placeholder={t('selectCountry')} />
             </SelectTrigger>
             <SelectContent>
               {Object.keys(COUNTRIES_CURRENCIES).map((country) => (
@@ -296,18 +300,18 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
 
         {/* Sexo */}
         <div className="space-y-3">
-          <Label>Sexo</Label>
+          <Label>{t('sex')}</Label>
           <RadioGroup
             value={data.gender || ''}
             onValueChange={(value) => updateData('gender', value as 'male' | 'female')}
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="male" id="male" />
-              <Label htmlFor="male">Hombre</Label>
+              <Label htmlFor="male">{t('male')}</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="female" id="female" />
-              <Label htmlFor="female">Mujer</Label>
+              <Label htmlFor="female">{t('female')}</Label>
             </div>
           </RadioGroup>
         </div>
@@ -315,7 +319,7 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
         {/* Peso objetivo */}
         <div className="space-y-2">
           <Label htmlFor="target_weight">
-            Peso objetivo (kg) - Opcional
+            {t('targetWeightOptional')}
           </Label>
           <Input
             id="target_weight"
@@ -323,10 +327,10 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
             step="0.1"
             value={data.target_weight || ''}
             onChange={(e) => updateData('target_weight', parseFloat(e.target.value) || undefined)}
-            placeholder="Ej: 70.0 (opcional)"
+            placeholder={language === 'es' ? 'Ej: 70.0 (opcional)' : 'e.g. 70.0 (optional)'}
           />
           <p className="text-xs text-muted-foreground">
-            Si completas este campo, se calculará automáticamente tu objetivo basado en la diferencia con tu peso actual
+            {t('targetWeightHelp')}
           </p>
         </div>
 
@@ -335,18 +339,18 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
-            Nivel de Actividad Física
+            {t('activityLevel')}
           </Label>
           <Select value={data.activity_level || ''} onValueChange={(value) => updateData('activity_level', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecciona tu nivel de actividad" />
+              <SelectValue placeholder={t('selectActivity')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="sedentary">Sedentario (poco o ningún ejercicio)</SelectItem>
-              <SelectItem value="lightly_active">Ligeramente activo (ejercicio ligero 1-3 días/semana)</SelectItem>
-              <SelectItem value="moderately_active">Moderadamente activo (ejercicio moderado 3-5 días/semana)</SelectItem>
-              <SelectItem value="active">Activo (ejercicio intenso 6-7 días/semana)</SelectItem>
-              <SelectItem value="very_active">Muy activo (ejercicio muy intenso, trabajo físico)</SelectItem>
+              <SelectItem value="sedentary">{t('sedentary')}</SelectItem>
+              <SelectItem value="lightly_active">{t('lightlyActive')}</SelectItem>
+              <SelectItem value="moderately_active">{t('moderatelyActive')}</SelectItem>
+              <SelectItem value="active">{t('activeLevel')}</SelectItem>
+              <SelectItem value="very_active">{t('veryActive')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -357,17 +361,17 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
             <div className="p-4 border-b">
               <h4 className="flex items-center gap-2 text-lg font-semibold">
                 <Calculator className="h-5 w-5" />
-                Cálculo Automático de Calorías
+                {t('autoCalorieCalc')}
               </h4>
             </div>
             <div className="space-y-3 p-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground">TDEE (Gasto Energético Total)</p>
+                  <p className="text-muted-foreground">{t('tdeeLabel')}</p>
                   <p className="text-2xl font-bold text-foreground">{data.calculated_tdee} cal</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Objetivo Calórico Diario</p>
+                  <p className="text-muted-foreground">{t('dailyCalorieGoal')}</p>
                   <p className="text-2xl font-bold text-foreground">{data.calculated_calories} cal</p>
                 </div>
               </div>
@@ -375,16 +379,16 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
               {/* Información de progreso si hay peso objetivo */}
               {data.target_weight && data.weight && data.goal && data.goal !== 'maintain' && data.progress_speed && (
                 <div className="mt-4 p-3 bg-background rounded-lg border">
-                  <h5 className="font-medium mb-2">Proyección de Progreso</h5>
+                  <h5 className="font-medium mb-2">{t('progressProjection')}</h5>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Peso a {data.goal === 'lose' ? 'perder' : 'ganar'}</p>
+                      <p className="text-muted-foreground">{data.goal === 'lose' ? t('weightToLose') : t('weightToGain')}</p>
                       <p className="text-lg font-bold text-foreground">
                         {Math.abs(data.target_weight - data.weight).toFixed(1)} kg
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Tiempo estimado</p>
+                      <p className="text-muted-foreground">{t('estimatedTime')}</p>
                       <p className="text-lg font-bold text-foreground">
                         {(() => {
                           const weightDiff = Math.abs(data.target_weight - data.weight);
@@ -395,17 +399,17 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
                           console.log('Tiempo estimado:', { weightDiff, weeklyRate, weeks, progress_speed: data.progress_speed });
                           
                           if (weeks <= 3) {
-                            return `${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`;
+                            return `${weeks} ${weeks === 1 ? t('weekShort') : t('weeksShort')}`;
                           } else {
                             const months = Math.floor(weeks / 4.33);
                             const remainingWeeks = Math.round(weeks % 4.33);
                             
                             if (months === 0) {
-                              return `${weeks} semanas`;
+                              return `${weeks} ${t('weeksShort')}`;
                             } else if (remainingWeeks === 0) {
-                              return `${months} ${months === 1 ? 'mes' : 'meses'}`;
+                              return `${months} ${months === 1 ? t('monthShort') : t('monthsShort')}`;
                             } else {
-                              return `${months} ${months === 1 ? 'mes' : 'meses'} ${remainingWeeks} ${remainingWeeks === 1 ? 'semana' : 'semanas'}`;
+                              return `${months} ${months === 1 ? t('monthShort') : t('monthsShort')} ${remainingWeeks} ${remainingWeeks === 1 ? t('weekShort') : t('weeksShort')}`;
                             }
                           }
                         })()}
@@ -416,15 +420,15 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
               )}
 
               <div className="text-xs text-muted-foreground">
-                <p>Fórmula: Mifflin-St Jeor + Ajuste saludable</p>
+                <p>{t('formulaLabel')}</p>
                 {data.goal && data.goal !== 'maintain' && data.progress_speed && (
                   <p>
-                    Ajuste por velocidad: {data.goal === 'lose' ? '-' : '+'}{Math.abs(PROGRESS_SPEED_ADJUSTMENTS[data.progress_speed][data.goal as 'lose' | 'gain'])} cal/día
-                    ({data.progress_speed === 'slow' ? '0.25' : data.progress_speed === 'moderate' ? '0.5' : '0.75'} kg/semana)
+                    {t('speedAdjustment')}: {data.goal === 'lose' ? '-' : '+'}{Math.abs(PROGRESS_SPEED_ADJUSTMENTS[data.progress_speed][data.goal as 'lose' | 'gain'])} {t('perDay')}
+                    ({data.progress_speed === 'slow' ? '0.25' : data.progress_speed === 'moderate' ? '0.5' : '0.75'} {t('kgPerWeek')})
                   </p>
                 )}
-                {data.goal === 'maintain' && <p>Sin ajuste calórico (mantenimiento)</p>}
-                <p className="text-xs opacity-75">Basado en 1kg = 7,700 calorías</p>
+                {data.goal === 'maintain' && <p>{t('noCalorieAdjustment')}</p>}
+                <p className="text-xs opacity-75">{t('basedOn7700')}</p>
               </div>
             </div>
           </Card>
@@ -432,10 +436,10 @@ export const PersonalDataSettings: React.FC<PersonalDataSettingsProps> = ({ user
 
         <div className="flex gap-3 pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-            Cancelar
+            {t('cancel')}
           </Button>
           <Button onClick={handleSave} disabled={saving} className="flex-1">
-            {saving ? 'Guardando...' : 'Guardar'}
+            {saving ? t('saving') : t('save')}
           </Button>
         </div>
         </div>

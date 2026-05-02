@@ -11,6 +11,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Droplets } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 interface EditNutritionGoalsDialogProps {
   open: boolean;
@@ -23,6 +25,8 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = (k: keyof typeof translations.es) => translations[language][k];
   
   const [showAlert, setShowAlert] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -89,8 +93,10 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     if (profile?.calculated_calories) {
       handleCaloriesChange(profile.calculated_calories);
       toast({
-        title: "Calorías aplicadas",
-        description: `Se aplicaron ${profile.calculated_calories} calorías recomendadas.`
+        title: t('caloriesApplied'),
+        description: language === 'es'
+          ? `Se aplicaron ${profile.calculated_calories} calorías recomendadas.`
+          : `Applied ${profile.calculated_calories} recommended calories.`
       });
     } else {
       setShowAlert(true);
@@ -160,43 +166,43 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
 
   const nutritionPresets = [
     {
-      name: "🔥 Pérdida de Peso",
-      description: "Déficit calórico\npreservando músculo",
+      name: t('presetWeightLoss'),
+      description: t('presetWeightLossDesc'),
       protein: 35,
       carbs: 30,
       fat: 35
     },
     {
-      name: "💪 Ganancia Muscular", 
-      description: "Volumen para\ncrecimiento muscular",
+      name: t('presetMuscleGain'),
+      description: t('presetMuscleGainDesc'),
       protein: 30,
       carbs: 40,
       fat: 30
     },
     {
-      name: "⚖️ Mantenimiento",
-      description: "Balanceado para\nmantener peso",
+      name: t('presetMaintenance'),
+      description: t('presetMaintenanceDesc'),
       protein: 25,
       carbs: 45,
       fat: 30
     },
     {
-      name: "🥑 Ketogénica",
-      description: "Muy baja en\ncarbohidratos",
+      name: t('presetKeto'),
+      description: t('presetKetoDesc'),
       protein: 20,
       carbs: 10,
       fat: 70
     },
     {
-      name: "🏃‍♂️ Alto Rendimiento",
-      description: "Para atletas y\ndeportistas",
+      name: t('presetPerformance'),
+      description: t('presetPerformanceDesc'),
       protein: 25,
       carbs: 50,
       fat: 25
     },
     {
-      name: "🩺 Diabético",
-      description: "Control glucémico\noptimizado",
+      name: t('presetDiabetic'),
+      description: t('presetDiabeticDesc'),
       protein: 30,
       carbs: 35,
       fat: 35
@@ -227,8 +233,10 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
       const recommendedLiters = (profile.weight * 35) / 1000;
       setWaterIntake(Math.round(recommendedLiters * 10) / 10);
       toast({
-        title: "Agua recomendada aplicada",
-        description: `Se aplicaron ${Math.round(recommendedLiters * 10) / 10}L basado en tu peso.`
+        title: t('waterApplied'),
+        description: language === 'es'
+          ? `Se aplicaron ${Math.round(recommendedLiters * 10) / 10}L basado en tu peso.`
+          : `Applied ${Math.round(recommendedLiters * 10) / 10}L based on your weight.`
       });
     } else {
       setShowAlert(true);
@@ -259,16 +267,16 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
       queryClient.invalidateQueries({ queryKey: ['user-meals'] });
       
       toast({
-        title: "Objetivos actualizados",
-        description: "Tus objetivos nutricionales han sido guardados correctamente."
+        title: t('goalsUpdated'),
+        description: t('goalsUpdatedDesc')
       });
       
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating nutrition goals:', error);
       toast({
-        title: "Error",
-        description: "No se pudieron guardar los objetivos. Inténtalo de nuevo.",
+        title: t('error'),
+        description: t('couldNotSaveGoals'),
         variant: "destructive"
       });
     }
@@ -278,13 +286,13 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar Objetivos Nutricionales</DialogTitle>
+          <DialogTitle>{t('editNutritionGoals')}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Presets nutricionales */}
           <div className="space-y-3">
-            <Label>Presets Nutricionales</Label>
+            <Label>{t('nutritionPresets')}</Label>
             <div className="grid grid-cols-2 gap-2">
               {nutritionPresets.map((preset) => (
                 <Button
@@ -304,7 +312,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
 
           {/* Calorías totales */}
           <div className="space-y-2">
-            <Label htmlFor="calories">Calorías diarias objetivo</Label>
+            <Label htmlFor="calories">{t('dailyCalorieTarget')}</Label>
             <div className="flex gap-2">
               <Input
                 id="calories"
@@ -326,7 +334,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                 onClick={handleRecommendedCalories}
                 className="px-3"
               >
-                Recomendado
+                {t('recommended')}
               </Button>
             </div>
           </div>
@@ -334,7 +342,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
           {/* Slider de Proteína */}
           <div className="space-y-3">
             <Label className="flex items-center justify-between">
-              <span style={{ color: '#3b82f6' }}>Proteína ({percentages.protein}%)</span>
+              <span style={{ color: '#3b82f6' }}>{t('proteinLabel')} ({percentages.protein}%)</span>
             </Label>
             <div className="flex items-center gap-3">
               <Slider
@@ -361,14 +369,14 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
               </div>
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              1g = 4 calorías
+              {t('cal4Per1g')}
             </div>
           </div>
 
           {/* Slider de Carbohidratos */}
           <div className="space-y-3">
             <Label className="flex items-center justify-between">
-              <span style={{ color: '#10b981' }}>Carbohidratos ({percentages.carbs}%)</span>
+              <span style={{ color: '#10b981' }}>{t('carbsLabel')} ({percentages.carbs}%)</span>
             </Label>
             <div className="flex items-center gap-3">
               <Slider
@@ -395,14 +403,14 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
               </div>
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              1g = 4 calorías
+              {t('cal4Per1g')}
             </div>
           </div>
 
           {/* Slider de Grasas */}
           <div className="space-y-3">
             <Label className="flex items-center justify-between">
-              <span style={{ color: '#f59e0b' }}>Grasas ({percentages.fat}%)</span>
+              <span style={{ color: '#f59e0b' }}>{t('fatsLabel')} ({percentages.fat}%)</span>
             </Label>
             <div className="flex items-center gap-3">
               <Slider
@@ -429,20 +437,20 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
               </div>
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              1g = 9 calorías
+              {t('cal9Per1g')}
             </div>
           </div>
 
           {/* Verificación de porcentajes */}
           <div className="text-sm text-muted-foreground text-center">
-            Total: {percentages.protein + percentages.carbs + percentages.fat}%
+            {t('total')}: {percentages.protein + percentages.carbs + percentages.fat}%
           </div>
 
           {/* Ingesta de agua */}
           <div className="space-y-3 pt-4 border-t">
             <Label className="flex items-center gap-2">
               <Droplets className="h-4 w-4 text-blue-500" />
-              Ingesta de agua diaria
+              {t('dailyWaterIntake')}
             </Label>
             <div className="space-y-2">
               <div className="flex gap-2">
@@ -454,7 +462,7 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                   max="10"
                   step="0.1"
                   className="flex-1"
-                  placeholder="Litros"
+                  placeholder={t('liters')}
                 />
                 <Button
                   type="button"
@@ -463,11 +471,11 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
                   onClick={calculateRecommendedWater}
                   className="px-3"
                 >
-                  Recomendado
+                  {t('recommended')}
                 </Button>
               </div>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{waterIntake}L = {litersToGlasses(waterIntake)} vasos (250ml c/u)</span>
+                <span>{waterIntake}L = {litersToGlasses(waterIntake)} {t('glasses')} {t('glassesEach')}</span>
                 <span className="flex items-center gap-1">
                   <Droplets className="h-3 w-3" />
                   {litersToGlasses(waterIntake)}
@@ -483,14 +491,14 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
               onClick={() => onOpenChange(false)}
               className="flex-1"
             >
-              Cancelar
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
               disabled={setNutritionGoals.isPending}
               className="flex-1"
             >
-              {setNutritionGoals.isPending ? "Guardando..." : "Guardar"}
+              {setNutritionGoals.isPending ? t('saving') : t('save')}
             </Button>
           </div>
         </form>
@@ -499,16 +507,15 @@ export const EditNutritionGoalsDialog = ({ open, onOpenChange }: EditNutritionGo
       <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Calcular Calorías Recomendadas</AlertDialogTitle>
+            <AlertDialogTitle>{t('calcRecommendedTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Para obtener las calorías recomendadas, primero debes completar la calculadora de datos personales.
-              Esto incluye tu edad, peso, altura, nivel de actividad y objetivos.
+              {t('calcRecommendedDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleNavigateToSettings}>
-              Ir a Ajustes Personales
+              {t('goToPersonal')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
