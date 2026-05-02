@@ -81,25 +81,22 @@ export const MealPlate = ({
     console.log("🏷️ MealPlate - Using fallback mapping for meal_type:", mealType);
     
     const names = {
-      // Español
-      breakfast: "Desayuno",
-      lunch: "Almuerzo", 
-      dinner: "Cena",
-      snack: "Merienda",
-      // Español también
-      desayuno: "Desayuno",
-      almuerzo: "Almuerzo", 
-      comida: "Almuerzo",
-      cena: "Cena",
-      merienda: "Merienda",
-      // Nombres de categorías por defecto
-      "Desayuno": "Desayuno",
-      "Almuerzo": "Almuerzo",
-      "Cena": "Cena",
-      "Merienda": "Merienda"
+      breakfast: t.breakfast,
+      lunch: t.lunch,
+      dinner: t.dinner,
+      snack: t.snackMeal,
+      desayuno: t.breakfast,
+      almuerzo: t.lunch,
+      comida: t.lunch,
+      cena: t.dinner,
+      merienda: t.snackMeal,
+      "Desayuno": t.breakfast,
+      "Almuerzo": t.lunch,
+      "Cena": t.dinner,
+      "Merienda": t.snackMeal
     };
     
-    const mappedName = names[mealType as keyof typeof names] || "Comida";
+    const mappedName = names[mealType as keyof typeof names] || (language === 'es' ? "Comida" : "Meal");
     console.log("🏷️ MealPlate - Mapped name:", mappedName);
     return mappedName;
   }
@@ -554,15 +551,15 @@ export const MealPlate = ({
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="text-center p-2 rounded bg-background">
                     <div className="font-medium">{Math.round(protein * 10) / 10}g</div>
-                    <div className="text-muted-foreground">Proteína</div>
+                    <div className="text-muted-foreground">{t.proteinFull}</div>
                   </div>
                   <div className="text-center p-2 rounded bg-background">
                     <div className="font-medium">{Math.round(carbs * 10) / 10}g</div>
-                    <div className="text-muted-foreground">Carbohidratos</div>
+                    <div className="text-muted-foreground">{t.carbsFull}</div>
                   </div>
                   <div className="text-center p-2 rounded bg-background">
                     <div className="font-medium">{Math.round(fat * 10) / 10}g</div>
-                    <div className="text-muted-foreground">Grasas</div>
+                    <div className="text-muted-foreground">{t.fatsFull}</div>
                   </div>
                 </div>
               </div>
